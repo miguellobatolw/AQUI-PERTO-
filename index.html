@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Aqui Perto — serviços e produtores locais</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0f5c4d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Aqui Perto">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap">
+<style>
+:root{--bg:#f2f6f4;--surface:#fff;--ink:#14262b;--muted:#5a6d70;--line:#d6e0dc;--brand:#0f5c4d;--brand-ink:#fff;--accent:#f2b33d;--accent-ink:#2a1d00;--chip:#e3ece8;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1a1c;--surface:#152427;--ink:#e8f1ee;--muted:#93a9a8;--line:#27393b;--brand:#4fc3a5;--brand-ink:#05231b;--accent:#f2b33d;--chip:#1d3033;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e1a1c;--surface:#152427;--ink:#e8f1ee;--muted:#93a9a8;--line:#27393b;--brand:#4fc3a5;--brand-ink:#05231b;--accent:#f2b33d;--chip:#1d3033;color-scheme:dark}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+.wrap{max-width:960px;margin:0 auto;padding:0 16px}
+header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 0;flex-wrap:wrap}
+.logo{font-weight:800;font-size:22px;letter-spacing:-.02em;display:flex;align-items:center;gap:8px;cursor:pointer;background:none;border:0;padding:0}
+.pin{width:22px;height:22px;background:var(--brand);border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:inline-block;position:relative}
+.pin::after{content:"";position:absolute;inset:6px;background:var(--accent);border-radius:50%}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 16px;cursor:pointer;font-weight:600}
+.btn.primary{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+.btn.accent{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn:focus-visible,.chip:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.nav{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.hello{color:var(--muted);font-size:14px}
+.hero{padding:28px 0 20px}
+h1{font-size:clamp(34px,8vw,60px);line-height:1.02;letter-spacing:-.03em;margin:0 0 10px;font-weight:800;max-width:14ch}
+.sub{color:var(--muted);margin:0 0 20px;max-width:46ch}
+.search{display:grid;grid-template-columns:1.4fr 1fr auto;gap:8px;background:var(--surface);border:2px solid var(--ink);border-radius:18px;padding:8px}
+.search input,.search select{border:0;background:transparent;padding:12px;min-width:0;width:100%;border-radius:10px}
+.search select{border-left:1px solid var(--line);border-radius:0}
+@media(max-width:620px){.search{grid-template-columns:1fr}.search select{border-left:0;border-top:1px solid var(--line)}}
+.tabs{display:flex;gap:6px;margin:22px 0 12px;border-bottom:1px solid var(--line)}
+.tab{background:none;border:0;padding:10px 14px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:4px 0 12px;-webkit-overflow-scrolling:touch}
+.chip{flex:none;border:1px solid var(--line);background:var(--chip);border-radius:999px;padding:6px 14px;cursor:pointer;font-size:14px}
+.chip[aria-pressed="true"]{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+.count{color:var(--muted);font-size:14px;margin:4px 0 12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;padding-bottom:40px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.top{display:flex;gap:12px;align-items:center}
+.av{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;font-weight:800;font-size:20px;color:#fff;flex:none}
+.card h3{margin:0;font-size:18px;line-height:1.2}
+.meta{color:var(--muted);font-size:14px}
+.card p{margin:0;font-size:15px}
+.foot{display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:6px;gap:8px}
+.price{font-weight:600}
+.star{color:#c98a00;font-weight:600}
+.mine{background:var(--accent);color:var(--accent-ink);font-size:12px;border-radius:6px;padding:1px 7px;font-weight:600;margin-left:6px}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:14px;padding:28px;text-align:center;grid-column:1/-1}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;margin:20px 0 40px;max-width:640px}
+.panel h2{margin:0 0 4px;font-size:26px;letter-spacing:-.02em}
+label{display:block;font-weight:600;margin:14px 0 6px}
+.f{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px 12px}
+.seg{display:flex;gap:8px}
+.seg .chip{flex:1;text-align:center;padding:10px}
+.zones{display:flex;flex-wrap:wrap;gap:6px}
+.err{color:#c0392b;font-size:14px;min-height:20px;margin-top:8px}
+dialog{border:0;border-radius:16px;padding:22px;max-width:380px;width:calc(100% - 32px);background:var(--surface);color:var(--ink)}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-weight:600;display:none;z-index:9}
+.prow{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+.stk{display:flex;gap:6px;align-items:center}.stk .f{width:84px;text-align:center}.stk .btn{padding:6px 12px}
+.tg{display:flex;align-items:center;gap:6px;margin:0;font-weight:400;font-size:14px}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.ok{color:var(--brand);font-weight:600}.out{color:#c0392b;font-weight:600}
+@media(max-width:520px){.pgrid{grid-template-columns:1fr}}
+.thumb{width:52px;height:52px;border-radius:10px;border:1px dashed var(--line);background:var(--chip);padding:0;overflow:hidden;cursor:pointer;display:grid;place-items:center;font-size:22px;color:var(--muted);flex:none}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.pimg{width:56px;height:56px;border-radius:10px;object-fit:cover;flex:none}
+.hide{display:none!important}
+.note{font-size:13px;color:var(--muted);margin-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <button class="logo" onclick="go('home')" aria-label="Início"><span class="pin"></span>Aqui Perto</button>
+  <div class="nav">
+    <span class="hello" id="hello"></span>
+    <button class="btn" id="btnIn" onclick="openLogin('login')">Entrar</button>
+    <button class="btn hide" id="btnCat" onclick="openCat()">O meu catálogo</button>
+    <button class="btn hide" id="btnOut" onclick="logout()">Sair</button>
+    <button class="btn primary" onclick="goProv()">Sou fornecedor</button>
+  </div>
+</header>
+
+<main id="home" class="hide">
+  <section class="hero">
+    <h1>Quem precisa, mesmo ao lado.</h1>
+    <p class="sub">Canalizadores, explicadores, hortas, queijarias e marceneiros da sua zona. Fale diretamente com quem trabalha perto de si.</p>
+    <div class="search">
+      <input id="q" type="search" placeholder="O que procura? Ex.: canalizador, mel" aria-label="O que procura">
+      <select id="zona" aria-label="Zona"></select>
+      <button class="btn accent" onclick="render()">Procurar</button>
+    </div>
+  </section>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tab-servico" onclick="setTipo('servico')">Serviços</button>
+    <button class="tab" role="tab" id="tab-produto" onclick="setTipo('produto')">Produtores locais</button>
+  </div>
+  <div class="chips" id="chips"></div>
+  <div class="count" id="count"></div>
+  <div class="grid" id="grid"></div>
+</main>
+
+<main id="join" class="hide">
+  <div class="panel">
+    <h2>Inscreva o seu negócio</h2>
+    <div class="meta">Os clientes da sua zona passam a encontrá-lo aqui.</div>
+    <label>Tipo de fornecedor</label>
+    <div class="seg">
+      <button class="chip" id="j-servico" onclick="jTipo('servico')">Prestador de serviços</button>
+      <button class="chip" id="j-produto" onclick="jTipo('produto')">Produtor local</button>
+    </div>
+    <label for="jnome">Nome ou marca</label>
+    <input class="f" id="jnome" maxlength="60" autocomplete="name">
+    <label for="jcat">Categoria</label>
+    <select class="f" id="jcat"></select>
+    <label>Zonas onde atende (escolha uma ou mais)</label>
+    <div class="zones" id="jzonas"></div>
+    <label for="jpreco">Preço indicativo</label>
+    <input class="f" id="jpreco" maxlength="40" placeholder="Ex.: 25 €/hora ou 3 €/kg">
+    <label for="jdesc">Descrição</label>
+    <textarea class="f" id="jdesc" rows="3" maxlength="240" placeholder="O que faz, há quanto tempo, horários…"></textarea>
+    <label for="jtel">Telemóvel</label>
+    <input class="f" id="jtel" type="tel" inputmode="tel" placeholder="9XX XXX XXX" autocomplete="tel">
+    <div class="err" id="jerr" role="alert"></div>
+    <button class="btn primary" onclick="saveProv()">Publicar o meu perfil</button>
+    <p class="note" id="demoNote">Nesta versão de demonstração os dados ficam guardados apenas neste navegador.</p>
+  </div>
+</main>
+
+<main id="login" class="hide">
+  <div class="panel">
+    <h2>Aqui Perto</h2>
+    <div class="meta">Entre ou crie a sua conta.</div>
+    <div class="seg" style="margin-top:14px">
+      <button class="chip" id="lm-login" onclick="openLogin('login')">Entrar</button>
+      <button class="chip" id="lm-signup" onclick="openLogin('signup')">Criar conta</button>
+    </div>
+    <div id="lrole" class="hide">
+      <label>Sou</label>
+      <div class="seg">
+        <button class="chip" id="lr-cliente" onclick="setLR('cliente')">Cliente</button>
+        <button class="chip" id="lr-fornecedor" onclick="setLR('fornecedor')">Fornecedor</button>
+      </div>
+    </div>
+    <label for="lemail">E-mail</label>
+    <input class="f" id="lemail" type="email" autocomplete="email">
+    <div id="lpassrow"><label for="lpass">Palavra-passe (mínimo 8 caracteres)</label>
+    <input class="f" id="lpass" type="password"></div>
+    <div class="note" id="ldemo">Modo demonstração: não pede palavra-passe.</div>
+    <div class="err" id="lerr" role="alert"></div>
+    <button class="btn primary" id="lbtn" onclick="submitLogin()">Entrar</button>
+    <p class="note"><a href="#" onclick="go('home');render();return false">Continuar sem conta</a> para só ver os fornecedores.</p>
+  </div>
+</main>
+
+<main id="cat" class="hide">
+  <div class="panel" style="max-width:760px">
+    <h2>O meu catálogo</h2>
+    <div class="meta">Produtos e serviços que os clientes veem no seu perfil. Deixe o stock em branco se não o quiser controlar.</div>
+    <div id="catsel-wrap"><label for="catsel">Perfil</label><select class="f" id="catsel" onchange="CAT_ID=this.value;drawCat()"></select></div>
+    <div class="count" id="catsum" style="margin-top:14px"></div>
+    <div id="catlist"></div>
+    <input type="file" id="pfile" accept="image/*" class="hide">
+    <h3 style="margin:20px 0 0">Adicionar produto</h3>
+    <div class="pgrid">
+      <input class="f" id="pnome" placeholder="Nome (ex.: Batata-doce)" maxlength="60" aria-label="Nome do produto">
+      <input class="f" id="ppreco" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Preço em €" aria-label="Preço em euros">
+      <select class="f" id="pun" aria-label="Unidade"><option>kg</option><option>un</option><option>dúzia</option><option>litro</option><option>frasco</option><option>cabaz</option><option>hora</option></select>
+      <input class="f" id="pstock" type="number" min="0" step="any" inputmode="decimal" placeholder="Stock (opcional)" aria-label="Stock">
+    </div>
+    <label for="pfoto">Foto (opcional)</label>
+    <div style="display:flex;gap:10px;align-items:center"><input id="pfoto" type="file" accept="image/*" class="f"><img id="ppv" class="pimg hide" alt="Pré-visualização"></div>
+    <div class="err" id="perr" role="alert"></div>
+    <button class="btn primary" onclick="addProd()">Adicionar</button>
+    <p style="margin-top:16px"><button class="btn" onclick="go('home');render()">Voltar à pesquisa</button></p>
+  </div>
+</main>
+
+<main id="ob" class="hide">
+  <div class="panel">
+    <h2>Complete o seu perfil</h2>
+    <div class="meta">Quatro perguntas para mostrarmos o que há perto de si.</div>
+    <label for="obnome">Como se chama?</label>
+    <input class="f" id="obnome" maxlength="40" autocomplete="given-name">
+    <label for="obzona">Em que zona vive?</label>
+    <select class="f" id="obzona"></select>
+    <label>O que procura mais?</label>
+    <div class="seg">
+      <button class="chip" id="op-servico" onclick="obP('servico')">Serviços</button>
+      <button class="chip" id="op-produto" onclick="obP('produto')">Produtos locais</button>
+    </div>
+    <label for="obtel">Telemóvel (opcional)</label>
+    <input class="f" id="obtel" type="tel" inputmode="tel" placeholder="9XX XXX XXX">
+    <div class="err" id="oberr" role="alert"></div>
+    <button class="btn primary" onclick="saveOb()">Guardar e começar</button>
+  </div>
+</main>
+</div>
+
+
+<dialog id="dCont">
+  <h2 id="ctNome" style="margin:0 0 4px"></h2>
+  <div class="meta" id="ctMeta"></div>
+  <p id="ctTel" style="font-size:22px;font-weight:800;margin:14px 0"></p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <a class="btn primary" id="ctCall" style="text-decoration:none">Ligar</a>
+    <a class="btn accent" id="ctWa" target="_blank" rel="noopener" style="text-decoration:none">WhatsApp</a>
+    <button class="btn" onclick="dCont.close()">Fechar</button>
+  </div>
+</dialog>
+<dialog id="dProd">
+  <h2 id="pdNome" style="margin:0 0 4px"></h2>
+  <div class="meta">Produtos disponíveis</div>
+  <div id="pdList" style="margin-top:8px"></div>
+  <div style="display:flex;gap:8px;margin-top:14px"><button class="btn" onclick="dProd.close()">Fechar</button><button class="btn primary" id="pdCont">Contactar</button></div>
+</dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+// Preencha com os dados do seu projeto Supabase (Project Settings > API)
+const SUPABASE_URL="";   // ex.: https://abcd1234.supabase.co
+const SUPABASE_KEY="";   // chave "anon" / "publishable"
+const Z=["Aveiro","Beja","Braga","Bragança","Castelo Branco","Coimbra","Évora","Faro","Guarda","Leiria","Lisboa","Portalegre","Porto","Santarém","Setúbal","Viana do Castelo","Vila Real","Viseu","Açores","Madeira"];
+const CATS={servico:["Canalizador","Eletricista","Pedreiro","Pintor","Explicador","Babysitter","Jardineiro","Limpezas","Mudanças"],
+produto:["Hortícolas","Fruta","Carne e pecuária","Queijos e enchidos","Mel e doces","Móveis de madeira","Vinho e azeite","Ovos e lacticínios"]};
+const COLORS=["#0f5c4d","#b5532a","#2f5d9e","#7a4a9c","#a3302f","#3d7a2e","#8a6a00"];
+const SEED=[
+["Joaquim Ferreira","servico","Canalizador",["Lisboa","Setúbal"],"30 €/hora","Reparações, desentupimentos e instalação de esquentadores. Atendimento urgente.","912000001",4.8,64],
+["Rui Machado","servico","Eletricista",["Porto","Braga"],"28 €/hora","Quadros elétricos, certificação e iluminação. Mais de 15 anos de experiência.","912000002",4.7,41],
+["Marta Lopes","servico","Explicador",["Coimbra","Leiria"],"15 €/hora","Matemática e Físico-Química do 7.º ao 12.º ano. Aulas presenciais ou online.","912000003",4.9,38],
+["Inês Pacheco","servico","Babysitter",["Lisboa"],"8 €/hora","Estudante de enfermagem, com primeiros socorros. Disponível noites e fins de semana.","912000004",4.9,22],
+["Construções Almeida","servico","Pedreiro",["Viseu","Guarda","Coimbra"],"Orçamento grátis","Remodelações, muros e rebocos. Equipa de três pessoas.","912000005",4.5,19],
+["Horta do Vale","produto","Hortícolas",["Braga","Viana do Castelo","Porto"],"2,50 €/kg","Cabazes semanais de legumes da época, sem pesticidas.","912000006",4.9,87],
+["Queijaria da Serra","produto","Queijos e enchidos",["Guarda","Castelo Branco","Viseu"],"14 €/kg","Queijo de ovelha curado e enchidos tradicionais. Envio para todo o país.","912000007",5.0,53],
+["Apiário Sol Nascente","produto","Mel e doces",["Faro","Beja","Évora"],"7 €/frasco","Mel de rosmaninho e de laranjeira, colhido localmente.","912000008",4.8,29],
+["Marcenaria Pinho Bravo","produto","Móveis de madeira",["Leiria","Santarém","Lisboa"],"Sob orçamento","Mesas, estantes e cozinhas feitas à medida em madeira maciça.","912000009",4.7,17],
+["Herdade das Oliveiras","produto","Vinho e azeite",["Évora","Portalegre","Setúbal"],"9 €/litro","Azeite virgem extra de produção própria. Visitas à herdade por marcação.","912000010",4.9,44],
+["Quinta do Ovo Feliz","produto","Ovos e lacticínios",["Aveiro","Porto","Coimbra"],"3 €/dúzia","Ovos de galinhas criadas ao ar livre, entrega ao domicílio.","912000011",4.6,31],
+["Jardins do Atlântico","servico","Jardineiro",["Madeira","Açores"],"20 €/hora","Manutenção de jardins, podas e plantações.","912000012",4.6,12]
+].map((a,i)=>({id:"s"+i,nome:a[0],tipo:a[1],cat:a[2],zonas:a[3],preco:a[4],desc:a[5],tel:a[6],rating:a[7],n:a[8]}));
+
+const PR={"Horta do Vale":[["Batata",1.2,"kg",120],["Batata-doce",2.1,"kg",45],["Cenoura",1.4,"kg",0],["Couve galega",1.1,"un",30]],
+"Queijaria da Serra":[["Queijo de ovelha curado",14,"kg",18],["Chouriço caseiro",12,"kg",9]],
+"Apiário Sol Nascente":[["Mel de rosmaninho",7,"frasco",40],["Mel de laranjeira",7,"frasco",25]],
+"Herdade das Oliveiras":[["Azeite virgem extra",9,"litro",300]]};
+const byNome=(a,b)=>a.nome.localeCompare(b.nome,"pt");
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const norm=s=>String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+let S={tipo:"servico",cat:"",jtipo:"servico",jz:[],user:null,list:SEED.slice()};
+
+const DEMO=!SUPABASE_URL||!SUPABASE_KEY;
+const sb=DEMO?null:supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let SESSION=null;
+function load(){try{S.user=JSON.parse(localStorage.getItem("aq_user")||"null");}catch(e){}}
+async function loadList(){
+  if(DEMO){let l=[];try{l=JSON.parse(localStorage.getItem("aq_mine")||"[]");}catch(e){}S.list=SEED.concat(l);S.list.forEach(p=>{if(!p.prods)p.prods=(PR[p.nome]||[]).map((a,i)=>({id:p.id+"-"+i,nome:a[0],preco:a[1],un:a[2],stock:a[3],ativo:true}));});applyUser();return;}
+  const {data,error}=await sb.from("fornecedores").select("*, produtos(*)").order("created_at",{ascending:false});
+  if(error){toast("Não foi possível carregar os fornecedores.");return;}
+  const uid=SESSION&&SESSION.user.id;
+  S.list=data.map(r=>({id:r.id,nome:r.nome,tipo:r.tipo,cat:r.cat,zonas:r.zonas,preco:r.preco||"",desc:r.descr||"",tel:r.tel,rating:0,n:0,prods:(r.produtos||[]).map(x=>({id:x.id,nome:x.nome,preco:Number(x.preco),un:x.un,stock:x.stock==null?null:Number(x.stock),ativo:x.ativo,foto:x.foto||""})),mine:r.user_id===uid}));applyUser();
+}
+function authUI(){$("demoNote").classList.toggle("hide",!DEMO);applyUser();}
+function saveMine(){try{localStorage.setItem("aq_mine",JSON.stringify(S.list.filter(p=>p.mine)));}catch(e){}}
+function toast(t){const e=$("toast");e.textContent=t;e.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display="none",2600);}
+
+function fillZones(sel,first){sel.innerHTML=(first?`<option value="">${first}</option>`:"")+Z.map(z=>`<option>${z}</option>`).join("");}
+let VIEW="boot",LM="login",LR="cliente",OBP="servico",NEWID="",CAT_ID="",PHOTO_PID="",NEWBLOB=null;
+function go(v){VIEW=v;["home","join","login","ob","cat"].forEach(x=>$(x).classList.toggle("hide",x!==v));if(v==="join")jTipo(S.jtipo);scrollTo(0,0);}
+function goProv(){if(DEMO||SESSION||S.user)go("join");else openLogin("signup","fornecedor");}
+function setLR(r){LR=r;drawLogin();}
+function openLogin(m,r){LM=m||"login";if(r)LR=r;$("lerr").textContent="";drawLogin();go("login");}
+function drawLogin(){
+  $("lm-login").setAttribute("aria-pressed",LM==="login");$("lm-signup").setAttribute("aria-pressed",LM==="signup");
+  $("lrole").classList.toggle("hide",LM!=="signup");
+  ["cliente","fornecedor"].forEach(r=>$("lr-"+r).setAttribute("aria-pressed",LR===r));
+  $("lpass").autocomplete=LM==="signup"?"new-password":"current-password";
+  $("lbtn").textContent=LM==="signup"?"Criar conta":"Entrar";
+  $("lpassrow").classList.toggle("hide",DEMO);$("ldemo").classList.toggle("hide",!DEMO);
+}
+async function submitLogin(){
+  const m=$("lemail").value.trim(),p=$("lpass").value,e=$("lerr");e.textContent="";
+  if(!/^\S+@\S+\.\S+$/.test(m)){e.textContent="Indique um e-mail válido.";return;}
+  if(DEMO){if(S.user){go("home");render();}else if(LR==="fornecedor"&&LM==="signup")go("join");else go("ob");return;}
+  if(p.length<8){e.textContent="A palavra-passe precisa de pelo menos 8 caracteres.";return;}
+  if(LM==="signup"){
+    const {data,error}=await sb.auth.signUp({email:m,password:p,options:{data:{papel:LR},emailRedirectTo:location.href.split("#")[0]}});
+    if(error){e.textContent=/registered/i.test(error.message)?"Já existe uma conta com este e-mail. Use Entrar.":"Não foi possível criar a conta.";return;}
+    if(!data.session){e.textContent="Enviámos um e-mail de confirmação. Confirme-o e depois entre.";return;}
+  }else{
+    const {error}=await sb.auth.signInWithPassword({email:m,password:p});
+    if(error){e.textContent="E-mail ou palavra-passe incorretos.";return;}
+  }
+}
+async function logout(){
+  S.user=null;try{localStorage.removeItem("aq_user");}catch(x){}
+  if(!DEMO){await sb.auth.signOut();return;}
+  applyUser();go("login");
+}
+async function afterAuth(){
+  await loadList();
+  const {data}=await sb.from("perfis").select("*").eq("user_id",SESSION.user.id).maybeSingle();
+  if(!data){const papel=(SESSION.user.user_metadata||{}).papel||LR;S.user=null;applyUser();if(papel==="fornecedor")go("join");else go("ob");return;}
+  S.user={nome:data.nome,zona:data.zona||""};try{localStorage.setItem("aq_user",JSON.stringify(S.user));}catch(x){}
+  applyUser();$("zona").value=S.user.zona;go("home");render();
+}
+const imgUrl=x=>!x.foto?"":(x.foto.startsWith("data:")?x.foto:sb.storage.from("produtos").getPublicUrl(x.foto).data.publicUrl);
+const thumb=x=>{const u=imgUrl(x);return u?`<img src="${esc(u)}" alt="" loading="lazy">`:"+";};
+const toData=b=>new Promise((r,j)=>{const f=new FileReader();f.onload=()=>r(f.result);f.onerror=()=>j(f.error||new Error("leitura"));f.readAsDataURL(b);});
+async function loadImg(file){
+  const why=[];
+  try{const bm=await createImageBitmap(file);return {src:bm,w:bm.width,h:bm.height,close:()=>{if(bm.close)bm.close();}};}
+  catch(e){why.push("bitmap: "+((e&&e.name)||e));}
+  for(let i=0;i<2;i++){
+    let u=null;
+    try{
+      u=i?await toData(file):URL.createObjectURL(file);
+      const im=await new Promise((res,rej)=>{const t=new Image();t.onload=()=>res(t);t.onerror=()=>rej(new Error("erro de imagem"));t.src=u;});
+      return {src:im,w:im.naturalWidth,h:im.naturalHeight,close:()=>{if(!i)URL.revokeObjectURL(u);}};
+    }catch(e){if(!i&&u)URL.revokeObjectURL(u);why.push((i?"dados: ":"url: ")+((e&&e.name)||"")+" "+((e&&e.message)||""));}
+  }
+  throw new Error(why.join("; "));
+}
+async function compress(file,max,q){
+  const {src,w,h,close}=await loadImg(file);
+  if(!w||!h){close();throw new Error("imagem vazia");}
+  const k=Math.min(1,max/Math.max(w,h)),c=document.createElement("canvas");
+  c.width=Math.max(1,Math.round(w*k));c.height=Math.max(1,Math.round(h*k));
+  const ctx=c.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,c.width,c.height);ctx.drawImage(src,0,0,c.width,c.height);close();
+  const blob=await new Promise(r=>{try{c.toBlob(r,"image/jpeg",q);}catch(e){r(null);}});
+  if(blob)return blob;
+  const d=c.toDataURL("image/jpeg",q);
+  if(!d||d.length<40)throw new Error("conversão falhou");
+  const bin=atob(d.split(",")[1]),u=new Uint8Array(bin.length);
+  for(let n=0;n<bin.length;n++)u[n]=bin.charCodeAt(n);
+  return new Blob([u],{type:"image/jpeg"});
+}
+async function prepPhoto(file){
+  try{return await compress(file,DEMO?360:900,DEMO?0.7:0.8);}
+  catch(e){const er=new Error("ler");er.reason="Não foi possível ler essa imagem ("+((e&&e.message)||e)+").";throw er;}
+}
+async function savePhoto(file){return uploadPhoto(await prepPhoto(file));}
+async function uploadPhoto(b){
+  if(DEMO)return toData(b);
+  const path=SESSION.user.id+"/"+Date.now()+"-"+Math.random().toString(36).slice(2,8)+".jpg";
+  const {error}=await sb.storage.from("produtos").upload(path,b,{contentType:"image/jpeg",cacheControl:"31536000"});
+  if(error){const er=new Error("enviar"),m=error.message||String(error);er.reason="Não foi possível enviar a foto: "+m+(/bucket|policy|row-level|not found/i.test(m)?". Confirme que correu o schema-fotos.sql no Supabase.":"");throw er;}
+  return path;
+}
+async function dropPhoto(x){if(!DEMO&&x&&x.foto&&!x.foto.startsWith("data:"))await sb.storage.from("produtos").remove([x.foto]);}
+const fmtP=x=>Number(x.preco).toFixed(2).replace(".",",")+" € / "+x.un;
+const stkTxt=x=>x.stock==null?"":(x.stock===0?"Esgotado":"Em stock: "+String(x.stock).replace(".",",")+" "+x.un);
+function prodBtn(p){const n=(p.prods||[]).filter(x=>x.ativo).length;return n?`<div><button class="chip" data-prod="${p.id}">Ver produtos (${n})</button></div>`:"";}
+function openProd(id){
+  const p=S.list.find(x=>x.id===id);if(!p)return;
+  $("pdNome").textContent=p.nome;
+  $("pdList").innerHTML=p.prods.filter(x=>x.ativo).sort(byNome).map(x=>`<div class="prow">${imgUrl(x)?`<img class="pimg" src="${esc(imgUrl(x))}" alt="${esc(x.nome)}" loading="lazy">`:""}<div style="flex:1"><strong>${esc(x.nome)}</strong><div class="meta">${esc(fmtP(x))}</div></div><div class="${x.stock===0?"out":"ok"}">${esc(stkTxt(x))}</div></div>`).join("");
+  $("pdCont").onclick=()=>{$("dProd").close();openCont(id);};
+  $("dProd").showModal();
+}
+function openCat(id){if(id)CAT_ID=id;if(!S.list.some(p=>p.mine)){goProv();return;}go("cat");drawCat();}
+function drawCat(){
+  const mine=S.list.filter(p=>p.mine);if(!mine.length)return;
+  if(!mine.find(x=>x.id===CAT_ID))CAT_ID=mine[0].id;
+  $("catsel").innerHTML=mine.map(p=>`<option value="${esc(p.id)}">${esc(p.nome)}</option>`).join("");$("catsel").value=CAT_ID;
+  $("catsel-wrap").classList.toggle("hide",mine.length<2);
+  const f=mine.find(x=>x.id===CAT_ID),pr=f.prods.slice().sort(byNome);
+  $("catsum").textContent=pr.length+(pr.length===1?" item":" itens")+" · "+pr.filter(x=>x.stock===0).length+" esgotados · "+pr.filter(x=>!x.ativo).length+" ocultos";
+  $("catlist").innerHTML=pr.length?pr.map(x=>`<div class="prow" data-p="${esc(x.id)}"><button class="thumb" data-a="foto" aria-label="Foto de ${esc(x.nome)}">${thumb(x)}</button><div style="min-width:120px;flex:1"><strong>${esc(x.nome)}</strong><div class="meta">${esc(fmtP(x))}</div></div>
+  <div class="stk"><button class="btn" data-a="dec" aria-label="Menos 1">−</button><input class="f" data-a="stock" type="number" min="0" step="any" inputmode="decimal" placeholder="—" value="${x.stock==null?"":x.stock}" aria-label="Stock de ${esc(x.nome)}"><button class="btn" data-a="inc" aria-label="Mais 1">+</button></div>
+  <label class="tg"><input type="checkbox" data-a="ativo" ${x.ativo?"checked":""}> Visível</label><button class="btn" data-a="del">Apagar</button></div>`).join(""):'<p class="meta">Ainda não tem produtos. Adicione o primeiro abaixo.</p>';
+}
+async function updProd(pid,patch){
+  const f=S.list.find(x=>x.id===CAT_ID),pr=f.prods.find(x=>x.id===pid);if(!pr)return;
+  Object.assign(pr,patch);
+  if(DEMO)saveMine();
+  else{const {error}=await sb.from("produtos").update(patch).eq("id",pid);if(error){toast("Não foi possível guardar.");await loadList();drawCat();return false;}}
+  drawCat();return true;
+}
+async function delProd(pid){
+  if(!confirm("Apagar este produto?"))return;
+  const f=S.list.find(x=>x.id===CAT_ID),old=f.prods.find(x=>x.id===pid);
+  if(DEMO){f.prods=f.prods.filter(x=>x.id!==pid);saveMine();}
+  else{const {error}=await sb.from("produtos").delete().eq("id",pid);if(error){toast("Não foi possível apagar.");return;}await dropPhoto(old);await loadList();}
+  drawCat();
+}
+async function addProd(){
+  const f=S.list.find(x=>x.id===CAT_ID);if(!f)return;
+  const nome=$("pnome").value.trim(),preco=parseFloat($("ppreco").value),un=$("pun").value,sv=$("pstock").value,stock=sv===""?null:Math.max(0,Number(sv));
+  if(nome.length<2){$("perr").textContent="Indique o nome do produto.";return;}
+  if(!(preco>=0)){$("perr").textContent="Indique o preço (pode ser 0).";return;}
+  $("perr").textContent="";
+  let foto="";const fl=$("pfoto").files[0];
+  if(fl&&!NEWBLOB){$("perr").textContent="A foto ainda não está pronta. Espere um instante ou escolha-a de novo.";return;}
+  if(NEWBLOB){try{foto=await uploadPhoto(NEWBLOB);}catch(x){$("perr").textContent=(x&&x.reason)||"Não foi possível usar essa imagem.";return;}}
+  if(DEMO){f.prods.push({id:"p"+Date.now(),nome,preco,un,stock,ativo:true,foto});saveMine();}
+  else{
+    const {error}=await sb.from("produtos").insert({fornecedor_id:f.id,nome,preco,un,stock,ativo:true,foto:foto||null});
+    if(error){await dropPhoto({foto});$("perr").textContent="Não foi possível adicionar. Tente outra vez.";return;}
+    await loadList();
+  }
+  ["pnome","ppreco","pstock","pfoto"].forEach(i=>$(i).value="");NEWBLOB=null;$("ppv").classList.add("hide");drawCat();$("pnome").focus();
+}
+function obP(t){OBP=t;["servico","produto"].forEach(x=>$("op-"+x).setAttribute("aria-pressed",x===t));}
+async function saveOb(){
+  const nome=$("obnome").value.trim(),zona=$("obzona").value,tel=$("obtel").value.replace(/\D/g,"").replace(/^351/,"");
+  if(!nome){$("oberr").textContent="Indique o seu nome.";return;}
+  if(tel&&tel.length!==9){$("oberr").textContent="O telemóvel deve ter 9 dígitos.";return;}
+  if(!DEMO){
+    const {error}=await sb.from("perfis").upsert({user_id:SESSION.user.id,papel:"cliente",nome,zona,procura:OBP,tel:tel||null});
+    if(error){$("oberr").textContent="Não foi possível guardar. Tente outra vez.";return;}
+  }
+  S.user={nome,zona};try{localStorage.setItem("aq_user",JSON.stringify(S.user));}catch(x){}
+  S.tipo=OBP;S.cat="";applyUser();$("zona").value=zona;go("home");render();toast("Perfil criado. Bem-vindo, "+nome+"!");
+}
+function setTipo(t){S.tipo=t;S.cat="";render();}
+function setCat(c){S.cat=S.cat===c?"":c;render();}
+
+function render(){
+  ["servico","produto"].forEach(t=>$("tab-"+t).setAttribute("aria-selected",t===S.tipo));
+  $("chips").innerHTML=CATS[S.tipo].map(c=>`<button class="chip" aria-pressed="${S.cat===c}" data-c="${esc(c)}">${esc(c)}</button>`).join("");
+  document.querySelectorAll("#chips .chip").forEach(b=>b.onclick=()=>setCat(b.dataset.c));
+  const z=$("zona").value,q=norm($("q").value.trim());
+  const r=S.list.filter(p=>p.tipo===S.tipo&&(!S.cat||p.cat===S.cat)&&(!z||p.zonas.includes(z))&&(!q||norm(p.nome+" "+p.cat+" "+p.desc+" "+(p.prods||[]).map(x=>x.nome).join(" ")).includes(q))).sort((a,b)=>b.rating-a.rating);
+  $("count").textContent=r.length+(r.length===1?" resultado":" resultados")+(z?" em "+z:" em todo o país");
+  $("grid").innerHTML=r.length?r.map(card).join(""):`<div class="empty"><strong>Ainda ninguém${z?" em "+esc(z):""} com esta pesquisa.</strong><p class="meta">Tente outra zona ou categoria, ou convide um fornecedor que conheça.</p><button class="btn primary" onclick="go('join')">Inscrever um fornecedor</button></div>`;
+  document.querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>openCont(b.dataset.id));
+  document.querySelectorAll("[data-prod]").forEach(b=>b.onclick=()=>openProd(b.dataset.prod));
+  document.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{if(!confirm("Apagar este perfil?"))return;const {error}=await sb.from("fornecedores").delete().eq("id",b.dataset.del);if(error)toast("Não foi possível apagar.");else{await loadList();render();}});
+}
+function card(p){
+  const col=COLORS[(p.nome.charCodeAt(0)+p.nome.length)%COLORS.length];
+  return `<article class="card"><div class="top"><div class="av" style="background:${col}" aria-hidden="true">${esc(p.nome[0])}</div>
+  <div><h3>${esc(p.nome)}${p.mine?'<span class="mine">O meu</span>':""}</h3><div class="meta">${esc(p.cat)} · ${esc(p.zonas.slice(0,3).join(", "))}</div></div></div>
+  <p>${esc(p.desc)}</p>${prodBtn(p)}
+  <div class="foot"><div><span class="price">${esc(p.preco||"Sob consulta")}</span><br><span class="star">${p.n?"★ "+p.rating.toFixed(1)+" <span class='meta'>("+p.n+")</span>":"<span class='meta'>Novo na app</span>"}</span></div>
+  <div style="display:flex;gap:6px">${p.mine&&!DEMO?`<button class="btn" data-del="${p.id}">Apagar</button>`:""}<button class="btn primary" data-id="${p.id}">Contactar</button></div></div></article>`;
+}
+function openCont(id){
+  const p=S.list.find(x=>x.id===id);if(!p)return;
+  $("ctNome").textContent=p.nome;$("ctMeta").textContent=p.cat+" · "+p.zonas.join(", ");
+  const d=p.tel.replace(/\D/g,"");
+  $("ctTel").textContent=p.tel.replace(/(\d{3})(\d{3})(\d{3})/,"$1 $2 $3");
+  $("ctCall").href="tel:+351"+d;$("ctWa").href="https://wa.me/351"+d;
+  $("dCont").showModal();
+}
+function applyUser(){
+  $("hello").textContent=S.user?"Olá, "+S.user.nome:"";
+  const on=!!S.user||!!SESSION;
+  $("btnCat").classList.toggle("hide",!S.list.some(p=>p.mine));
+  $("btnIn").classList.toggle("hide",on);$("btnOut").classList.toggle("hide",!on);
+}
+function jTipo(t){
+  S.jtipo=t;["servico","produto"].forEach(x=>$("j-"+x).setAttribute("aria-pressed",x===t));
+  $("jcat").innerHTML=CATS[t].map(c=>`<option>${c}</option>`).join("")+"<option>Outra</option>";
+}
+function drawJZ(){
+  $("jzonas").innerHTML=Z.map(z=>`<button type="button" class="chip" aria-pressed="${S.jz.includes(z)}" data-z="${z}">${z}</button>`).join("");
+  document.querySelectorAll("#jzonas .chip").forEach(b=>b.onclick=()=>{const z=b.dataset.z;S.jz=S.jz.includes(z)?S.jz.filter(x=>x!==z):S.jz.concat(z);drawJZ();});
+}
+async function saveProv(){
+  const nome=$("jnome").value.trim(),tel=$("jtel").value.replace(/\D/g,"").replace(/^351/,"");
+  let e="";
+  if(!nome)e="Indique o nome ou a marca.";
+  else if(!S.jz.length)e="Escolha pelo menos uma zona.";
+  else if(tel.length!==9)e="O telemóvel deve ter 9 dígitos.";
+  $("jerr").textContent=e;if(e)return;
+  const p={nome,tipo:S.jtipo,cat:$("jcat").value,zonas:S.jz.slice(),preco:$("jpreco").value.trim(),desc:$("jdesc").value.trim()||"Sem descrição.",tel};
+  if(DEMO){NEWID="m"+Date.now();S.list.push({...p,id:NEWID,rating:0,n:0,mine:true,prods:[]});saveMine();}
+  else{
+    if(!SESSION){openLogin("signup","fornecedor");return;}
+    const {data:ins,error}=await sb.from("fornecedores").insert({nome:p.nome,tipo:p.tipo,cat:p.cat,zonas:p.zonas,preco:p.preco,descr:p.desc,tel:p.tel}).select("id").single();
+    if(error){$("jerr").textContent="Não foi possível publicar. Tente outra vez.";return;}
+    NEWID=ins.id;await loadList();
+  }
+  S.user={nome:p.nome,zona:p.zonas[0]};try{localStorage.setItem("aq_user",JSON.stringify(S.user));}catch(x){}applyUser();
+  if(!DEMO)await sb.from("perfis").upsert({user_id:SESSION.user.id,papel:"fornecedor",nome:p.nome,zona:p.zonas[0]});
+  ["jnome","jpreco","jdesc","jtel"].forEach(i=>$(i).value="");S.jz=[];drawJZ();
+  S.tipo=p.tipo;S.cat="";$("zona").value="";$("q").value="";
+  render();openCat(NEWID);toast("Perfil publicado. Agora adicione os seus produtos.");
+}
+
+fillZones($("zona"),"Todo o país");fillZones($("obzona"));obP("servico");load();applyUser();drawJZ();
+if(S.user)$("zona").value=S.user.zona;
+$("q").addEventListener("keydown",e=>{if(e.key==="Enter")render();});
+$("zona").addEventListener("change",render);
+$("catlist").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-a]"),row=b&&b.closest("[data-p]");if(!row)return;
+  const f=S.list.find(x=>x.id===CAT_ID),pr=f&&f.prods.find(x=>x.id===row.dataset.p);if(!pr)return;
+  const cur=pr.stock==null?0:Number(pr.stock),a=b.dataset.a;
+  if(a==="inc")updProd(pr.id,{stock:cur+1});
+  else if(a==="dec")updProd(pr.id,{stock:Math.max(0,cur-1)});
+  else if(a==="del")delProd(pr.id);
+  else if(a==="foto"){PHOTO_PID=pr.id;$("pfile").click();}
+});
+$("catlist").addEventListener("change",e=>{
+  const el=e.target,row=el.closest("[data-p]");if(!row)return;
+  if(el.dataset.a==="stock")updProd(row.dataset.p,{stock:el.value===""?null:Math.max(0,Number(el.value))});
+  else if(el.dataset.a==="ativo")updProd(row.dataset.p,{ativo:el.checked});
+});
+$("pfile").addEventListener("change",async e=>{
+  const fl=e.target.files[0];e.target.value="";if(!fl||!PHOTO_PID)return;
+  const f=S.list.find(x=>x.id===CAT_ID),pr=f&&f.prods.find(x=>x.id===PHOTO_PID);if(!pr)return;
+  let nf;try{nf=await savePhoto(fl);}catch(x){toast((x&&x.reason)||"Não foi possível usar essa imagem.");return;}
+  const old={foto:pr.foto};
+  if(await updProd(pr.id,{foto:nf}))await dropPhoto(old);else await dropPhoto({foto:nf});
+});
+$("pfoto").addEventListener("change",async e=>{
+  const fl=e.target.files[0],im=$("ppv");NEWBLOB=null;$("perr").textContent="";
+  if(im.src&&im.src.startsWith("blob:"))URL.revokeObjectURL(im.src);
+  im.removeAttribute("src");im.classList.add("hide");
+  if(!fl)return;
+  try{NEWBLOB=await prepPhoto(fl);}
+  catch(x){$("perr").textContent=(x&&x.reason)||"Não foi possível usar essa imagem.";return;}
+  im.src=URL.createObjectURL(NEWBLOB);im.classList.remove("hide");
+});
+(async()=>{
+  if(!DEMO){
+    const {data}=await sb.auth.getSession();SESSION=data.session;
+    sb.auth.onAuthStateChange(async(ev,sess)=>{
+      if(ev==="INITIAL_SESSION")return;
+      SESSION=sess;
+      if(ev==="SIGNED_OUT"){S.user=null;applyUser();await loadList();render();go("login");return;}
+      if(sess&&(VIEW==="login"||VIEW==="boot"))await afterAuth();else{await loadList();render();}
+    });
+  }
+  authUI();
+  if(SESSION)await afterAuth();
+  else{await loadList();render();if(S.user)go("home");else openLogin("login");}
+})();
+if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+</script>
+</body>
+</html>
