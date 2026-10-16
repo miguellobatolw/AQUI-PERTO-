@@ -39,14 +39,15 @@ h1{font-size:clamp(34px,8vw,60px);line-height:1.02;letter-spacing:-.03em;margin:
 .search input,.search select{border:0;background:transparent;padding:12px;min-width:0;width:100%;border-radius:10px}
 .search select{border-left:1px solid var(--line);border-radius:0}
 @media(max-width:620px){.search{grid-template-columns:1fr}.search select{border-left:0;border-top:1px solid var(--line)}}
-.tabs{display:flex;gap:6px;margin:22px 0 12px;border-bottom:1px solid var(--line)}
-.tab{background:none;border:0;padding:10px 14px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px}
+.tabs{display:flex;gap:6px;margin:22px 0 12px;position:relative;max-width:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-webkit-overflow-scrolling:touch;box-shadow:inset 0 -1px 0 var(--line)}
+.tabs::-webkit-scrollbar{display:none}
+.tab{background:none;border:0;padding:10px 14px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;flex:none;white-space:nowrap}
 .tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
 .chips{display:flex;gap:8px;overflow-x:auto;padding:4px 0 12px;-webkit-overflow-scrolling:touch}
 .chip{flex:none;border:1px solid var(--line);background:var(--chip);border-radius:999px;padding:6px 14px;cursor:pointer;font-size:14px}
 .chip[aria-pressed="true"]{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
 .count{color:var(--muted);font-size:14px;margin:4px 0 12px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;padding-bottom:40px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(270px,100%),1fr));gap:14px;padding-bottom:40px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px}
 .top{display:flex;gap:12px;align-items:center}
 .av{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;font-weight:800;font-size:20px;color:#fff;flex:none}
@@ -61,7 +62,7 @@ h1{font-size:clamp(34px,8vw,60px);line-height:1.02;letter-spacing:-.03em;margin:
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;margin:20px 0 40px;max-width:640px}
 .panel h2{margin:0 0 4px;font-size:26px;letter-spacing:-.02em}
 label{display:block;font-weight:600;margin:14px 0 6px}
-.f{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px 12px}
+.f{width:100%;min-width:0;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px 12px}
 .seg{display:flex;gap:8px}
 .seg .chip{flex:1;text-align:center;padding:10px}
 .zones{display:flex;flex-wrap:wrap;gap:6px}
@@ -70,7 +71,7 @@ dialog{border:0;border-radius:16px;padding:22px;max-width:380px;width:calc(100% 
 dialog::backdrop{background:rgba(0,0,0,.5)}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-weight:600;display:none;z-index:9}
 .prow{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line);flex-wrap:wrap}
-.stk{display:flex;gap:6px;align-items:center}.stk .f{width:84px;text-align:center}.stk .btn{padding:6px 12px}
+.stk{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.stk .f{width:84px;text-align:center}.stk .btn{padding:6px 12px}
 .tg{display:flex;align-items:center;gap:6px;margin:0;font-weight:400;font-size:14px}
 .pgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
 .ok{color:var(--brand);font-weight:600}.out{color:#c0392b;font-weight:600}
@@ -83,6 +84,27 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
 .kpi b{display:block;font-size:26px;line-height:1.15;color:var(--ink)}
 .hide{display:none!important}
 .note{font-size:13px;color:var(--muted);margin-top:14px}
+
+html,body{max-width:100%;overflow-x:hidden}
+.wrap{padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right))}
+img,video{max-width:100%}
+.card h3,.prow strong,.prow .meta,.hello,.panel h2,dialog h2,.kpi{overflow-wrap:anywhere}
+dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
+.nav .btn{white-space:nowrap}
+@media(max-width:560px){
+  .wrap{padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right))}
+  header{padding:10px 0}
+  .hello{flex-basis:100%}
+  .nav .btn{padding:7px 12px;font-size:14px}
+  .hero{padding:14px 0 10px}
+  .panel{padding:16px 14px;margin:12px 0 28px}
+  .panel h2{font-size:22px}
+  .tab{padding:10px 12px}
+  .kpi b{font-size:22px}
+  .prow>.stk,.prow>.btn{flex-basis:100%}
+  .prow>.stk .btn{flex:1}
+  dialog{padding:18px}
+}
 </style>
 </head>
 <body>
@@ -239,7 +261,7 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
       <input class="f" id="pstock" type="number" min="0" step="any" inputmode="decimal" placeholder="Stock (opcional)" aria-label="Stock">
     </div>
     <label for="pfoto">Foto (opcional)</label>
-    <div style="display:flex;gap:10px;align-items:center"><input id="pfoto" type="file" accept="image/*" class="f"><img id="ppv" class="pimg hide" alt="Pré-visualização"></div>
+    <div style="display:flex;gap:10px;align-items:center;min-width:0"><input id="pfoto" type="file" accept="image/*" class="f"><img id="ppv" class="pimg hide" alt="Pré-visualização"></div>
     <div class="err" id="perr" role="alert"></div>
     <button class="btn primary" onclick="addProd()">Adicionar</button>
     <p style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" onclick="openCrm()">Área do fornecedor</button><button class="btn" onclick="go('home');render()">Voltar à pesquisa</button></p>
@@ -479,7 +501,7 @@ function drawCat(){
   $("catsel-wrap").classList.toggle("hide",mine.length<2);
   const f=mine.find(x=>x.id===CAT_ID),pr=f.prods.slice().sort(byNome);
   $("catsum").textContent=pr.length+(pr.length===1?" item":" itens")+" · "+pr.filter(x=>x.stock===0).length+" esgotados · "+pr.filter(x=>!x.ativo).length+" ocultos";
-  $("catlist").innerHTML=pr.length?pr.map(x=>`<div class="prow" data-p="${esc(x.id)}"><button class="thumb" data-a="foto" aria-label="Foto de ${esc(x.nome)}">${thumb(x)}</button><div style="min-width:120px;flex:1"><strong>${esc(x.nome)}</strong><div class="meta">${esc(fmtP(x))}</div></div>
+  $("catlist").innerHTML=pr.length?pr.map(x=>`<div class="prow" data-p="${esc(x.id)}"><button class="thumb" data-a="foto" aria-label="Foto de ${esc(x.nome)}">${thumb(x)}</button><div style="min-width:min(120px,100%);flex:1"><strong>${esc(x.nome)}</strong><div class="meta">${esc(fmtP(x))}</div></div>
   <div class="stk"><button class="btn" data-a="dec" aria-label="Menos 1">−</button><input class="f" data-a="stock" type="number" min="0" step="any" inputmode="decimal" placeholder="—" value="${x.stock==null?"":x.stock}" aria-label="Stock de ${esc(x.nome)}"><button class="btn" data-a="inc" aria-label="Mais 1">+</button></div>
   <label class="tg"><input type="checkbox" data-a="ativo" ${x.ativo?"checked":""}> Visível</label><button class="btn" data-a="del">Apagar</button></div>`).join(""):'<p class="meta">Ainda não tem produtos. Adicione o primeiro abaixo.</p>';
 }
@@ -567,13 +589,14 @@ async function setEstado(id,est){
 function ordRow(o){
   const bt=(e,t,c)=>`<button class="btn ${c||""}" data-id="${esc(o.id)}" data-est="${e}">${t}</button>`;
   const ac=o.estado==="novo"?bt("confirmado","Confirmar","primary")+bt("cancelado","Recusar"):o.estado==="confirmado"?bt("concluido","Concluir","primary")+bt("cancelado","Cancelar"):"";
-  return `<div class="prow" style="align-items:flex-start"><div style="flex:1;min-width:200px"><strong>${esc(o.nome)}</strong> <span class="meta">· ${EST[o.estado]} · ${new Date(o.data).toLocaleDateString("pt-PT")}</span>
+  return `<div class="prow" style="align-items:flex-start"><div style="flex:1;min-width:min(200px,100%)"><strong>${esc(o.nome)}</strong> <span class="meta">· ${EST[o.estado]} · ${new Date(o.data).toLocaleDateString("pt-PT")}</span>
   <div class="meta"><a href="tel:+351${esc(o.tel)}">${esc(o.tel)}</a></div><div>${o.itens.map(i=>esc(i.qtd+" "+i.un+" "+i.nome)).join(", ")}</div>${o.nota?`<div class="meta">${esc(o.nota)}</div>`:""}<strong>${eur(o.total)}</strong></div>
   <div class="stk" style="flex-wrap:wrap">${ac}<a class="btn" target="_blank" rel="noopener" href="https://wa.me/351${esc(o.tel)}">WhatsApp</a></div></div>`;
 }
 function drawCrm(){
   const L=myPed(),nv=L.filter(o=>o.estado==="novo").length,B=$("crmbody");
   ["painel","pedidos","clientes","perfil","relatorios"].forEach(t=>$("ct-"+t).setAttribute("aria-selected",t===CT));
+  {const t=$("ct-"+CT),q=t&&t.parentElement;if(q)q.scrollLeft=Math.max(0,t.offsetLeft-(q.clientWidth-t.offsetWidth)/2);}
   $("ct-pedidos").textContent="Pedidos"+(nv?" ("+nv+")":"");
   if(CT==="painel"){
     const done=L.filter(o=>o.estado==="concluido"),low=[],fu=[],seen={},hoje=new Date().toISOString().slice(0,10);
@@ -584,14 +607,14 @@ function drawCrm(){
     const fl=L.filter(o=>PF==="todos"||o.estado===PF);
     B.innerHTML=`<div class="chips">${["novo","confirmado","concluido","cancelado","todos"].map(f=>`<button class="chip" data-f="${f}" aria-pressed="${PF===f}">${f==="todos"?"Todos":EST[f]}</button>`).join("")}</div>`+(fl.length?fl.map(ordRow).join(""):'<p class="meta">Sem pedidos nesta lista.</p>');
   }else if(CT==="perfil"){
-    B.innerHTML=S.list.filter(p=>p.mine).map(p=>`<div class="prow"><div style="flex:1;min-width:200px"><strong>${esc(p.nome)}</strong><div class="meta">${esc(p.cat)} · ${esc(p.zonas.join(", "))}<br>${esc(p.tel)} · ${p.lat!=null?"📍 com localização":"sem localização (os clientes não veem a distância)"}</div></div><button class="btn primary" data-edit="${esc(p.id)}">Editar</button></div>`).join("")+'<p style="margin-top:14px"><button class="btn" data-newprof="1">Novo perfil</button></p>';
+    B.innerHTML=S.list.filter(p=>p.mine).map(p=>`<div class="prow"><div style="flex:1;min-width:min(200px,100%)"><strong>${esc(p.nome)}</strong><div class="meta">${esc(p.cat)} · ${esc(p.zonas.join(", "))}<br>${esc(p.tel)} · ${p.lat!=null?"📍 com localização":"sem localização (os clientes não veem a distância)"}</div></div><button class="btn primary" data-edit="${esc(p.id)}">Editar</button></div>`).join("")+'<p style="margin-top:14px"><button class="btn" data-newprof="1">Novo perfil</button></p>';
   }else if(CT==="relatorios"){
     B.innerHTML=relatorio(L);
   }else{
     const m={};
     L.forEach(o=>{const k=o.cliente_id||o.tel,c=m[k]||(m[k]={k,nome:o.nome,tel:o.tel,n:0,g:0,u:o.data});c.n++;if(o.estado==="concluido")c.g+=o.total;if(o.data>c.u)c.u=o.data;});
     const cs=Object.values(m).sort((a,b)=>b.u.localeCompare(a.u));
-    B.innerHTML=cs.length?cs.map(c=>`<div class="prow" style="align-items:flex-start"><div style="flex:1;min-width:200px"><strong>${esc(c.nome)}</strong> <span class="mine">${c.g>=150?"VIP":c.n>=3?"Habitual":c.n>1?"Repetente":"Novo"}</span><div class="meta"><a href="tel:+351${esc(c.tel)}">${esc(c.tel)}</a> · ${c.n} pedido${c.n>1?"s":""} · ${eur(c.g)} concluídos · último a ${new Date(c.u).toLocaleDateString("pt-PT")}</div></div><textarea class="f" style="flex:1;min-width:200px" rows="2" maxlength="500" data-nota="${esc(c.k)}" placeholder="Nota privada (ex.: prefere entregas à sexta)">${esc(NOTAS[c.k]||"")}</textarea><div style="flex-basis:100%"><label class="tg" style="margin:0">Contactar em <input class="f" type="date" style="width:auto" data-seg="${esc(c.k)}" value="${esc(SEG[c.k]||"")}"></label> <button class="btn" data-hist="${esc(c.k)}">Histórico</button><div id="h-${esc(c.k)}" class="hide meta" style="margin-top:6px"></div></div></div>`).join(""):'<p class="meta">Os clientes aparecem aqui quando fizerem o primeiro pedido.</p>';
+    B.innerHTML=cs.length?cs.map(c=>`<div class="prow" style="align-items:flex-start"><div style="flex:1;min-width:min(200px,100%)"><strong>${esc(c.nome)}</strong> <span class="mine">${c.g>=150?"VIP":c.n>=3?"Habitual":c.n>1?"Repetente":"Novo"}</span><div class="meta"><a href="tel:+351${esc(c.tel)}">${esc(c.tel)}</a> · ${c.n} pedido${c.n>1?"s":""} · ${eur(c.g)} concluídos · último a ${new Date(c.u).toLocaleDateString("pt-PT")}</div></div><textarea class="f" style="flex:1;min-width:min(200px,100%)" rows="2" maxlength="500" data-nota="${esc(c.k)}" placeholder="Nota privada (ex.: prefere entregas à sexta)">${esc(NOTAS[c.k]||"")}</textarea><div style="flex-basis:100%"><label class="tg" style="margin:0">Contactar em <input class="f" type="date" style="width:auto" data-seg="${esc(c.k)}" value="${esc(SEG[c.k]||"")}"></label> <button class="btn" data-hist="${esc(c.k)}">Histórico</button><div id="h-${esc(c.k)}" class="hide meta" style="margin-top:6px"></div></div></div>`).join(""):'<p class="meta">Os clientes aparecem aqui quando fizerem o primeiro pedido.</p>';
   }
 }
 const EST_C={novo:"Enviado, a aguardar resposta",confirmado:"Confirmado",concluido:"Concluído",cancelado:"Cancelado"};
@@ -601,7 +624,7 @@ function drawMeus(){
   const uid=SESSION&&SESSION.user.id,L=PED.filter(o=>DEMO||o.cliente_id===uid);
   $("meuslist").innerHTML=L.length?L.map(o=>{
     const f=S.list.find(x=>x.id===o.fid);
-    return `<div class="prow" style="align-items:flex-start"><div style="flex:1;min-width:200px"><strong>${esc(f?f.nome:"Fornecedor")}</strong> <span class="meta">· ${new Date(o.data).toLocaleDateString("pt-PT")}</span><div>${o.itens.map(i=>esc(i.qtd+" "+i.un+" "+i.nome)).join(", ")}</div><strong>${eur(o.total)}</strong> <span class="${EST_K[o.estado]}">${EST_C[o.estado]}</span></div>
+    return `<div class="prow" style="align-items:flex-start"><div style="flex:1;min-width:min(200px,100%)"><strong>${esc(f?f.nome:"Fornecedor")}</strong> <span class="meta">· ${new Date(o.data).toLocaleDateString("pt-PT")}</span><div>${o.itens.map(i=>esc(i.qtd+" "+i.un+" "+i.nome)).join(", ")}</div><strong>${eur(o.total)}</strong> <span class="${EST_K[o.estado]}">${EST_C[o.estado]}</span></div>
     <div class="stk" style="flex-wrap:wrap">${o.estado==="novo"?`<button class="btn" data-cancel="${esc(o.id)}">Cancelar</button>`:""}${f?`<button class="btn" data-contact="${esc(f.id)}">Contactar</button>`:""}</div></div>`;
   }).join(""):'<p class="meta">Ainda não fez pedidos. Escolha um fornecedor e toque em "Ver produtos".</p>';
 }
@@ -616,10 +639,10 @@ function relatorio(L){
   const ok=L.filter(o=>o.estado==="concluido"||o.estado==="confirmado"),meses=[],d=new Date();
   for(let i=5;i>=0;i--){const x=new Date(d.getFullYear(),d.getMonth()-i,1);meses.push({k:x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0"),t:x.toLocaleDateString("pt-PT",{month:"short"}),v:0});}
   ok.forEach(o=>{const m=meses.find(y=>y.k===String(o.data).slice(0,7));if(m)m.v+=o.total;});
-  const mx=Math.max(1,...meses.map(m=>m.v)),tp={};
+  const mx=Math.max(1,...meses.map(m=>m.v)),tp={},lbl=v=>v>=10000?(Math.round(v/100)/10).toString().replace(".",",")+"k €":v>=100?Math.round(v)+" €":eur(v);
   ok.forEach(o=>o.itens.forEach(i=>{const t=tp[i.nome]||(tp[i.nome]={n:i.nome,q:0,v:0,u:i.un});t.q+=i.qtd;t.v+=i.qtd*i.preco;}));
   const top=Object.values(tp).sort((a,b)=>b.v-a.v).slice(0,5);
-  return `<h3 style="margin:0 0 8px">Vendas por mês (confirmadas e concluídas)</h3><div style="display:flex;gap:8px;align-items:flex-end;height:150px">${meses.map(m=>`<div style="flex:1;text-align:center;font-size:12px"><div class="meta" style="font-size:11px">${m.v?eur(m.v):""}</div><div style="background:var(--brand);height:${Math.round(m.v/mx*100)}px;min-height:2px;border-radius:6px 6px 0 0"></div>${esc(m.t)}</div>`).join("")}</div>
+  return `<h3 style="margin:0 0 8px">Vendas por mês (confirmadas e concluídas)</h3><div style="display:flex;gap:4px;align-items:flex-end;height:150px;width:100%">${meses.map(m=>`<div style="flex:1;min-width:0;text-align:center;font-size:12px"><div class="meta" style="font-size:10px;white-space:nowrap">${m.v?lbl(m.v):""}</div><div style="background:var(--brand);height:${Math.round(m.v/mx*100)}px;min-height:2px;border-radius:6px 6px 0 0"></div>${esc(m.t)}</div>`).join("")}</div>
   <h3 style="margin:18px 0 4px">Produtos mais vendidos</h3>${top.length?top.map(t=>`<div class="prow"><span>${esc(t.n)}</span><span class="meta">${String(t.q).replace(".",",")} ${esc(t.u)} · ${eur(t.v)}</span></div>`).join(""):'<p class="meta">Sem vendas ainda.</p>'}
   <p style="margin-top:16px"><button class="btn" data-csv="1">Exportar pedidos (CSV)</button></p>`;
 }
