@@ -170,7 +170,19 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
     <div class="note" id="ldemo">Modo demonstração: não pede palavra-passe.</div>
     <div class="err" id="lerr" role="alert"></div>
     <button class="btn primary" id="lbtn" onclick="submitLogin()">Entrar</button>
+    <div id="lgwrap"><div class="meta" style="text-align:center;margin:16px 0 10px">ou</div><button class="btn" style="width:100%;padding:10px 16px" onclick="googleLogin()"><svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true" style="vertical-align:-3px;margin-right:8px"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.5-.8-3-.8-4.7s.3-3.2.8-4.7l-7.9-6.1C.9 16.4 0 20.1 0 24s.9 7.6 2.6 10.8l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.9 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.9l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>Continuar com Google</button></div>
     <p class="note"><a href="#" onclick="go('home');render();return false">Continuar sem conta</a> para só ver os fornecedores.</p>
+  </div>
+</main>
+
+<main id="role" class="hide">
+  <div class="panel">
+    <h2>Bem-vindo!</h2>
+    <div class="meta">Como quer usar a Aqui Perto?</div>
+    <div class="seg" style="margin-top:14px;flex-direction:column">
+      <button class="chip" onclick="setRole('cliente')">Procuro serviços e produtos (cliente)</button>
+      <button class="chip" onclick="setRole('fornecedor')">Quero oferecer os meus serviços ou produtos (fornecedor)</button>
+    </div>
   </div>
 </main>
 
@@ -317,7 +329,7 @@ const norm=s=>String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/
 let S={tipo:"servico",cat:"",jtipo:"servico",jz:[],user:null,list:SEED.slice()};
 
 const DEMO=!SUPABASE_URL||!SUPABASE_KEY;
-const REC_LINK=/type=recovery/.test(location.hash+location.search),REC_ERR=/error_code=otp_expired|error=access_denied/.test(location.hash+location.search);
+const REC_LINK=/type=recovery/.test(location.hash+location.search),REC_ERR=/otp_expired/.test(location.hash+location.search),OAUTH_ERR=!/otp_expired/.test(location.hash+location.search)&&/[#&?]error=/.test(location.hash+location.search);
 const sb=DEMO?null:supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let SESSION=null;
 function load(){try{S.user=JSON.parse(localStorage.getItem("aq_user")||"null");}catch(e){}}
@@ -334,7 +346,7 @@ function toast(t){const e=$("toast");e.textContent=t;e.style.display="block";cle
 
 function fillZones(sel,first){sel.innerHTML=(first?`<option value="">${first}</option>`:"")+Z.map(z=>`<option>${z}</option>`).join("");}
 let VIEW="boot",LM="login",LR="cliente",OBP="servico",NEWID="",CAT_ID="",PHOTO_PID="",NEWBLOB=null,ORD_F="",CT="painel",PF="novo",PED=[],NOTAS={},SEG={},MYPOS=null,JPOS=null,EDIT_ID="";
-function go(v){VIEW=v;if(v!=="join"&&EDIT_ID){EDIT_ID="";clearJoin();}["home","join","login","ob","cat","crm","meus","newpass"].forEach(x=>$(x).classList.toggle("hide",x!==v));if(v==="join"){joinMode();jTipo(S.jtipo);}scrollTo(0,0);}
+function go(v){VIEW=v;if(v!=="join"&&EDIT_ID){EDIT_ID="";clearJoin();}["home","join","login","ob","cat","crm","meus","newpass","role"].forEach(x=>$(x).classList.toggle("hide",x!==v));if(v==="join"){joinMode();jTipo(S.jtipo);}scrollTo(0,0);}
 function goProv(){if(EDIT_ID){EDIT_ID="";clearJoin();}if(DEMO||SESSION||S.user)go("join");else openLogin("signup","fornecedor");}
 function setLR(r){LR=r;drawLogin();}
 function openLogin(m,r){LM=m||"login";if(r)LR=r;$("lerr").textContent="";drawLogin();go("login");}
@@ -344,7 +356,7 @@ function drawLogin(){
   ["cliente","fornecedor"].forEach(r=>$("lr-"+r).setAttribute("aria-pressed",LR===r));
   $("lpass").autocomplete=LM==="signup"?"new-password":"current-password";
   $("lbtn").textContent=LM==="signup"?"Criar conta":"Entrar";
-  $("lpassrow").classList.toggle("hide",DEMO);$("ldemo").classList.toggle("hide",!DEMO);$("lforgot").classList.toggle("hide",DEMO||LM!=="login");
+  $("lpassrow").classList.toggle("hide",DEMO);$("ldemo").classList.toggle("hide",!DEMO);$("lforgot").classList.toggle("hide",DEMO||LM!=="login");$("lgwrap").classList.toggle("hide",DEMO);
 }
 async function submitLogin(){
   const m=$("lemail").value.trim(),p=$("lpass").value,e=$("lerr");e.textContent="";
@@ -360,6 +372,12 @@ async function submitLogin(){
     if(error){e.textContent=/not confirmed/i.test(error.message)?"Confirme primeiro o e-mail: abra o link que enviámos (veja também o spam).":"E-mail ou palavra-passe incorretos. Pode usar «Esqueci a palavra-passe».";return;}
   }
 }
+async function googleLogin(){
+  try{localStorage.setItem("aq_role",LM==="signup"?LR:"");}catch(x){}
+  const {error}=await sb.auth.signInWithOAuth({provider:"google",options:{redirectTo:location.origin+location.pathname}});
+  if(error)$("lerr").textContent="Não foi possível iniciar sessão com o Google. Tente outra vez.";
+}
+function setRole(r){try{localStorage.setItem("aq_role",r);}catch(x){}if(r==="fornecedor")go("join");else go("ob");}
 async function forgotPass(){
   const m=$("lemail").value.trim(),e=$("lerr");e.textContent="";
   if(!/^\S+@\S+\.\S+$/.test(m)){e.textContent="Escreva o seu e-mail acima e toque outra vez em «Esqueci a palavra-passe».";return;}
@@ -385,7 +403,14 @@ async function logout(){
 async function afterAuth(){
   await loadList();
   const {data}=await sb.from("perfis").select("*").eq("user_id",SESSION.user.id).maybeSingle();
-  if(!data){const papel=(SESSION.user.user_metadata||{}).papel||LR;S.user=null;applyUser();if(papel==="fornecedor")go("join");else go("ob");return;}
+  if(!data){
+    const md=SESSION.user.user_metadata||{};let papel=md.papel||"";
+    if(!papel){try{papel=localStorage.getItem("aq_role")||"";}catch(x){}}
+    S.user=null;applyUser();
+    const nm=md.full_name||md.name||"";if(nm&&!$("obnome").value)$("obnome").value=nm.split(" ")[0];
+    if(papel==="fornecedor")go("join");else if(papel==="cliente")go("ob");else go("role");
+    return;
+  }
   S.user={nome:data.nome,zona:data.zona||""};try{localStorage.setItem("aq_user",JSON.stringify(S.user));}catch(x){}
   applyUser();$("zona").value=S.user.zona;go("home");render();
 }
@@ -817,6 +842,12 @@ $("pfoto").addEventListener("change",async e=>{
     await loadList();render();
     if(REC_LINK&&SESSION)go("newpass");
     else{openLogin("login");$("lerr").textContent="O link expirou ou já foi usado. Peça um novo em «Esqueci a palavra-passe».";}
+    return;
+  }
+  if(!DEMO&&OAUTH_ERR&&!SESSION){
+    await loadList();render();openLogin("login");
+    try{history.replaceState(null,"",location.pathname);}catch(x){}
+    $("lerr").textContent="Não foi possível entrar com o Google. Tente outra vez.";
     return;
   }
   if(SESSION)await afterAuth();
