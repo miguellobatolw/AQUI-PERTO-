@@ -166,10 +166,24 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
     <input class="f" id="lemail" type="email" autocomplete="email">
     <div id="lpassrow"><label for="lpass">Palavra-passe (mínimo 8 caracteres)</label>
     <input class="f" id="lpass" type="password"></div>
+    <p class="note hide" id="lforgot" style="margin:8px 0 0"><a href="#" onclick="forgotPass();return false">Esqueci a palavra-passe</a></p>
     <div class="note" id="ldemo">Modo demonstração: não pede palavra-passe.</div>
     <div class="err" id="lerr" role="alert"></div>
     <button class="btn primary" id="lbtn" onclick="submitLogin()">Entrar</button>
     <p class="note"><a href="#" onclick="go('home');render();return false">Continuar sem conta</a> para só ver os fornecedores.</p>
+  </div>
+</main>
+
+<main id="newpass" class="hide">
+  <div class="panel">
+    <h2>Nova palavra-passe</h2>
+    <div class="meta">Escolha uma palavra-passe nova para a sua conta.</div>
+    <label for="np1">Nova palavra-passe (mínimo 8 caracteres)</label>
+    <input class="f" id="np1" type="password" autocomplete="new-password">
+    <label for="np2">Repita a palavra-passe</label>
+    <input class="f" id="np2" type="password" autocomplete="new-password">
+    <div class="err" id="nperr" role="alert"></div>
+    <button class="btn primary" onclick="saveNewPass()">Guardar</button>
   </div>
 </main>
 
@@ -303,6 +317,7 @@ const norm=s=>String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/
 let S={tipo:"servico",cat:"",jtipo:"servico",jz:[],user:null,list:SEED.slice()};
 
 const DEMO=!SUPABASE_URL||!SUPABASE_KEY;
+const REC_LINK=/type=recovery/.test(location.hash+location.search),REC_ERR=/error_code=otp_expired|error=access_denied/.test(location.hash+location.search);
 const sb=DEMO?null:supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let SESSION=null;
 function load(){try{S.user=JSON.parse(localStorage.getItem("aq_user")||"null");}catch(e){}}
@@ -319,7 +334,7 @@ function toast(t){const e=$("toast");e.textContent=t;e.style.display="block";cle
 
 function fillZones(sel,first){sel.innerHTML=(first?`<option value="">${first}</option>`:"")+Z.map(z=>`<option>${z}</option>`).join("");}
 let VIEW="boot",LM="login",LR="cliente",OBP="servico",NEWID="",CAT_ID="",PHOTO_PID="",NEWBLOB=null,ORD_F="",CT="painel",PF="novo",PED=[],NOTAS={},SEG={},MYPOS=null,JPOS=null,EDIT_ID="";
-function go(v){VIEW=v;if(v!=="join"&&EDIT_ID){EDIT_ID="";clearJoin();}["home","join","login","ob","cat","crm","meus"].forEach(x=>$(x).classList.toggle("hide",x!==v));if(v==="join"){joinMode();jTipo(S.jtipo);}scrollTo(0,0);}
+function go(v){VIEW=v;if(v!=="join"&&EDIT_ID){EDIT_ID="";clearJoin();}["home","join","login","ob","cat","crm","meus","newpass"].forEach(x=>$(x).classList.toggle("hide",x!==v));if(v==="join"){joinMode();jTipo(S.jtipo);}scrollTo(0,0);}
 function goProv(){if(EDIT_ID){EDIT_ID="";clearJoin();}if(DEMO||SESSION||S.user)go("join");else openLogin("signup","fornecedor");}
 function setLR(r){LR=r;drawLogin();}
 function openLogin(m,r){LM=m||"login";if(r)LR=r;$("lerr").textContent="";drawLogin();go("login");}
@@ -329,7 +344,7 @@ function drawLogin(){
   ["cliente","fornecedor"].forEach(r=>$("lr-"+r).setAttribute("aria-pressed",LR===r));
   $("lpass").autocomplete=LM==="signup"?"new-password":"current-password";
   $("lbtn").textContent=LM==="signup"?"Criar conta":"Entrar";
-  $("lpassrow").classList.toggle("hide",DEMO);$("ldemo").classList.toggle("hide",!DEMO);
+  $("lpassrow").classList.toggle("hide",DEMO);$("ldemo").classList.toggle("hide",!DEMO);$("lforgot").classList.toggle("hide",DEMO||LM!=="login");
 }
 async function submitLogin(){
   const m=$("lemail").value.trim(),p=$("lpass").value,e=$("lerr");e.textContent="";
@@ -342,8 +357,25 @@ async function submitLogin(){
     if(!data.session){e.textContent="Enviámos um e-mail de confirmação. Confirme-o e depois entre.";return;}
   }else{
     const {error}=await sb.auth.signInWithPassword({email:m,password:p});
-    if(error){e.textContent="E-mail ou palavra-passe incorretos.";return;}
+    if(error){e.textContent=/not confirmed/i.test(error.message)?"Confirme primeiro o e-mail: abra o link que enviámos (veja também o spam).":"E-mail ou palavra-passe incorretos. Pode usar «Esqueci a palavra-passe».";return;}
   }
+}
+async function forgotPass(){
+  const m=$("lemail").value.trim(),e=$("lerr");e.textContent="";
+  if(!/^\S+@\S+\.\S+$/.test(m)){e.textContent="Escreva o seu e-mail acima e toque outra vez em «Esqueci a palavra-passe».";return;}
+  const {error}=await sb.auth.resetPasswordForEmail(m,{redirectTo:location.origin+location.pathname});
+  if(error){e.textContent=/rate|limit/i.test(error.message)?"Já foram pedidos vários e-mails. Espere um pouco e tente de novo.":"Não foi possível enviar o e-mail. Tente daqui a pouco.";return;}
+  e.textContent="Se existir uma conta com este e-mail, enviámos um link para criar uma nova palavra-passe (veja também o spam).";
+}
+async function saveNewPass(){
+  const a=$("np1").value,b=$("np2").value,e=$("nperr");e.textContent="";
+  if(a.length<8){e.textContent="A palavra-passe precisa de pelo menos 8 caracteres.";return;}
+  if(a!==b){e.textContent="As palavras-passe não coincidem.";return;}
+  const {error}=await sb.auth.updateUser({password:a});
+  if(error){e.textContent=/same|different/i.test(error.message)?"Escolha uma palavra-passe diferente da anterior.":"Não foi possível guardar. Peça um novo link e tente outra vez.";return;}
+  $("np1").value="";$("np2").value="";
+  try{history.replaceState(null,"",location.pathname);}catch(x){}
+  toast("Palavra-passe atualizada.");await afterAuth();
 }
 async function logout(){
   S.user=null;try{localStorage.removeItem("aq_user");}catch(x){}
@@ -774,11 +806,19 @@ $("pfoto").addEventListener("change",async e=>{
     sb.auth.onAuthStateChange(async(ev,sess)=>{
       if(ev==="INITIAL_SESSION")return;
       SESSION=sess;
+      if(ev==="PASSWORD_RECOVERY"){go("newpass");return;}
+      if(VIEW==="newpass")return;
       if(ev==="SIGNED_OUT"){S.user=null;applyUser();await loadList();render();go("login");return;}
       if(sess&&(VIEW==="login"||VIEW==="boot"))await afterAuth();else{await loadList();render();}
     });
   }
   authUI();
+  if(!DEMO&&(REC_LINK||REC_ERR)){
+    await loadList();render();
+    if(REC_LINK&&SESSION)go("newpass");
+    else{openLogin("login");$("lerr").textContent="O link expirou ou já foi usado. Peça um novo em «Esqueci a palavra-passe».";}
+    return;
+  }
   if(SESSION)await afterAuth();
   else{await loadList();render();if(S.user)go("home");else openLogin("login");}
 })();
