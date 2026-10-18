@@ -6,11 +6,16 @@
 <title>Aqui Perto — serviços e produtores locais</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0f5c4d">
+<meta name="description" content="Canalizadores, explicadores, hortas, queijarias e marceneiros da sua zona. Fale diretamente com quem trabalha perto de si.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Aqui Perto — serviços e produtores locais">
+<meta property="og:description" content="Fale diretamente com quem trabalha perto de si.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Aqui Perto">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap">
 <style>
 :root{--bg:#f2f6f4;--surface:#fff;--ink:#14262b;--muted:#5a6d70;--line:#d6e0dc;--brand:#0f5c4d;--brand-ink:#fff;--accent:#f2b33d;--accent-ink:#2a1d00;--chip:#e3ece8;
@@ -82,10 +87,19 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
 .kpi{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--bg);font-size:14px;color:var(--muted)}
 .kpi b{display:block;font-size:26px;line-height:1.15;color:var(--ink)}
+.legal h3{margin:18px 0 4px;font-size:17px}.legal p,.legal li{font-size:15px;margin:4px 0}.legal ul{padding-left:20px;margin:4px 0}
+footer a{color:inherit;text-decoration:underline}
 .hide{display:none!important}
 .chip:disabled{opacity:.45;cursor:not-allowed}
 .badge{display:inline-block;background:var(--chip);border-radius:6px;padding:2px 8px;font-size:13px;font-weight:600}
 .note{font-size:13px;color:var(--muted);margin-top:14px}
+#fornQR svg{width:100%;height:auto;display:block;border-radius:8px}
+.linkb{background:none;border:0;padding:0;cursor:pointer;font:inherit;text-align:left}
+.linkb:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:4px}
+.pick{display:flex;gap:2px;margin:12px 0 8px}
+.pick button{background:none;border:0;font-size:36px;line-height:1;cursor:pointer;padding:2px 4px;color:var(--muted)}
+.pick button[aria-pressed="true"]{color:#c98a00}
+.pick button:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:6px}
 
 html,body{max-width:100%;overflow-x:hidden}
 .wrap{padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right))}
@@ -118,6 +132,7 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
     <button class="btn" id="btnIn" onclick="openLogin('login')">Entrar</button>
     <button class="btn hide" id="btnMeus" onclick="openMeus()">Os meus pedidos</button>
     <button class="btn hide" id="btnCat" onclick="openCrm()">Área do fornecedor</button>
+    <button class="btn hide" id="btnMod" onclick="openMod()">Moderação</button>
     <button class="btn hide" id="btnOut" onclick="logout()">Sair</button>
     <button class="btn primary" onclick="goProv()">Sou fornecedor</button>
   </div>
@@ -222,8 +237,9 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
     <p class="note hide" id="lforgot" style="margin:8px 0 0"><a href="#" onclick="forgotPass();return false">Esqueci a palavra-passe</a></p>
     <div class="note" id="ldemo">Modo demonstração: não pede palavra-passe.</div>
     <div class="err" id="lerr" role="alert"></div>
+    <label class="tg hide" id="lacc" style="margin:12px 0 0"><input type="checkbox" id="laccx"> <span>Li e aceito os <a href="#" onclick="showLegal('termos');return false">Termos</a> e a <a href="#" onclick="showLegal('priv');return false">Política de Privacidade</a>.</span></label>
     <button class="btn primary" id="lbtn" onclick="submitLogin()">Entrar</button>
-    <div id="lgwrap"><div class="meta" style="text-align:center;margin:16px 0 10px">ou</div><button class="btn" style="width:100%;padding:10px 16px" onclick="googleLogin()"><svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true" style="vertical-align:-3px;margin-right:8px"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.5-.8-3-.8-4.7s.3-3.2.8-4.7l-7.9-6.1C.9 16.4 0 20.1 0 24s.9 7.6 2.6 10.8l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.9 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.9l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>Continuar com Google</button></div>
+    <div id="lgwrap"><div class="meta" style="text-align:center;margin:16px 0 10px">ou</div><button class="btn" style="width:100%;padding:10px 16px" onclick="googleLogin()"><svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true" style="vertical-align:-3px;margin-right:8px"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.5-.8-3-.8-4.7s.3-3.2.8-4.7l-7.9-6.1C.9 16.4 0 20.1 0 24s.9 7.6 2.6 10.8l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.9 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.9l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>Continuar com Google</button><div class="note" style="margin-top:8px;text-align:center">Ao continuar aceita os <a href="#" onclick="showLegal('termos');return false">Termos</a> e a <a href="#" onclick="showLegal('priv');return false">Política de Privacidade</a>.</div></div>
     <p class="note"><a href="#" onclick="go('home');render();return false">Continuar sem conta</a> para só ver os fornecedores.</p>
   </div>
 </main>
@@ -257,6 +273,7 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
     <h2>Os meus pedidos</h2>
     <div class="meta">Acompanhe o estado dos pedidos que fez aos fornecedores.</div>
     <div id="meusmoedas" style="margin-top:12px"></div>
+    <div id="meusorc" style="margin-top:12px"></div>
     <div id="meuslist" style="margin-top:12px"></div>
     <p style="margin-top:16px"><button class="btn" onclick="go('home');render()">Voltar à pesquisa</button></p>
   </div>
@@ -268,6 +285,7 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
     <div class="tabs" role="tablist">
       <button class="tab" id="ct-painel" onclick="crmTab('painel')">Painel</button>
       <button class="tab" id="ct-pedidos" onclick="crmTab('pedidos')">Pedidos</button>
+      <button class="tab" id="ct-orcamentos" onclick="crmTab('orcamentos')">Orçamentos</button>
       <button class="tab" id="ct-clientes" onclick="crmTab('clientes')">Clientes</button>
       <button class="tab" id="ct-perfil" onclick="crmTab('perfil')">Perfil</button>
       <button class="tab" id="ct-relatorios" onclick="crmTab('relatorios')">Relatórios</button>
@@ -320,6 +338,46 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
     <button class="btn primary" onclick="saveOb()">Guardar e começar</button>
   </div>
 </main>
+
+<main id="forn" class="hide">
+  <div style="padding:8px 0 40px;max-width:560px">
+    <p style="margin:4px 0 12px"><button class="btn" onclick="go('home');render()">← Voltar à pesquisa</button></p>
+    <div id="fornbody"></div>
+    <div class="panel" style="margin:16px 0 0">
+      <h2 style="font-size:20px">Partilhar este perfil</h2>
+      <div class="meta">Quem abrir o link vê logo este fornecedor, mesmo sem conta.</div>
+      <input class="f" id="fornUrl" readonly aria-label="Link do perfil" style="margin-top:12px" onfocus="this.select()">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+        <button class="btn primary" onclick="shareProv(FORN_ID)">Partilhar</button>
+        <button class="btn" onclick="copyLink($('fornUrl').value)">Copiar link</button>
+        <a class="btn" id="fornWa" target="_blank" rel="noopener" style="text-decoration:none">WhatsApp</a>
+      </div>
+      <div id="fornQR" style="width:min(220px,100%);margin:16px 0 8px"></div>
+      <button class="btn hide" id="fornQRdl" onclick="dlQR()">Transferir QR code (SVG)</button>
+    </div>
+  </div>
+</main>
+
+<main id="mod" class="hide">
+  <div class="panel" style="max-width:760px">
+    <h2>Moderação</h2>
+    <div class="meta">Avaliações em análise (comentário com link, e-mail ou telefone), denunciadas ou ocultas.</div>
+    <div id="modlist" style="margin-top:12px"></div>
+    <p style="margin-top:16px"><button class="btn" onclick="go('home');render()">Voltar à pesquisa</button></p>
+  </div>
+</main>
+
+<main id="legal" class="hide">
+  <div class="panel legal" style="max-width:760px">
+    <h2 id="legaltitle"></h2>
+    <div id="legalbody"></div>
+    <p style="margin-top:18px"><button class="btn" onclick="go(LEGAL_BACK||'home')">Voltar</button></p>
+  </div>
+</main>
+
+<footer class="note" style="text-align:center;padding:4px 0 28px">
+  <a href="#" onclick="shareApp();return false">Partilhar a app</a> · <a href="#" onclick="showLegal('termos');return false">Termos de uso</a> · <a href="#" onclick="showLegal('priv');return false">Política de privacidade</a><span id="fdel" class="hide"> · <a href="#" onclick="apagarConta();return false">Apagar a minha conta</a></span>
+</footer>
 </div>
 
 
@@ -357,6 +415,56 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
     <button class="btn accent" onclick="sendOrder()">Enviar pedido</button>
   </div>
   <div style="display:flex;gap:8px;margin-top:14px"><button class="btn" onclick="dProd.close()">Fechar</button><button class="btn primary" id="pdCont">Contactar</button></div>
+</dialog>
+<dialog id="dOrc">
+  <h2 id="orcTitulo" style="margin:0 0 4px"></h2>
+  <div class="meta">Descreva o que precisa. O fornecedor responde com um valor.</div>
+  <label for="orcDesc">O que precisa?</label>
+  <textarea class="f" id="orcDesc" rows="4" maxlength="500" placeholder="Ex.: fuga de água na cozinha, por baixo do lava-loiça"></textarea>
+  <label for="orcLocal">Onde? (localidade ou rua, opcional)</label>
+  <input class="f" id="orcLocal" maxlength="120" autocomplete="address-level2">
+  <label for="orcData">Data pretendida (opcional)</label>
+  <input class="f" id="orcData" type="date">
+  <label class="tg" style="margin-top:10px"><input type="checkbox" id="orcUrg"> É urgente</label>
+  <label for="orcFotos">Fotografias (até 3, opcional)</label>
+  <input class="f" id="orcFotos" type="file" accept="image/*" multiple>
+  <div id="orcPv" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"></div>
+  <input class="f" id="orcCli" placeholder="O seu nome" maxlength="60" autocomplete="name" aria-label="O seu nome" style="margin-top:12px">
+  <input class="f" id="orcTel" type="tel" inputmode="tel" placeholder="Telemóvel (9 dígitos)" autocomplete="tel" aria-label="Telemóvel" style="margin-top:8px">
+  <div class="err" id="orcErr" role="alert"></div>
+  <div style="display:flex;gap:8px;margin-top:14px"><button class="btn" onclick="dOrc.close()">Cancelar</button><button class="btn primary" id="orcBtn" onclick="sendOrc()">Enviar pedido</button></div>
+</dialog>
+<dialog id="dResp">
+  <h2 style="margin:0 0 4px">Responder ao pedido</h2>
+  <div class="meta">O cliente vê o valor e a mensagem em Os meus pedidos.</div>
+  <label for="respValor">Valor estimado (€, opcional)</label>
+  <input class="f" id="respValor" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Ex.: 80">
+  <label for="respMsg">Mensagem (data de visita, o que inclui…)</label>
+  <textarea class="f" id="respMsg" rows="3" maxlength="300"></textarea>
+  <div class="err" id="respErr" role="alert"></div>
+  <div style="display:flex;gap:8px;margin-top:14px"><button class="btn" onclick="dResp.close()">Cancelar</button><button class="btn primary" onclick="sendResp()">Enviar resposta</button></div>
+</dialog>
+<dialog id="dAv">
+  <h2 id="avNome" style="margin:0 0 4px"></h2>
+  <div class="meta">Como correu este pedido?</div>
+  <div class="pick" id="avPick" role="group" aria-label="Classificação de 1 a 5 estrelas"></div>
+  <textarea class="f" id="avTxt" rows="3" maxlength="200" placeholder="Comentário (opcional). Fica público com o seu primeiro nome." aria-label="Comentário"></textarea>
+  <div class="err" id="avErr" role="alert"></div>
+  <div style="display:flex;gap:8px;margin-top:14px"><button class="btn" onclick="dAv.close()">Cancelar</button><button class="btn primary" onclick="sendAv()">Enviar avaliação</button></div>
+</dialog>
+<dialog id="dDen">
+  <h2 style="margin:0 0 4px">Denunciar avaliação</h2>
+  <div class="meta">A equipa da app analisa e decide se a oculta.</div>
+  <label for="denMotivo">Motivo</label>
+  <select class="f" id="denMotivo"><option value="ofensiva">Linguagem ofensiva</option><option value="falsa">Falsa (não foi cliente)</option><option value="spam">Spam ou publicidade</option><option value="dados">Dados pessoais</option><option value="outro">Outro</option></select>
+  <div class="err" id="denErr" role="alert"></div>
+  <div style="display:flex;gap:8px;margin-top:14px"><button class="btn" onclick="dDen.close()">Cancelar</button><button class="btn primary" onclick="sendDen()">Enviar denúncia</button></div>
+</dialog>
+<dialog id="dRev">
+  <h2 id="rvNome" style="margin:0 0 4px"></h2>
+  <div class="meta" id="rvSum"></div>
+  <div id="rvList" style="margin-top:8px"></div>
+  <div style="margin-top:14px"><button class="btn" onclick="dRev.close()">Fechar</button></div>
 </dialog>
 <div class="toast" id="toast" role="status"></div>
 
@@ -403,19 +511,21 @@ const sb=DEMO?null:supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let SESSION=null;
 function load(){try{S.user=JSON.parse(localStorage.getItem("aq_user")||"null");}catch(e){}}
 async function loadList(){
-  if(DEMO){let l=[];try{l=JSON.parse(localStorage.getItem("aq_mine")||"[]");}catch(e){}S.list=SEED.concat(l);S.list.forEach(p=>{if(!p.prods)p.prods=(PR[p.nome]||[]).map((a,i)=>({id:p.id+"-"+i,nome:a[0],preco:a[1],un:a[2],stock:a[3],ativo:true}));if(p.lat===undefined){const g=GEO.find(x=>x[0]===p.zonas[0]);p.lat=g?g[1]:null;p.lng=g?g[2]:null;}if(p.entrega===undefined){const e=ENT[p.nome];p.entrega=!!e;p.raio=e?e[0]:0;p.taxa=e?e[1]:0;p.min=e?e[2]:0;p.gratis=e?e[3]:0;}if(p.fi===undefined)p.fi=FID[p.nome]||null;});applyUser();return;}
+  if(DEMO){let l=[];try{l=JSON.parse(localStorage.getItem("aq_mine")||"[]");}catch(e){}S.list=SEED.concat(l);S.list.forEach(p=>{if(!p.prods)p.prods=(PR[p.nome]||[]).map((a,i)=>({id:p.id+"-"+i,nome:a[0],preco:a[1],un:a[2],stock:a[3],ativo:true}));if(p.lat===undefined){const g=GEO.find(x=>x[0]===p.zonas[0]);p.lat=g?g[1]:null;p.lng=g?g[2]:null;}if(p.entrega===undefined){const e=ENT[p.nome];p.entrega=!!e;p.raio=e?e[0]:0;p.taxa=e?e[1]:0;p.min=e?e[2]:0;p.gratis=e?e[3]:0;}if(p.fi===undefined)p.fi=FID[p.nome]||null;});demoAvs();applyUser();return;}
   const {data,error}=await sb.from("fornecedores").select("*, produtos(*)").order("created_at",{ascending:false});
   if(error){toast("Não foi possível carregar os fornecedores.");return;}
   const uid=SESSION&&SESSION.user.id;
-  S.list=data.map(r=>({id:r.id,nome:r.nome,tipo:r.tipo,cat:r.cat,zonas:r.zonas,preco:r.preco||"",desc:r.descr||"",tel:r.tel,rating:0,n:0,lat:r.lat==null?null:Number(r.lat),lng:r.lng==null?null:Number(r.lng),entrega:!!r.entrega,raio:Number(r.entrega_raio)||0,taxa:Number(r.entrega_taxa)||0,min:Number(r.entrega_min)||0,gratis:Number(r.entrega_gratis)||0,fi:r.fidelidade&&r.fidelidade.ativo?r.fidelidade:null,prods:(r.produtos||[]).map(x=>({id:x.id,nome:x.nome,preco:Number(x.preco),un:x.un,stock:x.stock==null?null:Number(x.stock),ativo:x.ativo,foto:x.foto||""})),mine:r.user_id===uid}));applyUser();
+  S.list=data.map(r=>({id:r.id,nome:r.nome,tipo:r.tipo,cat:r.cat,zonas:r.zonas,preco:r.preco||"",desc:r.descr||"",tel:r.tel,rating:0,n:0,lat:r.lat==null?null:Number(r.lat),lng:r.lng==null?null:Number(r.lng),entrega:!!r.entrega,raio:Number(r.entrega_raio)||0,taxa:Number(r.entrega_taxa)||0,min:Number(r.entrega_min)||0,gratis:Number(r.entrega_gratis)||0,fi:r.fidelidade&&r.fidelidade.ativo?r.fidelidade:null,prods:(r.produtos||[]).map(x=>({id:x.id,nome:x.nome,preco:Number(x.preco),un:x.un,stock:x.stock==null?null:Number(x.stock),ativo:x.ativo,foto:x.foto||""})),mine:r.user_id===uid}));
+  try{const rt=await sb.from("fornecedor_rating").select("fornecedor_id,media,n");(rt.data||[]).forEach(x=>{const p=S.list.find(y=>y.id===x.fornecedor_id);if(p){p.rating=Number(x.media)||0;p.n=Number(x.n)||0;}});}catch(e){}
+  applyUser();
 }
 function authUI(){$("demoNote").classList.toggle("hide",!DEMO);applyUser();}
 function saveMine(){try{localStorage.setItem("aq_mine",JSON.stringify(S.list.filter(p=>p.mine)));}catch(e){}}
 function toast(t){const e=$("toast");e.textContent=t;e.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display="none",2600);}
 
 function fillZones(sel,first){sel.innerHTML=(first?`<option value="">${first}</option>`:"")+Z.map(z=>`<option>${z}</option>`).join("");}
-let VIEW="boot",LM="login",LR="cliente",OBP="servico",NEWID="",CAT_ID="",PHOTO_PID="",NEWBLOB=null,ORD_F="",CT="painel",PF="novo",RP="tudo",PED=[],NOTAS={},SEG={},MYPOS=null,JPOS=null,EDIT_ID="",ENT_F=false,OM=false,ENT_D=null,RW="",MOEDAS={},MOV={};
-function go(v){VIEW=v;if(v!=="join"&&EDIT_ID){EDIT_ID="";clearJoin();}["home","join","login","ob","cat","crm","meus","newpass","role"].forEach(x=>$(x).classList.toggle("hide",x!==v));if(v==="join"){joinMode();jTipo(S.jtipo);}scrollTo(0,0);}
+let VIEW="boot",LM="login",LR="cliente",OBP="servico",NEWID="",CAT_ID="",PHOTO_PID="",NEWBLOB=null,ORD_F="",CT="painel",PF="novo",RP="tudo",PED=[],NOTAS={},SEG={},MYPOS=null,JPOS=null,EDIT_ID="",ENT_F=false,OM=false,ENT_D=null,RW="",MOEDAS={},MOV={},IS_ADMIN=false,MOD=[],DEN_ID="",POP=false,FORN_ID="",QR_SVG="";
+function go(v){const prev=VIEW;VIEW=v;if(v!=="join"&&EDIT_ID){EDIT_ID="";clearJoin();}["home","join","login","ob","cat","crm","meus","newpass","role","mod","forn","legal"].forEach(x=>$(x).classList.toggle("hide",x!==v));if(v==="join"){joinMode();jTipo(S.jtipo);}scrollTo(0,0);navSync(v,prev);}
 function goProv(){if(EDIT_ID){EDIT_ID="";clearJoin();}if(DEMO||SESSION||S.user)go("join");else openLogin("signup","fornecedor");}
 function setLR(r){LR=r;drawLogin();}
 function openLogin(m,r){LM=m||"login";if(r)LR=r;$("lerr").textContent="";drawLogin();go("login");}
@@ -425,7 +535,7 @@ function drawLogin(){
   ["cliente","fornecedor"].forEach(r=>$("lr-"+r).setAttribute("aria-pressed",LR===r));
   $("lpass").autocomplete=LM==="signup"?"new-password":"current-password";
   $("lbtn").textContent=LM==="signup"?"Criar conta":"Entrar";
-  $("lpassrow").classList.toggle("hide",DEMO);$("ldemo").classList.toggle("hide",!DEMO);$("lforgot").classList.toggle("hide",DEMO||LM!=="login");$("lgwrap").classList.toggle("hide",DEMO);
+  $("lpassrow").classList.toggle("hide",DEMO);$("ldemo").classList.toggle("hide",!DEMO);$("lforgot").classList.toggle("hide",DEMO||LM!=="login");$("lgwrap").classList.toggle("hide",DEMO);$("lacc").classList.toggle("hide",DEMO||LM!=="signup");
 }
 async function submitLogin(){
   const m=$("lemail").value.trim(),p=$("lpass").value,e=$("lerr");e.textContent="";
@@ -433,7 +543,8 @@ async function submitLogin(){
   if(DEMO){if(S.user){go("home");render();}else if(LR==="fornecedor"&&LM==="signup")go("join");else go("ob");return;}
   if(p.length<8){e.textContent="A palavra-passe precisa de pelo menos 8 caracteres.";return;}
   if(LM==="signup"){
-    const {data,error}=await sb.auth.signUp({email:m,password:p,options:{data:{papel:LR},emailRedirectTo:location.href.split("#")[0]}});
+    if(!$("laccx").checked){e.textContent="Para criar conta tem de aceitar os Termos e a Política de Privacidade.";return;}
+    const {data,error}=await sb.auth.signUp({email:m,password:p,options:{data:{papel:LR,aceitou_termos:new Date().toISOString(),versao_termos:LEGAL.versao},emailRedirectTo:location.href.split("#")[0]}});
     if(error){e.textContent=/registered/i.test(error.message)?"Já existe uma conta com este e-mail. Use Entrar.":"Não foi possível criar a conta.";return;}
     if(!data.session){e.textContent="Enviámos um e-mail de confirmação. Confirme-o e depois entre.";return;}
   }else{
@@ -442,6 +553,7 @@ async function submitLogin(){
   }
 }
 async function googleLogin(){
+  if(LM==="signup"&&!$("laccx").checked){$("lerr").textContent="Para criar conta tem de aceitar os Termos e a Política de Privacidade.";return;}
   try{localStorage.setItem("aq_role",LM==="signup"?LR:"");}catch(x){}
   const {error}=await sb.auth.signInWithOAuth({provider:"google",options:{redirectTo:location.origin+location.pathname}});
   if(error)$("lerr").textContent="Não foi possível iniciar sessão com o Google. Tente outra vez.";
@@ -464,6 +576,53 @@ async function saveNewPass(){
   try{history.replaceState(null,"",location.pathname);}catch(x){}
   toast("Palavra-passe atualizada.");await afterAuth();
 }
+const LEGAL={resp:"Miguel Lobato",email:"aquiperto2026.app@gmail.com",versao:"2026-10-18",data:"18 de outubro de 2026"};
+let LEGAL_BACK="home";
+const LEGAL_TXT={
+priv:{t:"Política de privacidade",h:()=>`<p class="meta">Versão de ${esc(LEGAL.data)}.</p>
+<h3>1. Quem é o responsável</h3><p>${esc(LEGAL.resp)}, contacto: ${esc(LEGAL.email)}.</p>
+<h3>2. Que dados tratamos</h3><ul><li>Conta: e-mail, nome, zona, telemóvel (opcional) e se é cliente ou fornecedor.</li><li>Fornecedores: nome do negócio, categoria, zonas, preços, descrição, telemóvel, fotografias, entregas, fidelidade e localização aproximada (arredondada a cerca de 1 km, nunca a morada exata).</li><li>Pedidos: produtos, valores, nota, nome e telemóvel do cliente e, nas entregas, a morada indicada.</li><li>Pedidos de orçamento: descrição, localidade, data pretendida, nome, telemóvel e até 3 fotografias, guardadas em armazenamento privado.</li><li>Notas privadas e datas de seguimento que o fornecedor regista sobre clientes, e moedas de fidelidade.</li><li>Dados técnicos do aparelho para os avisos de novos pedidos, se os ativar.</li></ul>
+<h3>3. Localização</h3><p>A localização do GPS é usada no seu aparelho para ordenar por distância e não é guardada. Para obter o nome da localidade podem ser enviadas coordenadas arredondadas (cerca de 1 km) ao serviço OpenStreetMap (Nominatim).</p>
+<h3>4. Para que usamos e porquê</h3><p>Criar e gerir a conta e os pedidos (execução do serviço); mostrar fornecedores perto de si e enviar avisos (o seu consentimento); manter a app segura (interesse legítimo). Não vendemos dados nem fazemos publicidade.</p>
+<h3>5. Quem vê os dados</h3><p>O fornecedor vê o nome, o telemóvel e a morada de entrega dos clientes que lhe fazem pedidos, e, nos pedidos de orçamento, a descrição, a localidade e as fotografias enviadas. Os clientes veem os dados públicos do fornecedor, incluindo o telemóvel. As avaliações (estrelas, comentário e primeiro nome do cliente) são públicas. As denúncias de avaliações ficam registadas e só a equipa da app as vê. Usamos como prestadores: Supabase (base de dados, contas e fotografias), GitHub Pages (alojamento), Google (se entrar com Google) e OpenStreetMap.</p>
+<h3>6. Quanto tempo guardamos</h3><p>Enquanto a conta existir. Ao apagar a conta eliminamos o perfil, os perfis de fornecedor, produtos, fotografias, pedidos, pedidos de orçamento, notas e avisos associados. Cópias de segurança podem demorar algum tempo a desaparecer.</p>
+<h3>7. Os seus direitos</h3><p>Pode pedir acesso, retificação, apagamento, limitação, portabilidade e opor-se ao tratamento, ou retirar o consentimento, através de ${esc(LEGAL.email)}. Pode apagar a conta na própria app (link no fundo da página). Tem direito a reclamar à Comissão Nacional de Proteção de Dados (cnpd.pt).</p>
+<h3>8. Armazenamento no aparelho</h3><p>Usamos o armazenamento do navegador só para a app funcionar (sessão e preferências). Não usamos cookies de publicidade ou de análise.</p>
+<h3>9. Menores</h3><p>A app destina-se a maiores de 18 anos.</p>`},
+termos:{t:"Termos de uso",h:()=>`<p class="meta">Versão de ${esc(LEGAL.data)}.</p>
+<h3>1. O que é a Aqui Perto</h3><p>Uma plataforma que aproxima clientes e fornecedores locais. Não vendemos nem entregamos os produtos ou serviços: o contrato é feito diretamente entre cliente e fornecedor.</p>
+<h3>2. Contas</h3><p>Tem de ser maior de 18 anos, dar dados verdadeiros e guardar a sua palavra-passe. É responsável pela atividade da sua conta.</p>
+<h3>3. Fornecedores</h3><p>Devem manter preços, stock, zonas e fotografias corretos, ter os direitos sobre as imagens, cumprir a lei aplicável à sua atividade (licenças, segurança alimentar, faturação, direitos do consumidor) e honrar os pedidos que confirmam.</p>
+<h3>4. Clientes e pedidos</h3><p>Um pedido é um pedido ao fornecedor e só fica combinado quando este o confirma. Pagamento e entrega são acordados diretamente com o fornecedor: a app não processa pagamentos.</p>
+<h3>5. Moedas de fidelidade</h3><p>São uma oferta de cada fornecedor, não têm valor em dinheiro e não podem ser trocadas por dinheiro. Valem as regras definidas por esse fornecedor.</p>
+<h3>6. Condutas proibidas</h3><p>Conteúdo falso, ilegal ou ofensivo, spam, fraude, e tentar aceder a dados de outras pessoas. Podemos ocultar avaliações que violem estes termos, incluindo as denunciadas por outros utilizadores.</p>
+<h3>7. Suspensão</h3><p>Podemos remover conteúdos ou suspender contas que violem estes termos.</p>
+<h3>8. Responsabilidade</h3><p>A app é fornecida como está. Não somos responsáveis pela qualidade dos produtos ou serviços nem por conflitos entre utilizadores, exceto quando a lei o impuser. Os direitos do consumidor que a lei garante mantêm-se, incluindo recorrer a uma entidade de resolução alternativa de litígios.</p>
+<h3>9. Alterações e lei aplicável</h3><p>Podemos atualizar estes termos e indicaremos a nova versão. Aplica-se a lei portuguesa.</p>
+<h3>10. Contacto</h3><p>${esc(LEGAL.resp)} · ${esc(LEGAL.email)}</p>`}};
+function showLegal(k){
+  if(VIEW!=="legal")LEGAL_BACK=VIEW;
+  $("legaltitle").textContent=LEGAL_TXT[k].t;$("legalbody").innerHTML=LEGAL_TXT[k].h();go("legal");
+}
+const AQ_KEYS=["aq_mine","aq_moedas","aq_notas","aq_ped","aq_seg","aq_user","aq_role","aq_avs","aq_orc"];
+async function apagarConta(){
+  if(!confirm("Vai apagar a sua conta e todos os dados associados (perfis, produtos, fotografias, pedidos). Isto não pode ser desfeito. Continuar?"))return;
+  const t=prompt("Para confirmar, escreva APAGAR:");
+  if(!t||t.trim().toUpperCase()!=="APAGAR"){toast("Pedido cancelado.");return;}
+  if(DEMO){AQ_KEYS.forEach(k=>{try{localStorage.removeItem(k);}catch(x){}});location.reload();return;}
+  if(!SESSION)return;
+  try{
+    if(PUSH_OK())await pushOff(true);
+    const uid=SESSION.user.id,st=sb.storage.from("produtos"),ls=await st.list(uid,{limit:1000});
+    if(ls.data&&ls.data.length)await st.remove(ls.data.map(f=>uid+"/"+f.name));
+  }catch(x){}
+  try{const so=sb.storage.from("orcamentos"),lo=await so.list(SESSION.user.id,{limit:1000});if(lo.data&&lo.data.length)await so.remove(lo.data.map(f=>SESSION.user.id+"/"+f.name));}catch(x){}
+  const {error}=await sb.rpc("apagar_conta");
+  if(error){toast("Não foi possível apagar a conta. Tente outra vez ou contacte-nos.");return;}
+  AQ_KEYS.forEach(k=>{try{localStorage.removeItem(k);}catch(x){}});
+  try{await sb.auth.signOut();}catch(x){}
+  S.user=null;SESSION=null;applyUser();go("login");toast("Conta apagada.");
+}
 async function logout(){
   if(PUSH_OK())await pushOff(true);
   S.user=null;try{localStorage.removeItem("aq_user");}catch(x){}
@@ -471,7 +630,7 @@ async function logout(){
   applyUser();go("login");
 }
 async function afterAuth(){
-  await loadList();
+  await loadList();await checkAdmin();
   const {data}=await sb.from("perfis").select("*").eq("user_id",SESSION.user.id).maybeSingle();
   if(!data){
     const md=SESSION.user.user_metadata||{};let papel=md.papel||"";
@@ -590,11 +749,12 @@ const eur=n=>Number(n).toFixed(2).replace(".",",")+" €";
 const EST={novo:"Novo",confirmado:"Confirmado",concluido:"Concluído",cancelado:"Cancelado"};
 function savePed(){try{localStorage.setItem("aq_ped",JSON.stringify(PED));localStorage.setItem("aq_notas",JSON.stringify(NOTAS));localStorage.setItem("aq_seg",JSON.stringify(SEG));}catch(e){}}
 async function loadPed(){
-  await loadMoedas();
+  await loadMoedas();if(DEMO)AVS=lsAvs();
   if(DEMO){try{PED=JSON.parse(localStorage.getItem("aq_ped")||"[]");}catch(e){PED=[];}try{NOTAS=JSON.parse(localStorage.getItem("aq_notas")||"{}");}catch(e){NOTAS={};}try{SEG=JSON.parse(localStorage.getItem("aq_seg")||"{}");}catch(e){SEG={};}return;}
   const a=await sb.from("pedidos").select("*").order("created_at",{ascending:false});
   PED=(a.data||[]).map(r=>({id:r.id,fid:r.fornecedor_id,cliente_id:r.cliente_id,nome:r.cliente_nome,tel:r.cliente_tel,itens:r.itens,total:Number(r.total),nota:r.nota||"",entrega:!!r.entrega,morada:r.morada||"",taxa:Number(r.taxa)||0,moedas:Number(r.moedas_usadas)||0,rec:r.recompensa||"",desc:Number(r.desconto)||0,estado:r.estado,data:r.created_at}));
   const n=await sb.from("notas_cliente").select("*");NOTAS={};SEG={};(n.data||[]).forEach(r=>{NOTAS[r.cliente_id]=r.nota;SEG[r.cliente_id]=r.seguir_em||"";});
+  AVS={};if(SESSION){const av=await sb.from("avaliacoes").select("pedido_id,estrelas,comentario,estado").eq("cliente_id",SESSION.user.id);(av.data||[]).forEach(r=>{AVS[r.pedido_id]={e:r.estrelas,c:r.comentario||"",estado:r.estado||"visivel"};});}
 }
 function ordItems(){
   const p=S.list.find(x=>x.id===ORD_F);if(!p)return[];
@@ -706,7 +866,7 @@ async function sendOrder(){
   $("dProd").close();$("onota").value="";toast("Pedido enviado a "+p.nome+". Acompanhe em Os meus pedidos.");
 }
 const myPed=()=>{const ids=new Set(S.list.filter(p=>p.mine).map(p=>p.id));return PED.filter(o=>ids.has(o.fid));};
-async function openCrm(){if(!S.list.some(p=>p.mine)){goProv();return;}await loadPed();go("crm");drawCrm();}
+async function openCrm(){if(!S.list.some(p=>p.mine)){goProv();return;}await loadPed();await loadOrc();go("crm");drawCrm();}
 function crmTab(t){CT=t;drawCrm();}
 async function setEstado(id,est){
   const o=PED.find(x=>x.id===id);if(!o)return;
@@ -740,7 +900,8 @@ function moedasCli(c){
 function drawCrm(){drawCrm1();if(CT==="painel")pushUI();}
 function drawCrm1(){
   const L=myPed(),nv=L.filter(o=>o.estado==="novo").length,B=$("crmbody");
-  ["painel","pedidos","clientes","perfil","relatorios"].forEach(t=>$("ct-"+t).setAttribute("aria-selected",t===CT));
+  ["painel","pedidos","orcamentos","clientes","perfil","relatorios"].forEach(t=>$("ct-"+t).setAttribute("aria-selected",t===CT));
+  {const n=orcNovos();$("ct-orcamentos").textContent="Orçamentos"+(n?" ("+n+")":"");}
   {const t=$("ct-"+CT),q=t&&t.parentElement;if(q)q.scrollLeft=Math.max(0,t.offsetLeft-(q.clientWidth-t.offsetWidth)/2);}
   $("ct-pedidos").textContent="Pedidos"+(nv?" ("+nv+")":"");
   if(CT==="painel"){
@@ -752,9 +913,11 @@ function drawCrm1(){
     const fl=L.filter(o=>PF==="todos"||o.estado===PF);
     B.innerHTML=`<div class="chips">${["novo","confirmado","concluido","cancelado","todos"].map(f=>`<button class="chip" data-f="${f}" aria-pressed="${PF===f}">${f==="todos"?"Todos":EST[f]}</button>`).join("")}</div>`+(fl.length?fl.map(ordRow).join(""):'<p class="meta">Sem pedidos nesta lista.</p>');
   }else if(CT==="perfil"){
-    B.innerHTML=S.list.filter(p=>p.mine).map(p=>`<div class="prow"><div style="flex:1;min-width:min(200px,100%)"><strong>${esc(p.nome)}</strong><div class="meta">${esc(p.cat)} · ${esc(p.zonas.join(", "))}<br>${esc(p.tel)} · ${p.lat!=null?"📍 com localização":"sem localização (os clientes não veem a distância)"}${p.entrega?" · 🚚 entrega até "+p.raio+" km ("+(p.taxa?eur(p.taxa):"grátis")+(p.gratis>0?", grátis acima de "+eur(p.gratis):"")+(p.min>0?", mínimo "+eur(p.min):"")+")":""}${p.fi&&p.fi.ativo?" · 🪙 programa de moedas ativo":""}</div></div><button class="btn primary" data-edit="${esc(p.id)}">Editar</button></div>`).join("")+'<p style="margin-top:14px"><button class="btn" data-newprof="1">Novo perfil</button></p>';
+    B.innerHTML=S.list.filter(p=>p.mine).map(p=>`<div class="prow"><div style="flex:1;min-width:min(200px,100%)"><strong>${esc(p.nome)}</strong><div class="meta">${esc(p.cat)} · ${esc(p.zonas.join(", "))}<br>${esc(p.tel)} · ${p.lat!=null?"📍 com localização":"sem localização (os clientes não veem a distância)"}${p.entrega?" · 🚚 entrega até "+p.raio+" km ("+(p.taxa?eur(p.taxa):"grátis")+(p.gratis>0?", grátis acima de "+eur(p.gratis):"")+(p.min>0?", mínimo "+eur(p.min):"")+")":""}${p.fi&&p.fi.ativo?" · 🪙 programa de moedas ativo":""}</div></div><div class="stk" style="flex-wrap:wrap"><button class="btn" data-forn="${esc(p.id)}">Partilhar / QR</button><button class="btn primary" data-edit="${esc(p.id)}">Editar</button></div></div>`).join("")+'<p style="margin-top:14px"><button class="btn" data-newprof="1">Novo perfil</button></p>';
   }else if(CT==="relatorios"){
     B.innerHTML=relatorio(L);
+  }else if(CT==="orcamentos"){
+    B.innerHTML=orcSup();orcSign(B);
   }else{
     const m={};
     L.forEach(o=>{const k=o.cliente_id||o.tel,c=m[k]||(m[k]={k,cid:o.cliente_id,nome:o.nome,tel:o.tel,n:0,g:0,u:o.data});c.n++;if(o.estado==="concluido")c.g+=o.total;if(o.data>c.u)c.u=o.data;});
@@ -764,18 +927,18 @@ function drawCrm1(){
 }
 const EST_C={novo:"Enviado, a aguardar resposta",confirmado:"Confirmado",concluido:"Concluído",cancelado:"Cancelado"};
 const EST_K={novo:"",confirmado:"ok",concluido:"ok",cancelado:"out"};
-async function openMeus(){await loadPed();go("meus");drawMeus();}
+async function openMeus(){await loadPed();await loadOrc();go("meus");drawMeus();}
 function drawMeusMoedas(){
   const rows=S.list.map(p=>({p,s:myFid(p)?mySaldo(p):0})).filter(x=>x.s>0);
   $("meusmoedas").innerHTML=rows.length?'<h3 style="margin:0 0 4px">As minhas moedas</h3>'+rows.map(x=>`<div class="prow"><strong>${esc(x.p.nome)}</strong><span class="meta">🪙 ${x.s} moeda${x.s===1?"":"s"}</span></div>`).join(""):"";
 }
 function drawMeus(){
-  drawMeusMoedas();
+  drawMeusMoedas();drawMeusOrc();
   const uid=SESSION&&SESSION.user.id,L=PED.filter(o=>DEMO||o.cliente_id===uid);
   $("meuslist").innerHTML=L.length?L.map(o=>{
     const f=S.list.find(x=>x.id===o.fid);
     return `<div class="prow" style="align-items:flex-start"><div style="flex:1;min-width:min(200px,100%)"><strong>${esc(f?f.nome:"Fornecedor")}</strong> <span class="meta">· ${new Date(o.data).toLocaleDateString("pt-PT")}</span><div>${o.itens.map(i=>esc(i.qtd+" "+i.un+" "+i.nome)).join(", ")}</div>${o.entrega?`<div class="meta">🚚 Entrega com taxa de ${eur(o.taxa)}</div>`:""}${o.rec?`<div class="meta">🪙 ${esc(recTxt(o))}</div>`:""}<strong>${eur(o.total)}</strong> <span class="${EST_K[o.estado]}">${EST_C[o.estado]}</span></div>
-    <div class="stk" style="flex-wrap:wrap">${o.estado==="novo"?`<button class="btn" data-cancel="${esc(o.id)}">Cancelar</button>`:""}${f?`<button class="btn" data-contact="${esc(f.id)}">Contactar</button>`:""}</div></div>`;
+    <div class="stk" style="flex-wrap:wrap">${o.estado==="novo"?`<button class="btn" data-cancel="${esc(o.id)}">Cancelar</button>`:""}${avBtn(o)}${f?`<button class="btn" data-contact="${esc(f.id)}">Contactar</button>`:""}</div></div>`;
   }).join(""):'<p class="meta">Ainda não fez pedidos. Escolha um fornecedor e toque em "Ver produtos".</p>';
 }
 async function cancelPed(id){
@@ -1087,6 +1250,10 @@ function render(){
   $("grid").innerHTML=r.length?r.map(card).join(""):`<div class="empty"><strong>Ainda ninguém${z?" em "+esc(z):""} com esta pesquisa.</strong><p class="meta">Tente outra zona ou categoria, ou convide um fornecedor que conheça.</p><button class="btn primary" onclick="go('join')">Inscrever um fornecedor</button></div>`;
   document.querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>openCont(b.dataset.id));
   document.querySelectorAll("[data-prod]").forEach(b=>b.onclick=()=>openProd(b.dataset.prod));
+  document.querySelectorAll("[data-rev]").forEach(b=>b.onclick=()=>openRev(b.dataset.rev));
+  document.querySelectorAll("[data-orc]").forEach(b=>b.onclick=()=>openOrc(b.dataset.orc));
+  document.querySelectorAll("[data-forn]").forEach(b=>b.onclick=()=>openForn(b.dataset.forn));
+  document.querySelectorAll("[data-share]").forEach(b=>b.onclick=()=>shareProv(b.dataset.share));
   document.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{if(!confirm("Apagar este perfil?"))return;const {error}=await sb.from("fornecedores").delete().eq("id",b.dataset.del);if(error)toast("Não foi possível apagar.");else{await loadList();render();}});
 }
 function fiBadge(p){
@@ -1105,10 +1272,10 @@ function entBadge(p){
 function card(p){
   const col=COLORS[(p.nome.charCodeAt(0)+p.nome.length)%COLORS.length];
   return `<article class="card"><div class="top"><div class="av" style="background:${col}" aria-hidden="true">${esc(p.nome[0])}</div>
-  <div><h3>${esc(p.nome)}${p.mine?'<span class="mine">O meu</span>':""}</h3><div class="meta">${esc(p.cat)} · ${esc(p.zonas.slice(0,3).join(", "))}${p.dist!=null?" · a "+(p.dist<10?p.dist.toFixed(1).replace(".",","):Math.round(p.dist))+" km":""}</div></div></div>
+  <div><h3><button type="button" class="linkb" data-forn="${esc(p.id)}" style="font-weight:inherit;color:inherit">${esc(p.nome)}</button>${p.mine?'<span class="mine">O meu</span>':""}</h3><div class="meta">${esc(p.cat)} · ${esc(p.zonas.slice(0,3).join(", "))}${p.dist!=null?" · a "+(p.dist<10?p.dist.toFixed(1).replace(".",","):Math.round(p.dist))+" km":""}</div></div><button type="button" class="btn" style="margin-left:auto;padding:6px 10px;flex:none" data-share="${esc(p.id)}" aria-label="Partilhar ${esc(p.nome)}">🔗</button></div>
   <p>${esc(p.desc)}</p>${prodBtn(p)}${entBadge(p)}${fiBadge(p)}
-  <div class="foot"><div><span class="price">${esc(p.preco||"Sob consulta")}</span><br><span class="star">${p.n?"★ "+p.rating.toFixed(1)+" <span class='meta'>("+p.n+")</span>":"<span class='meta'>Novo na app</span>"}</span></div>
-  <div style="display:flex;gap:6px">${p.mine&&!DEMO?`<button class="btn" data-del="${p.id}">Apagar</button>`:""}<button class="btn primary" data-id="${p.id}">Contactar</button></div></div></article>`;
+  <div class="foot"><div><span class="price">${esc(p.preco||"Sob consulta")}</span><br>${p.n?`<button type="button" class="star linkb" data-rev="${esc(p.id)}" aria-label="Ver avaliações de ${esc(p.nome)}">★ ${p.rating.toFixed(1).replace(".",",")} <span class="meta">(${p.n})</span></button>`:"<span class='meta'>Novo na app</span>"}</div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">${p.tipo==="servico"&&!p.mine?`<button class="btn accent" data-orc="${esc(p.id)}">Pedir orçamento</button>`:""}${p.mine&&!DEMO?`<button class="btn" data-del="${p.id}">Apagar</button>`:""}<button class="btn primary" data-id="${p.id}">Contactar</button></div></div></article>`;
 }
 function openCont(id){
   const p=S.list.find(x=>x.id===id);if(!p)return;
@@ -1123,6 +1290,8 @@ function applyUser(){
   const on=!!S.user||!!SESSION;
   $("btnMeus").classList.toggle("hide",!on);
   $("btnCat").classList.toggle("hide",!S.list.some(p=>p.mine));
+  $("btnMod").classList.toggle("hide",!IS_ADMIN);$("btnMod").textContent="Moderação"+(modPend()?" ("+modPend()+")":"");
+  $("fdel").classList.toggle("hide",!on);
   $("btnIn").classList.toggle("hide",on);$("btnOut").classList.toggle("hide",!on);
 }
 function drawFidForm(){$("jfidbox").classList.toggle("hide",!$("jfid").checked);}
@@ -1202,7 +1371,7 @@ $("pfile").addEventListener("change",async e=>{
   const old={foto:pr.foto};
   if(await updProd(pr.id,{foto:nf}))await dropPhoto(old);else await dropPhoto({foto:nf});
 });
-$("meuslist").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;if(b.dataset.cancel)cancelPed(b.dataset.cancel);else if(b.dataset.contact)openCont(b.dataset.contact);});
+$("meuslist").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;if(b.dataset.cancel)cancelPed(b.dataset.cancel);else if(b.dataset.rate)openAv(b.dataset.rate);else if(b.dataset.contact)openCont(b.dataset.contact);});
 $("crmbody").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;if(b.dataset.est)setEstado(b.dataset.id,b.dataset.est);else if(b.dataset.f){PF=b.dataset.f;drawCrm();}else if(b.dataset.hist)toggleHist(b.dataset.hist);else if(b.dataset.rp){RP=b.dataset.rp;drawCrm();}else if(b.dataset.pdf)exportPdf();else if(b.dataset.xlsx)exportXlsx();else if(b.dataset.csv)exportCsv();else if(b.dataset.edit)openEdit(b.dataset.edit);else if(b.dataset.newprof)goProv();});
 $("crmbody").addEventListener("change",async e=>{
   const nk=e.target.dataset.nota,sk=e.target.dataset.seg,k=nk||sk;if(!k)return;
@@ -1214,7 +1383,7 @@ $("crmbody").addEventListener("change",async e=>{
 setInterval(async()=>{
   if(DEMO||(VIEW!=="crm"&&VIEW!=="meus"))return;
   const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName))return;
-  await loadPed();if(VIEW==="crm")drawCrm();else drawMeus();
+  await loadPed();await loadOrc();if(VIEW==="crm")drawCrm();else drawMeus();
 },45000);
 // ---- avisos push ao fornecedor (pedidos novos)
 const urlB64=s=>{const p="=".repeat((4-s.length%4)%4),r=atob((s+p).replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from(r,c=>c.charCodeAt(0));};
@@ -1267,6 +1436,311 @@ async function pushUI(){
     (den?"":'<button class="btn'+(on?"":" primary")+'" onclick="'+(on?"pushOff()":"pushOn()")+'">'+(on?"Desativar":"Ativar avisos")+'</button>');
 }
 if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{if(e.data&&e.data.t==="crm"&&SESSION)openCrm();});
+// ---- avaliações (só pedidos concluídos, 1 por pedido)
+let AVS={},AV_ID="",AV_E=0;
+const lsAvs=()=>{try{return JSON.parse(localStorage.getItem("aq_avs")||"{}")||{};}catch(e){return {};}};
+function demoAvs(){
+  const a=lsAvs();AVS=a;
+  S.list.forEach(p=>{
+    if(p.r0===undefined){p.r0=p.rating;p.n0=p.n;}
+    const l=Object.values(a).filter(x=>x.fid===p.id),s=l.reduce((t,x)=>t+x.e,0);
+    p.n=p.n0+l.length;p.rating=p.n?(p.r0*p.n0+s)/p.n:0;
+  });
+}
+const starsTxt=n=>"★".repeat(n)+"☆".repeat(5-n);
+function avBtn(o){
+  if(o.estado!=="concluido")return "";
+  const a=AVS[o.id];
+  return a?(a.estado==="pendente"?`<span class="meta">Avaliação em análise</span>`:a.estado==="oculta"?`<span class="meta">Avaliação ocultada</span>`:`<span class="star" title="A sua avaliação">${starsTxt(a.e)}</span>`):`<button class="btn accent" data-rate="${esc(o.id)}">Avaliar</button>`;
+}
+function drawPick(){
+  $("avPick").innerHTML=[1,2,3,4,5].map(i=>`<button type="button" data-s="${i}" aria-pressed="${AV_E>=i}" aria-label="${i} estrela${i>1?"s":""}">${AV_E>=i?"★":"☆"}</button>`).join("");
+}
+function openAv(id){
+  const o=PED.find(x=>x.id===id);if(!o||o.estado!=="concluido"||AVS[id])return;
+  const f=S.list.find(x=>x.id===o.fid);
+  AV_ID=id;AV_E=0;$("avNome").textContent=f?f.nome:"Fornecedor";$("avTxt").value="";$("avErr").textContent="";drawPick();$("dAv").showModal();
+}
+async function sendAv(){
+  const e=$("avErr");e.textContent="";
+  if(!(AV_E>=1&&AV_E<=5)){e.textContent="Escolha de 1 a 5 estrelas.";return;}
+  const o=PED.find(x=>x.id===AV_ID);if(!o)return;
+  const c=$("avTxt").value.trim().slice(0,200);
+  if(DEMO){const a=lsAvs();a[o.id]={fid:o.fid,e:AV_E,c,autor:(o.nome||"").split(" ")[0],data:new Date().toISOString()};try{localStorage.setItem("aq_avs",JSON.stringify(a));}catch(x){}}
+  else{
+    const {error}=await sb.rpc("avaliar_pedido",{p_pedido:o.id,p_estrelas:AV_E,p_comentario:c||null});
+    if(error){e.textContent=/duplicate|unique/i.test(error.message)?"Já avaliou este pedido.":/conclu/i.test(error.message)?"Só pode avaliar pedidos concluídos.":"Não foi possível enviar a avaliação. Tente outra vez.";return;}
+  }
+  $("dAv").close();await loadList();await loadPed();drawMeus();toast("Obrigado pela sua avaliação.");
+}
+async function openRev(fid){
+  const p=S.list.find(x=>x.id===fid);if(!p)return;
+  $("rvNome").textContent=p.nome;
+  $("rvSum").textContent="★ "+p.rating.toFixed(1).replace(".",",")+" · "+p.n+(p.n===1?" avaliação":" avaliações");
+  $("rvList").innerHTML='<p class="meta">A carregar…</p>';$("dRev").showModal();
+  let L=[];
+  if(DEMO)L=Object.values(lsAvs()).filter(x=>x.fid===fid).map(x=>({e:x.e,c:x.c,autor:x.autor,data:x.data})).sort((a,b)=>b.data.localeCompare(a.data));
+  else{const {data}=await sb.from("avaliacoes").select("id,cliente_id,estrelas,comentario,autor,created_at").eq("fornecedor_id",fid).eq("estado","visivel").order("created_at",{ascending:false}).limit(20);L=(data||[]).map(x=>({id:x.id,cid:x.cliente_id,e:x.estrelas,c:x.comentario||"",autor:x.autor,data:x.created_at}));}
+  const uid=SESSION&&SESSION.user.id;
+  $("rvList").innerHTML=L.length?L.map(x=>`<div class="prow" style="align-items:flex-start"><div style="flex:1"><span class="star">${starsTxt(x.e)}</span> <span class="meta">· ${esc(x.autor||"Cliente")} · ${new Date(x.data).toLocaleDateString("pt-PT")}</span>${x.c?`<div>${esc(x.c)}</div>`:""}</div>${!DEMO&&x.id&&x.cid!==uid?`<button type="button" class="chip" data-den="${esc(x.id)}" aria-label="Denunciar esta avaliação">🚩 Denunciar</button>`:""}</div>`).join(""):'<p class="meta">Ainda sem comentários.</p>';
+}
+$("rvList").addEventListener("click",e=>{const b=e.target.closest("button[data-den]");if(b)openDen(b.dataset.den);});
+function openDen(id){
+  if(!SESSION){toast("Entre na sua conta para denunciar uma avaliação.");return;}
+  DEN_ID=id;$("denErr").textContent="";$("denMotivo").value="ofensiva";$("dRev").close();$("dDen").showModal();
+}
+async function sendDen(){
+  const e=$("denErr");e.textContent="";
+  const {error}=await sb.rpc("denunciar_avaliacao",{p_avaliacao:DEN_ID,p_motivo:$("denMotivo").value});
+  if(error){e.textContent=/pr[óo]pria|own/i.test(error.message)?"Não pode denunciar a sua própria avaliação.":"Não foi possível enviar a denúncia. Tente outra vez.";return;}
+  $("dDen").close();toast("Denúncia enviada. Obrigado.");
+}
+// ---- moderação (só contas na tabela admins)
+const MOT={ofensiva:"Linguagem ofensiva",falsa:"Falsa (não foi cliente)",spam:"Spam ou publicidade",dados:"Dados pessoais",outro:"Outro"};
+function modPend(){return MOD.filter(x=>x.estado==="pendente"||x.denuncias>0).length;}
+async function checkAdmin(){
+  IS_ADMIN=false;
+  if(!DEMO&&SESSION){
+    try{const r=await sb.rpc("sou_admin");IS_ADMIN=r.data===true;if(IS_ADMIN){const q=await sb.rpc("mod_fila");MOD=q.error?[]:(q.data||[]);}}catch(x){}
+  }
+  if(!IS_ADMIN)MOD=[];
+  applyUser();
+}
+async function loadMod(){const q=await sb.rpc("mod_fila");MOD=q.error?[]:(q.data||[]);applyUser();}
+async function openMod(){if(!IS_ADMIN)return;await loadMod();go("mod");drawMod();}
+function drawMod(){
+  $("modlist").innerHTML=MOD.length?MOD.map(x=>{
+    const flag=x.estado==="pendente"?"em análise":x.estado==="oculta"?"oculta":"";
+    const den=x.denuncias>0?"🚩 "+x.denuncias+" denúncia"+(x.denuncias>1?"s":"")+": "+(x.motivos||[]).map(m=>MOT[m]||m).join(", "):"";
+    const bt=(a,t,c)=>`<button class="btn ${c||""}" data-m="${esc(x.id)}" data-a="${a}">${t}</button>`;
+    const ac=x.estado==="oculta"?bt("repor","Repor"):bt("manter","Manter","primary")+bt("ocultar","Ocultar");
+    return `<div class="prow" style="align-items:flex-start"><div style="flex:1;min-width:min(200px,100%)"><strong>${esc(x.fornecedor_nome)}</strong> <span class="star">${starsTxt(x.estrelas)}</span><div class="meta">${esc(x.autor)} · ${new Date(x.created_at).toLocaleDateString("pt-PT")}${flag?" · "+flag:""}</div>${x.comentario?`<div>${esc(x.comentario)}</div>`:""}${den?`<div class="meta">${esc(den)}</div>`:""}</div><div class="stk" style="flex-wrap:wrap">${ac}</div></div>`;
+  }).join(""):'<p class="meta">Nada para rever.</p>';
+}
+async function modAct(id,a){
+  if(a==="ocultar"&&!confirm("Ocultar esta avaliação? Deixa de aparecer e de contar para a média."))return;
+  const {error}=await sb.rpc("moderar_avaliacao",{p_id:id,p_acao:a});
+  if(error){toast("Não foi possível guardar.");return;}
+  await loadMod();await loadList();drawMod();toast(a==="ocultar"?"Avaliação ocultada.":"Feito.");
+}
+$("modlist").addEventListener("click",e=>{const b=e.target.closest("button[data-m]");if(b)modAct(b.dataset.m,b.dataset.a);});
+$("avPick").addEventListener("click",e=>{const b=e.target.closest("button[data-s]");if(!b)return;AV_E=Number(b.dataset.s);drawPick();});
+// ---- histórico: o botão "voltar" (Android) e o gesto de voltar (iOS) navegam entre ecrãs
+const TRANS=["login","newpass","role","ob"];
+function navSync(v,prev){
+  if(POP)return;
+  try{
+    const st=history.state;
+    if(prev==="boot"||!(st&&st.aq))history.replaceState({aq:1,v},"");
+    else if(st.v!==v){
+      if(v==="home"&&TRANS.includes(prev))history.replaceState({aq:1,v},"");
+      else history.pushState({aq:1,v},"");
+    }
+  }catch(e){}
+}
+async function popTo(v){
+  document.querySelectorAll("dialog[open]").forEach(d=>d.close());
+  const authed=!!(SESSION||S.user),mine=S.list.some(p=>p.mine);
+  if(TRANS.includes(v)&&(authed||v==="newpass"||v!=="login")){history.back();return;}
+  const home=()=>{go("home");render();try{history.replaceState({aq:1,v:"home"},"");}catch(e){}};
+  POP=true;
+  try{
+    if(v==="login")openLogin(LM);
+    else if(v==="join"){if(DEMO||authed)go("join");else home();}
+    else if(v==="legal"){if($("legalbody").innerHTML)go("legal");else home();}
+    else if(v==="cat"){if(mine){go("cat");drawCat();}else home();}
+    else if(v==="crm"){if(mine)await openCrm();else home();}
+    else if(v==="meus"){if(authed)await openMeus();else home();}
+    else if(v==="mod"){if(IS_ADMIN)await openMod();else home();}
+    else if(v==="forn"){if(S.list.some(x=>x.id===FORN_ID)){go("forn");drawForn();}else home();}
+    else{go("home");render();}
+  }finally{POP=false;}
+}
+addEventListener("popstate",e=>{const v=e.state&&e.state.aq&&e.state.v;if(v)popTo(v);});
+// ---- pedidos de orçamento (serviços)
+let ORC=[],ORC_ID="",ORC_B=[],RESP_ID="",ORC_URL={};
+const ORC_EST_C={novo:"Enviado, a aguardar resposta",respondido:"Respondido",aceite:"Aceite",recusado:"Recusado",declinado:"O fornecedor não pode atender",cancelado:"Cancelado"};
+const ORC_EST_F={novo:"Novo",respondido:"Respondido",aceite:"Aceite pelo cliente",recusado:"Recusado pelo cliente",declinado:"Declinado",cancelado:"Cancelado pelo cliente"};
+const ORC_K={novo:"",respondido:"",aceite:"ok",recusado:"out",declinado:"out",cancelado:"out"};
+const lsOrc=()=>{try{return JSON.parse(localStorage.getItem("aq_orc")||"[]")||[];}catch(e){return [];}};
+const saveOrcLS=()=>{try{localStorage.setItem("aq_orc",JSON.stringify(ORC));}catch(e){}};
+const hojeISO=()=>new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
+const dtP=d=>new Date(d).toLocaleDateString("pt-PT");
+const fmtD=d=>new Date(d+"T12:00:00").toLocaleDateString("pt-PT");
+async function loadOrc(){
+  if(DEMO){ORC=lsOrc();return;}
+  if(!SESSION){ORC=[];return;}
+  const {data}=await sb.from("orcamentos").select("*").order("created_at",{ascending:false});
+  ORC=(data||[]).map(r=>({id:r.id,fid:r.fornecedor_id,cid:r.cliente_id,nome:r.cliente_nome,tel:r.cliente_tel,desc:r.descricao,local:r.local||"",data:r.data_pretendida||"",urg:!!r.urgente,fotos:r.fotos||[],estado:r.estado,valor:r.resposta_valor==null?null:Number(r.resposta_valor),msg:r.resposta_msg||"",criado:r.created_at}));
+}
+const myOrc=()=>{const ids=new Set(S.list.filter(p=>p.mine).map(p=>p.id));return ORC.filter(o=>ids.has(o.fid));};
+function orcNovos(){return myOrc().filter(o=>o.estado==="novo").length;}
+async function uploadOrcFoto(b){
+  if(DEMO)return toData(b);
+  const path=SESSION.user.id+"/"+Date.now()+"-"+Math.random().toString(36).slice(2,8)+".jpg";
+  const {error}=await sb.storage.from("orcamentos").upload(path,b,{contentType:"image/jpeg",cacheControl:"3600"});
+  if(error){const er=new Error("enviar");er.reason="Não foi possível enviar a foto: "+(error.message||error)+(/bucket|policy|row-level|not found/i.test(error.message||"")?". Confirme que correu o schema-orcamentos.sql no Supabase.":"");throw er;}
+  return path;
+}
+async function dropOrcFoto(p){if(!DEMO&&p&&!p.startsWith("data:"))try{await sb.storage.from("orcamentos").remove([p]);}catch(e){}}
+async function orcSign(root){
+  if(DEMO)return;
+  const els=[...root.querySelectorAll("img[data-op]")].filter(i=>!i.getAttribute("src"));if(!els.length)return;
+  const need=[...new Set(els.map(i=>i.dataset.op))].filter(p=>!ORC_URL[p]);
+  if(need.length){try{const {data}=await sb.storage.from("orcamentos").createSignedUrls(need,3600);(data||[]).forEach(x=>{if(x.signedUrl)ORC_URL[x.path]=x.signedUrl;});}catch(e){}}
+  els.forEach(i=>{const u=ORC_URL[i.dataset.op];if(u){i.src=u;const a=i.closest("a");if(a)a.href=u;}});
+}
+function orcFotos(o){
+  if(!o.fotos.length)return"";
+  return `<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">${o.fotos.map(p=>{const d=p.startsWith("data:");return `<a target="_blank" rel="noopener"${d?` href="${esc(p)}"`:""}><img class="pimg" data-op="${esc(p)}" alt="Foto do pedido"${d?` src="${esc(p)}"`:""}></a>`;}).join("")}</div>`;
+}
+const orcResp=o=>(o.valor!=null||o.msg)?`<div class="meta">💬 ${o.valor!=null?esc(eur(o.valor)):""}${o.valor!=null&&o.msg?" · ":""}${esc(o.msg)}</div>`:"";
+function openOrc(id){
+  const p=S.list.find(x=>x.id===id);if(!p)return;
+  if(!DEMO&&!SESSION){openLogin("signup","cliente");return;}
+  ORC_ID=id;ORC_B=[];
+  $("orcTitulo").textContent="Pedir orçamento a "+p.nome;
+  ["orcDesc","orcLocal","orcData","orcTel"].forEach(i=>$(i).value="");$("orcUrg").checked=false;$("orcFotos").value="";$("orcPv").innerHTML="";$("orcErr").textContent="";
+  $("orcData").min=hojeISO();$("orcCli").value=S.user?S.user.nome:"";$("orcBtn").disabled=false;
+  $("dOrc").showModal();
+}
+$("orcFotos").addEventListener("change",async e=>{
+  ORC_B=[];$("orcPv").innerHTML="";const er=$("orcErr");er.textContent="";
+  const fs=[...e.target.files];if(fs.length>3)er.textContent="Só as 3 primeiras fotografias foram usadas.";
+  for(const f of fs.slice(0,3)){
+    try{const b=await prepPhoto(f);ORC_B.push(b);const im=document.createElement("img");im.className="pimg";im.alt="Pré-visualização";im.src=URL.createObjectURL(b);$("orcPv").appendChild(im);}
+    catch(x){er.textContent=(x&&x.reason)||"Não foi possível ler uma das imagens.";}
+  }
+});
+function orcErr(m){
+  m=m||"";
+  if(/limite/i.test(m))return"Já enviou muitos pedidos hoje. Tente amanhã.";
+  if(/pr[óo]prio/i.test(m))return"Não pode pedir orçamento ao seu próprio perfil.";
+  if(/indispon/i.test(m))return"Este fornecedor já não está disponível.";
+  if(/data/i.test(m))return"A data pretendida não é válida.";
+  return"Não foi possível enviar o pedido. Tente outra vez.";
+}
+async function sendOrc(){
+  const e=$("orcErr");e.textContent="";
+  const p=S.list.find(x=>x.id===ORC_ID);if(!p)return;
+  const desc=$("orcDesc").value.trim(),local=$("orcLocal").value.trim(),data=$("orcData").value,urg=$("orcUrg").checked,nome=$("orcCli").value.trim(),tel=$("orcTel").value.replace(/\D/g,"").replace(/^351/,"");
+  if(desc.length<10){e.textContent="Descreva o que precisa (mínimo 10 caracteres).";return;}
+  if(nome.length<2){e.textContent="Indique o seu nome.";return;}
+  if(tel.length!==9){e.textContent="O telemóvel deve ter 9 dígitos.";return;}
+  if(data&&data<hojeISO()){e.textContent="A data pretendida já passou.";return;}
+  if(!DEMO&&!SESSION){$("dOrc").close();openLogin("signup","cliente");return;}
+  const btn=$("orcBtn");btn.disabled=true;
+  const fotos=[];
+  try{for(const b of ORC_B)fotos.push(await uploadOrcFoto(b));}
+  catch(x){await Promise.all(fotos.map(dropOrcFoto));e.textContent=(x&&x.reason)||"Não foi possível enviar as fotografias.";btn.disabled=false;return;}
+  if(DEMO){ORC=lsOrc();ORC.unshift({id:"q"+Date.now(),fid:p.id,cid:null,nome,tel,desc,local,data,urg,fotos,estado:"novo",valor:null,msg:"",criado:new Date().toISOString()});saveOrcLS();}
+  else{
+    const {error}=await sb.rpc("pedir_orcamento",{p_fornecedor:p.id,p_nome:nome,p_tel:tel,p_desc:desc,p_local:local||null,p_data:data||null,p_urgente:urg,p_fotos:fotos});
+    if(error){await Promise.all(fotos.map(dropOrcFoto));e.textContent=orcErr(error.message);btn.disabled=false;return;}
+  }
+  btn.disabled=false;$("dOrc").close();toast("Pedido enviado a "+p.nome+". Acompanhe em Os meus pedidos.");
+}
+// fornecedor
+function orcSup(){
+  const L=myOrc(),multi=S.list.filter(p=>p.mine).length>1;
+  if(!L.length)return'<p class="meta">Ainda não recebeu pedidos de orçamento. Só os perfis de serviços os recebem.</p>';
+  return L.map(o=>{
+    const f=S.list.find(x=>x.id===o.fid);
+    const ac=(o.estado==="novo"||o.estado==="respondido"?`<button class="btn primary" data-oz="resp" data-oid="${esc(o.id)}">${o.estado==="novo"?"Responder":"Alterar resposta"}</button>`:"")+(o.estado==="novo"?`<button class="btn" data-oz="decl" data-oid="${esc(o.id)}">Declinar</button>`:"");
+    return `<div class="prow" style="align-items:flex-start"><div style="flex:1;min-width:min(200px,100%)"><strong>${esc(o.nome)}</strong>${o.urg?' <span class="mine">Urgente</span>':""} <span class="meta">· ${ORC_EST_F[o.estado]} · ${dtP(o.criado)}</span>${multi&&f?`<div class="meta">Para: ${esc(f.nome)}</div>`:""}<div class="meta"><a href="tel:+351${esc(o.tel)}">${esc(o.tel)}</a>${o.local?" · 📍 "+esc(o.local):""}${o.data?" · 📅 "+esc(fmtD(o.data)):""}</div><div>${esc(o.desc)}</div>${orcFotos(o)}${orcResp(o)}</div><div class="stk" style="flex-wrap:wrap">${ac}<a class="btn" target="_blank" rel="noopener" href="https://wa.me/351${esc(o.tel)}">WhatsApp</a></div></div>`;
+  }).join("");
+}
+function openResp(id){
+  const o=ORC.find(x=>x.id===id);if(!o)return;
+  RESP_ID=id;$("respValor").value=o.valor==null?"":o.valor;$("respMsg").value=o.msg||"";$("respErr").textContent="";$("dResp").showModal();
+}
+async function sendResp(){
+  const e=$("respErr");e.textContent="";
+  const o=ORC.find(x=>x.id===RESP_ID);if(!o)return;
+  const vs=$("respValor").value,valor=vs===""?null:Math.max(0,Math.round(Number(vs)*100)/100),msg=$("respMsg").value.trim().slice(0,300);
+  if(valor==null&&msg.length<3){e.textContent="Indique um valor ou escreva uma mensagem.";return;}
+  if(DEMO){ORC=lsOrc();const x=ORC.find(y=>y.id===RESP_ID);if(x){x.estado="respondido";x.valor=valor;x.msg=msg;}saveOrcLS();}
+  else{const {error}=await sb.rpc("responder_orcamento",{p_id:RESP_ID,p_valor:valor,p_msg:msg||null,p_declinar:false});if(error){e.textContent="Não foi possível enviar a resposta. Tente outra vez.";return;}await loadOrc();}
+  $("dResp").close();drawCrm();toast("Resposta enviada ao cliente.");
+}
+async function declOrc(id){
+  if(!confirm("Declinar este pedido? O cliente vê que não pode atender."))return;
+  if(DEMO){ORC=lsOrc();const x=ORC.find(y=>y.id===id);if(x)x.estado="declinado";saveOrcLS();}
+  else{const {error}=await sb.rpc("responder_orcamento",{p_id:id,p_valor:null,p_msg:null,p_declinar:true});if(error){toast("Não foi possível declinar.");return;}await loadOrc();}
+  drawCrm();
+}
+$("crmbody").addEventListener("click",e=>{const b=e.target.closest("button[data-oz]");if(!b)return;if(b.dataset.oz==="resp")openResp(b.dataset.oid);else if(b.dataset.oz==="decl")declOrc(b.dataset.oid);});
+// cliente
+function drawMeusOrc(){
+  const uid=SESSION&&SESSION.user.id,L=ORC.filter(o=>DEMO||o.cid===uid),b=$("meusorc");
+  if(!L.length){b.innerHTML="";return;}
+  b.innerHTML='<h3 style="margin:0 0 4px">Os meus pedidos de orçamento</h3>'+L.map(o=>{
+    const f=S.list.find(x=>x.id===o.fid),bt=(a,t,c)=>`<button class="btn ${c||""}" data-oc="${a}" data-oid="${esc(o.id)}">${t}</button>`;
+    const ac=(o.estado==="respondido"?bt("aceitar","Aceitar","primary")+bt("recusar","Recusar"):"")+((o.estado==="novo"||o.estado==="respondido")?bt("cancelar","Cancelar"):"")+(f?`<button class="btn" data-contact="${esc(f.id)}">Contactar</button>`:"");
+    return `<div class="prow" style="align-items:flex-start"><div style="flex:1;min-width:min(200px,100%)"><strong>${esc(f?f.nome:"Fornecedor")}</strong> <span class="meta">· ${dtP(o.criado)}</span>${o.urg?' <span class="mine">Urgente</span>':""}<div>${esc(o.desc)}</div>${o.local||o.data?`<div class="meta">${o.local?"📍 "+esc(o.local):""}${o.local&&o.data?" · ":""}${o.data?"📅 "+esc(fmtD(o.data)):""}</div>`:""}${orcFotos(o)}${orcResp(o)}<span class="${ORC_K[o.estado]}">${ORC_EST_C[o.estado]}</span></div><div class="stk" style="flex-wrap:wrap">${ac}</div></div>`;
+  }).join("");
+  orcSign(b);
+}
+async function decOrc(id,a){
+  if((a==="cancelar"||a==="recusar")&&!confirm(a==="cancelar"?"Cancelar este pedido?":"Recusar esta proposta?"))return;
+  if(DEMO){ORC=lsOrc();const x=ORC.find(y=>y.id===id);if(x)x.estado=a==="aceitar"?"aceite":a==="recusar"?"recusado":"cancelado";saveOrcLS();}
+  else{const {error}=await sb.rpc("decidir_orcamento",{p_id:id,p_acao:a});if(error){toast("Não foi possível guardar. Atualize e tente outra vez.");await loadOrc();drawMeus();return;}await loadOrc();}
+  drawMeus();
+}
+$("meusorc").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;if(b.dataset.oc)decOrc(b.dataset.oid,b.dataset.oc);else if(b.dataset.contact)openCont(b.dataset.contact);});
+// ---- perfil do fornecedor, link direto, partilha e QR code
+const fornUrl=id=>location.origin+location.pathname+"?f="+encodeURIComponent(id);
+function bindCards(root){
+  root.querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>openCont(b.dataset.id));
+  root.querySelectorAll("[data-prod]").forEach(b=>b.onclick=()=>openProd(b.dataset.prod));
+  root.querySelectorAll("[data-rev]").forEach(b=>b.onclick=()=>openRev(b.dataset.rev));
+  root.querySelectorAll("[data-orc]").forEach(b=>b.onclick=()=>openOrc(b.dataset.orc));
+  root.querySelectorAll("[data-forn]").forEach(b=>b.onclick=()=>openForn(b.dataset.forn));
+  root.querySelectorAll("[data-share]").forEach(b=>b.onclick=()=>shareProv(b.dataset.share));
+}
+function openForn(id){FORN_ID=id;go("forn");drawForn();}
+function drawForn(){
+  const p=S.list.find(x=>x.id===FORN_ID);
+  if(!p){go("home");render();return;}
+  const url=fornUrl(p.id);
+  p.dist=(MYPOS&&p.lat!=null)?km(MYPOS.lat,MYPOS.lng,p.lat,p.lng):null;
+  $("fornbody").innerHTML='<div class="grid" style="grid-template-columns:1fr;padding-bottom:0">'+card(p)+'</div>';
+  bindCards($("fornbody"));
+  $("fornUrl").value=url;
+  $("fornWa").href="https://wa.me/?text="+encodeURIComponent("Veja "+p.nome+" na Aqui Perto: "+url);
+  drawQR(url,p);
+}
+function drawQR(url,p){
+  const box=$("fornQR"),dl=$("fornQRdl");box.innerHTML="";QR_SVG="";dl.classList.add("hide");
+  if(typeof qrcode!=="function"){box.innerHTML='<p class="meta">Não foi possível gerar o QR code. Verifique a ligação à internet.</p>';return;}
+  try{
+    const q=qrcode(0,"M");q.addData(url);q.make();
+    const n=q.getModuleCount(),m=4;let d="";
+    for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(q.isDark(r,c))d+="M"+(c+m)+","+(r+m)+"h1v1h-1z";
+    QR_SVG='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+(n+2*m)+" "+(n+2*m)+'" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="#fff"/><path d="'+d+'" fill="#000"/></svg>';
+    box.innerHTML='<div role="img" aria-label="QR code do perfil de '+esc(p.nome)+'">'+QR_SVG+'</div>';
+    dl.classList.remove("hide");
+  }catch(e){box.innerHTML='<p class="meta">Não foi possível gerar o QR code.</p>';}
+}
+function dlQR(){
+  const p=S.list.find(x=>x.id===FORN_ID);if(!p||!QR_SVG)return;
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([QR_SVG],{type:"image/svg+xml"}));
+  a.download="qr-"+(norm(p.nome).replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"perfil")+".svg";
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+async function copyLink(url){
+  try{await navigator.clipboard.writeText(url);toast("Link copiado.");return;}catch(e){}
+  try{const t=document.createElement("textarea");t.value=url;t.style.cssText="position:fixed;opacity:0";document.body.appendChild(t);t.select();document.execCommand("copy");t.remove();toast("Link copiado.");}
+  catch(e){toast("Não foi possível copiar o link.");}
+}
+async function shareLink(title,text,url){
+  if(navigator.share){try{await navigator.share({title,text,url});return;}catch(e){if(e&&e.name==="AbortError")return;}}
+  copyLink(url);
+}
+function shareProv(id){const p=S.list.find(x=>x.id===id);if(p)shareLink(p.nome,"Veja "+p.nome+" na Aqui Perto",fornUrl(id));}
+function shareApp(){shareLink("Aqui Perto","Serviços e produtores locais perto de si",location.origin+location.pathname);}
+$("crmbody").addEventListener("click",e=>{const b=e.target.closest("button[data-forn]");if(b)openForn(b.dataset.forn);});
 $("pdList").addEventListener("input",calcOrd);
 $("fidopts").addEventListener("click",e=>{const b=e.target.closest("button[data-rw]");if(!b||b.disabled)return;RW=RW===b.dataset.rw?"":b.dataset.rw;drawFid();calcOrd();});
 $("pfoto").addEventListener("change",async e=>{
@@ -1286,7 +1760,7 @@ $("pfoto").addEventListener("change",async e=>{
       SESSION=sess;
       if(ev==="PASSWORD_RECOVERY"){go("newpass");return;}
       if(VIEW==="newpass")return;
-      if(ev==="SIGNED_OUT"){S.user=null;applyUser();await loadList();render();go("login");return;}
+      if(ev==="SIGNED_OUT"){S.user=null;IS_ADMIN=false;MOD=[];applyUser();await loadList();render();go("login");return;}
       if(sess&&(VIEW==="login"||VIEW==="boot"))await afterAuth();else{await loadList();render();}
     });
   }
@@ -1303,8 +1777,13 @@ $("pfoto").addEventListener("change",async e=>{
     $("lerr").textContent="Não foi possível entrar com o Google. Tente outra vez.";
     return;
   }
+  const DL=(()=>{try{return new URLSearchParams(location.search).get("f")||"";}catch(e){return "";}})();
   if(SESSION)await afterAuth();
-  else{await loadList();render();if(S.user)go("home");else openLogin("login");}
+  else{await loadList();render();if(S.user||DL)go("home");else openLogin("login");}
+  if(DL){
+    try{history.replaceState(history.state,"",location.pathname+location.hash);}catch(x){}
+    if(VIEW==="home"){if(S.list.some(x=>x.id===DL))openForn(DL);else toast("Este perfil já não está disponível.");}
+  }
   if(SESSION&&/[?&]crm=1/.test(location.search)){try{history.replaceState(null,"",location.pathname);}catch(x){}openCrm();}
 })();
 if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
