@@ -278,6 +278,7 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
   <div class="panel" style="max-width:760px">
     <h2>Os meus pedidos</h2>
     <div class="meta">Acompanhe o estado dos pedidos que fez aos fornecedores.</div>
+    <div id="meuspush" style="margin-top:12px"></div>
     <div id="meusmoedas" style="margin-top:12px"></div>
     <div id="meusorc" style="margin-top:12px"></div>
     <div id="meuslist" style="margin-top:12px"></div>
@@ -939,7 +940,7 @@ function drawMeusMoedas(){
   $("meusmoedas").innerHTML=rows.length?'<h3 style="margin:0 0 4px">As minhas moedas</h3>'+rows.map(x=>`<div class="prow"><strong>${esc(x.p.nome)}</strong><span class="meta">🪙 ${x.s} moeda${x.s===1?"":"s"}</span></div>`).join(""):"";
 }
 function drawMeus(){
-  drawMeusMoedas();drawMeusOrc();
+  drawMeusMoedas();drawMeusOrc();pushUI();
   const uid=SESSION&&SESSION.user.id,L=PED.filter(o=>DEMO||o.cliente_id===uid);
   $("meuslist").innerHTML=L.length?L.map(o=>{
     const f=S.list.find(x=>x.id===o.fid);
@@ -1433,15 +1434,18 @@ async function pushUI(){
     return;
   }
   const sub=await pushSub(),on=!!sub,den=Notification.permission==="denied";
-  if(VIEW!=="crm"||CT!=="painel")return;
+  const cli=VIEW==="meus";
+  if(!cli&&(VIEW!=="crm"||CT!=="painel"))return;
   if(on&&!PUSH_SYNC){PUSH_SYNC=true;try{await pushSend(sub);}catch(e){}}
-  let box=$("pushbox");
+  let box=$(cli?"meuspush":"pushbox");
   if(!box){box=document.createElement("div");box.id="pushbox";box.className="prow";$("crmbody").appendChild(box);}
-  const txt=den?"Bloqueados nas definições do navegador. Ative-os lá para receber avisos.":on?"Ativos neste aparelho. Receberá uma notificação a cada pedido novo.":"Receba uma notificação no telemóvel assim que chegar um pedido.";
-  box.innerHTML='<div style="flex:1;min-width:min(200px,100%)"><strong>🔔 Avisos de pedidos novos</strong><div class="meta">'+txt+'</div></div>'+
+  if(cli)box.className="prow";
+  const tit=cli?"🔔 Avisos dos meus pedidos":"🔔 Avisos de pedidos novos";
+  const txt=den?"Bloqueados nas definições do navegador. Ative-os lá para receber avisos.":on?(cli?"Ativos neste aparelho. Receberá um aviso quando um pedido for confirmado, concluído ou cancelado, ou quando um orçamento tiver resposta.":"Ativos neste aparelho. Receberá uma notificação a cada pedido novo."):(cli?"Receba um aviso no telemóvel quando o fornecedor responder ao seu pedido ou orçamento.":"Receba uma notificação no telemóvel assim que chegar um pedido.");
+  box.innerHTML='<div style="flex:1;min-width:min(200px,100%)"><strong>'+tit+'</strong><div class="meta">'+txt+'</div></div>'+
     (den?"":'<button class="btn'+(on?"":" primary")+'" onclick="'+(on?"pushOff()":"pushOn()")+'">'+(on?"Desativar":"Ativar avisos")+'</button>');
 }
-if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{if(e.data&&e.data.t==="crm"&&SESSION)openCrm();});
+if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{if(e.data&&SESSION){if(e.data.t==="crm")openCrm();else if(e.data.t==="meus")openMeus();}});
 // ---- avaliações (só pedidos concluídos, 1 por pedido)
 let AVS={},AV_ID="",AV_E=0;
 const lsAvs=()=>{try{return JSON.parse(localStorage.getItem("aq_avs")||"{}")||{};}catch(e){return {};}};
@@ -1791,6 +1795,7 @@ $("pfoto").addEventListener("change",async e=>{
     if(VIEW==="home"){if(S.list.some(x=>x.id===DL))openForn(DL);else toast("Este perfil já não está disponível.");}
   }
   if(SESSION&&/[?&]crm=1/.test(location.search)){try{history.replaceState(null,"",location.pathname);}catch(x){}openCrm();}
+  if(SESSION&&/[?&]meus=1/.test(location.search)){try{history.replaceState(null,"",location.pathname);}catch(x){}openMeus();}
 })();
 if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
 </script>
