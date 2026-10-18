@@ -90,6 +90,11 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
 .thumb{width:52px;height:52px;border-radius:10px;border:1px dashed var(--line);background:var(--chip);padding:0;overflow:hidden;cursor:pointer;display:grid;place-items:center;font-size:22px;color:var(--muted);flex:none}
 .thumb img{width:100%;height:100%;object-fit:cover;display:block}
 .pimg{width:56px;height:56px;border-radius:10px;object-fit:cover;flex:none}
+.gal{display:flex;gap:8px;flex-wrap:wrap}
+.gal img{width:84px;height:84px;object-fit:cover;border-radius:10px;border:1px solid var(--line);display:block}
+.gal .gi{display:flex;flex-direction:column;gap:4px;align-items:flex-start}.gal .gi .btn{padding:4px 10px;font-size:13px}
+.gthumb{padding:0;border:0;background:none;cursor:pointer;border-radius:10px}
+.av img{width:100%;height:100%;object-fit:cover;border-radius:12px;display:block}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
 .kpi{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--bg);font-size:14px;color:var(--muted)}
 .kpi b{display:block;font-size:26px;line-height:1.15;color:var(--ink)}
@@ -215,6 +220,19 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
     <textarea class="f" id="jdesc" rows="3" maxlength="240" placeholder="O que faz, há quanto tempo, horários…"></textarea>
     <label for="jtel">Telemóvel</label>
     <input class="f" id="jtel" type="tel" inputmode="tel" placeholder="9XX XXX XXX" autocomplete="tel">
+    <div id="jmedia" class="hide">
+      <label>Logótipo</label>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <div class="av" id="jlogoPv" aria-hidden="true"></div>
+        <input id="jlogo" type="file" accept="image/*" class="f" style="flex:1;min-width:0" aria-label="Escolher logótipo">
+        <button class="btn hide" type="button" id="jlogoDel">Remover</button>
+      </div>
+      <label>Galeria de fotos (até 6)</label>
+      <div class="gal" id="jgal"></div>
+      <input id="jgalAdd" type="file" accept="image/*" multiple class="f" style="margin-top:8px" aria-label="Adicionar fotos à galeria">
+      <div class="meta" id="jmediaMsg" role="status" style="margin-top:6px"></div>
+      <p class="note">As fotos e o logótipo guardam-se logo que as escolhe.</p>
+    </div>
     <div class="err" id="jerr" role="alert"></div>
     <button class="btn primary" id="jbtn" onclick="saveProv()">Publicar o meu perfil</button>
     <p class="note" id="demoNote">Nesta versão de demonstração os dados ficam guardados apenas neste navegador.</p>
@@ -441,6 +459,10 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
   <div class="err" id="orcErr" role="alert"></div>
   <div style="display:flex;gap:8px;margin-top:14px"><button class="btn" onclick="dOrc.close()">Cancelar</button><button class="btn primary" id="orcBtn" onclick="sendOrc()">Enviar pedido</button></div>
 </dialog>
+<dialog id="dGal" style="max-width:min(720px,calc(100% - 32px));padding:14px">
+  <img id="galImg" alt="" style="max-width:100%;max-height:75vh;display:block;margin:0 auto;border-radius:10px">
+  <p style="text-align:center;margin:12px 0 0"><button class="btn" type="button" onclick="document.getElementById('dGal').close()">Fechar</button></p>
+</dialog>
 <dialog id="dResp">
   <h2 style="margin:0 0 4px">Responder ao pedido</h2>
   <div class="meta">O cliente vê o valor e a mensagem em Os meus pedidos.</div>
@@ -522,7 +544,7 @@ async function loadList(){
   const {data,error}=await sb.from("fornecedores").select("*, produtos(*)").order("created_at",{ascending:false});
   if(error){toast("Não foi possível carregar os fornecedores.");return;}
   const uid=SESSION&&SESSION.user.id;
-  S.list=data.map(r=>({id:r.id,nome:r.nome,tipo:r.tipo,cat:r.cat,zonas:r.zonas,preco:r.preco||"",desc:r.descr||"",tel:r.tel,rating:0,n:0,lat:r.lat==null?null:Number(r.lat),lng:r.lng==null?null:Number(r.lng),entrega:!!r.entrega,raio:Number(r.entrega_raio)||0,taxa:Number(r.entrega_taxa)||0,min:Number(r.entrega_min)||0,gratis:Number(r.entrega_gratis)||0,fi:r.fidelidade&&r.fidelidade.ativo?r.fidelidade:null,prods:(r.produtos||[]).map(x=>({id:x.id,nome:x.nome,preco:Number(x.preco),un:x.un,stock:x.stock==null?null:Number(x.stock),ativo:x.ativo,foto:x.foto||""})),mine:r.user_id===uid}));
+  S.list=data.map(r=>({id:r.id,nome:r.nome,tipo:r.tipo,cat:r.cat,zonas:r.zonas,preco:r.preco||"",desc:r.descr||"",tel:r.tel,rating:0,n:0,lat:r.lat==null?null:Number(r.lat),lng:r.lng==null?null:Number(r.lng),entrega:!!r.entrega,raio:Number(r.entrega_raio)||0,taxa:Number(r.entrega_taxa)||0,min:Number(r.entrega_min)||0,gratis:Number(r.entrega_gratis)||0,fi:r.fidelidade&&r.fidelidade.ativo?r.fidelidade:null,logo:r.logo||"",galeria:r.galeria||[],prods:(r.produtos||[]).map(x=>({id:x.id,nome:x.nome,preco:Number(x.preco),un:x.un,stock:x.stock==null?null:Number(x.stock),ativo:x.ativo,foto:x.foto||""})),mine:r.user_id===uid}));
   try{const rt=await sb.from("fornecedor_rating").select("fornecedor_id,media,n");(rt.data||[]).forEach(x=>{const p=S.list.find(y=>y.id===x.fornecedor_id);if(p){p.rating=Number(x.media)||0;p.n=Number(x.n)||0;}});}catch(e){}
   applyUser();
 }
@@ -626,7 +648,7 @@ async function apagarConta(){
   try{const so=sb.storage.from("orcamentos"),lo=await so.list(SESSION.user.id,{limit:1000});if(lo.data&&lo.data.length)await so.remove(lo.data.map(f=>SESSION.user.id+"/"+f.name));}catch(x){}
   const {error}=await sb.rpc("apagar_conta");
   if(error){toast("Não foi possível apagar a conta. Tente outra vez ou contacte-nos.");return;}
-  AQ_KEYS.forEach(k=>{try{localStorage.removeItem(k);}catch(x){}});
+  pushFlag(false);AQ_KEYS.forEach(k=>{try{localStorage.removeItem(k);}catch(x){}});
   try{await sb.auth.signOut();}catch(x){}
   S.user=null;SESSION=null;applyUser();go("login");toast("Conta apagada.");
 }
@@ -637,7 +659,7 @@ async function logout(){
   applyUser();go("login");
 }
 async function afterAuth(){
-  await loadList();await checkAdmin();
+  await loadList();await checkAdmin();pushRestore();
   const {data}=await sb.from("perfis").select("*").eq("user_id",SESSION.user.id).maybeSingle();
   if(!data){
     const md=SESSION.user.user_metadata||{};let papel=md.papel||"";
@@ -1217,7 +1239,7 @@ function joinMode(){
 }
 function clearJoin(){
   ["jnome","jpreco","jdesc","jtel"].forEach(i=>$(i).value="");
-  S.jz=[];JPOS=null;$("jmsg").textContent="";$("jerr").textContent="";drawJZ();
+  S.jz=[];JPOS=null;$("jmsg").textContent="";$("jerr").textContent="";drawJZ();$("jmedia").classList.add("hide");
   $("jent").checked=false;$("jraio").value="";$("jtaxa").value="";$("jmin").value="";$("jgratis").value="";drawEnt();$("jfid").checked=false;$("jppe").value=1;["jfecusto","jfpnome","jfpvalor","jfpcusto"].forEach(i=>$(i).value="");drawFidForm();
 }
 function openEdit(id){
@@ -1229,6 +1251,7 @@ function openEdit(id){
   {const fi=p.fi;$("jfid").checked=!!(fi&&fi.ativo);$("jppe").value=fi?fi.ppe:1;$("jfecusto").value=fi&&fi.ent?fi.ent.custo:"";$("jfpnome").value=fi&&fi.prod?fi.prod.nome:"";$("jfpvalor").value=fi&&fi.prod?fi.prod.valor:"";$("jfpcusto").value=fi&&fi.prod?fi.prod.custo:"";drawFidForm();}
   JPOS=p.lat!=null?{lat:p.lat,lng:p.lng}:null;
   $("jmsg").textContent=JPOS?"Localização aproximada guardada.":"Sem localização guardada.";$("jerr").textContent="";
+  mediaMsg("");drawMedia();
 }
 function obP(t){OBP=t;["servico","produto"].forEach(x=>$("op-"+x).setAttribute("aria-pressed",x===t));}
 async function saveOb(){
@@ -1261,7 +1284,7 @@ function render(){
   document.querySelectorAll("[data-orc]").forEach(b=>b.onclick=()=>openOrc(b.dataset.orc));
   document.querySelectorAll("[data-forn]").forEach(b=>b.onclick=()=>openForn(b.dataset.forn));
   document.querySelectorAll("[data-share]").forEach(b=>b.onclick=()=>shareProv(b.dataset.share));
-  document.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{if(!confirm("Apagar este perfil?"))return;const {error}=await sb.from("fornecedores").delete().eq("id",b.dataset.del);if(error)toast("Não foi possível apagar.");else{await loadList();render();}});
+  document.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{if(!confirm("Apagar este perfil?"))return;const pd=S.list.find(x=>x.id===b.dataset.del);const {error}=await sb.from("fornecedores").delete().eq("id",b.dataset.del);if(error)toast("Não foi possível apagar.");else{if(pd){await dropPath(pd.logo);for(const x of pd.galeria||[])await dropPath(x);}await loadList();render();}});
 }
 function fiBadge(p){
   const f=myFid(p);if(!f)return"";
@@ -1278,7 +1301,7 @@ function entBadge(p){
 }
 function card(p){
   const col=COLORS[(p.nome.charCodeAt(0)+p.nome.length)%COLORS.length];
-  return `<article class="card"><div class="top"><div class="av" style="background:${col}" aria-hidden="true">${esc(p.nome[0])}</div>
+  return `<article class="card"><div class="top"><div class="av" style="background:${col}" aria-hidden="true">${p.logo?`<img src="${esc(imgUrl({foto:p.logo}))}" alt="" loading="lazy">`:esc(p.nome[0])}</div>
   <div><h3><button type="button" class="linkb" data-forn="${esc(p.id)}" style="font-weight:inherit;color:inherit">${esc(p.nome)}</button>${p.mine?'<span class="mine">O meu</span>':""}</h3><div class="meta">${esc(p.cat)} · ${esc(p.zonas.slice(0,3).join(", "))}${p.dist!=null?" · a "+(p.dist<10?p.dist.toFixed(1).replace(".",","):Math.round(p.dist))+" km":""}</div></div><button type="button" class="btn" style="margin-left:auto;padding:6px 10px;flex:none" data-share="${esc(p.id)}" aria-label="Partilhar ${esc(p.nome)}">🔗</button></div>
   <p>${esc(p.desc)}</p>${prodBtn(p)}${entBadge(p)}${fiBadge(p)}
   <div class="foot"><div><span class="price">${esc(p.preco||"Sob consulta")}</span><br>${p.n?`<button type="button" class="star linkb" data-rev="${esc(p.id)}" aria-label="Ver avaliações de ${esc(p.nome)}">★ ${p.rating.toFixed(1).replace(".",",")} <span class="meta">(${p.n})</span></button>`:"<span class='meta'>Novo na app</span>"}</div>
@@ -1353,6 +1376,87 @@ async function saveProv(){
   render();openCat(NEWID);toast("Perfil publicado. Agora adicione os seus produtos.");
 }
 
+// ---- logótipo e galeria do perfil (guardam-se logo ao escolher; bucket "produtos")
+const MEDIA_MAX=6;let MEDIA_BUSY=false;
+const curProv=()=>S.list.find(x=>x.id===EDIT_ID&&x.mine);
+const mediaMsg=t=>{$("jmediaMsg").textContent=t||"";};
+async function dropPath(x){if(!DEMO&&x&&!x.startsWith("data:"))try{await sb.storage.from("produtos").remove([x]);}catch(e){}}
+async function mediaSave(p,patch){
+  if(DEMO){Object.assign(p,patch);saveMine();return true;}
+  const {error}=await sb.from("fornecedores").update(patch).eq("id",p.id);
+  if(error)return false;
+  Object.assign(p,patch);return true;
+}
+function drawMedia(){
+  const p=curProv(),box=$("jmedia");
+  if(!p){box.classList.add("hide");return;}
+  box.classList.remove("hide");
+  const pv=$("jlogoPv");
+  pv.style.background=COLORS[(p.nome.charCodeAt(0)+p.nome.length)%COLORS.length];
+  pv.innerHTML=p.logo?`<img src="${esc(imgUrl({foto:p.logo}))}" alt="">`:esc(p.nome[0]);
+  $("jlogoDel").classList.toggle("hide",!p.logo);
+  const g=p.galeria||[];
+  $("jgal").innerHTML=g.map((x,i)=>`<div class="gi"><img src="${esc(imgUrl({foto:x}))}" alt="Foto ${i+1} do perfil" loading="lazy"><button type="button" class="btn" data-gdel="${i}" aria-label="Remover foto ${i+1}">Remover</button></div>`).join("");
+  $("jgalAdd").disabled=g.length>=MEDIA_MAX;
+}
+function galHtml(p){
+  const g=p.galeria||[];if(!g.length)return "";
+  return '<div class="gal" style="margin-top:12px">'+g.map((x,i)=>`<button type="button" class="gthumb" data-gimg="${i}" aria-label="Ver foto ${i+1} de ${esc(p.nome)}"><img src="${esc(imgUrl({foto:x}))}" alt="" loading="lazy"></button>`).join("")+"</div>";
+}
+$("jlogo").addEventListener("change",async e=>{
+  const p=curProv(),f=e.target.files[0];e.target.value="";
+  if(!p||!f||MEDIA_BUSY)return;
+  MEDIA_BUSY=true;mediaMsg("A enviar o logótipo…");
+  try{
+    let b;try{b=await compress(f,DEMO?160:320,0.85);}catch(x){const er=new Error("ler");er.reason="Não foi possível ler essa imagem.";throw er;}
+    const path=await uploadPhoto(b),old=p.logo;
+    if(await mediaSave(p,{logo:path})){if(old)await dropPath(old);mediaMsg("Logótipo atualizado.");}
+    else{await dropPath(path);mediaMsg("Não foi possível guardar o logótipo.");}
+  }catch(er){mediaMsg(er.reason||"Não foi possível enviar a imagem.");}
+  MEDIA_BUSY=false;drawMedia();
+});
+$("jlogoDel").addEventListener("click",async()=>{
+  const p=curProv();if(!p||!p.logo||MEDIA_BUSY)return;
+  if(!confirm("Remover o logótipo?"))return;
+  MEDIA_BUSY=true;const old=p.logo;
+  if(await mediaSave(p,{logo:null})){await dropPath(old);mediaMsg("Logótipo removido.");}
+  else mediaMsg("Não foi possível remover o logótipo.");
+  MEDIA_BUSY=false;drawMedia();
+});
+$("jgalAdd").addEventListener("change",async e=>{
+  const p=curProv(),fl=[...e.target.files];e.target.value="";
+  if(!p||!fl.length||MEDIA_BUSY)return;
+  MEDIA_BUSY=true;
+  const g=(p.galeria||[]).slice(),room=Math.max(0,MEDIA_MAX-g.length),use=fl.slice(0,room);
+  let n=0,err="";
+  try{
+    for(const f of use){
+      mediaMsg("A enviar foto "+(n+1)+" de "+use.length+"…");
+      g.push(await uploadPhoto(await prepPhoto(f)));n++;
+    }
+  }catch(er){err=er.reason||"Não foi possível enviar a foto.";}
+  if(n){
+    if(await mediaSave(p,{galeria:g}))mediaMsg(err||(n+(n===1?" foto adicionada.":" fotos adicionadas.")+(fl.length>use.length?" Limite de "+MEDIA_MAX+" fotos.":"")));
+    else{for(const x of g.slice(g.length-n))await dropPath(x);mediaMsg("Não foi possível guardar as fotos.");}
+  }else mediaMsg(err);
+  MEDIA_BUSY=false;drawMedia();
+});
+$("jgal").addEventListener("click",async e=>{
+  const b=e.target.closest("button[data-gdel]"),p=curProv();
+  if(!b||!p||MEDIA_BUSY)return;
+  if(!confirm("Remover esta foto?"))return;
+  MEDIA_BUSY=true;
+  const g=(p.galeria||[]).slice(),x=g.splice(Number(b.dataset.gdel),1)[0];
+  if(await mediaSave(p,{galeria:g})){await dropPath(x);mediaMsg("Foto removida.");}
+  else mediaMsg("Não foi possível remover a foto.");
+  MEDIA_BUSY=false;drawMedia();
+});
+$("fornbody").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-gimg]");if(!b)return;
+  const p=S.list.find(x=>x.id===FORN_ID),x=p&&(p.galeria||[])[Number(b.dataset.gimg)];if(!x)return;
+  $("galImg").src=imgUrl({foto:x});$("galImg").alt="Foto de "+p.nome;$("dGal").showModal();
+});
+
 fillZones($("zona"),"Todo o país");fillZones($("obzona"));obP("servico");load();applyUser();drawJZ();
 if(S.user)$("zona").value=S.user.zona;
 $("q").addEventListener("keydown",e=>{if(e.key==="Enter")render();});
@@ -1403,6 +1507,21 @@ async function pushSend(sub){
   const {error}=await sb.rpc("registar_push",{p_endpoint:j.endpoint,p_p256dh:j.keys.p256dh,p_auth:j.keys.auth});
   if(error)throw error;
 }
+// Preferência "avisos ativos" guardada por conta neste aparelho: ao sair a subscrição é cancelada
+// (para a pessoa seguinte não receber avisos alheios), mas volta a ligar-se quando a mesma conta entra.
+const pushKey=()=>SESSION?"aq_push_"+SESSION.user.id:"";
+function pushFlag(on){const k=pushKey();if(!k)return;try{if(on)localStorage.setItem(k,"1");else localStorage.removeItem(k);}catch(e){}}
+async function pushRestore(){
+  try{
+    const k=pushKey();
+    if(!k||!PUSH_OK()||Notification.permission!=="granted"||localStorage.getItem(k)!=="1")return;
+    const reg=await Promise.race([navigator.serviceWorker.ready,new Promise(r=>setTimeout(()=>r(null),5000))]);
+    if(!reg)return;
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlB64(VAPID_PUBLIC)});
+    await pushSend(sub);PUSH_SYNC=true;
+  }catch(e){}
+}
 async function pushOn(){
   try{
     const perm=await Notification.requestPermission();
@@ -1410,7 +1529,7 @@ async function pushOn(){
     const reg=await pushReg();if(!reg)throw new Error("sem service worker");
     let sub=await reg.pushManager.getSubscription();
     if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlB64(VAPID_PUBLIC)});
-    await pushSend(sub);PUSH_SYNC=true;
+    await pushSend(sub);PUSH_SYNC=true;pushFlag(true);
     toast("Avisos ativados neste aparelho.");
   }catch(e){toast("Não foi possível ativar os avisos.");}
   pushUI();
@@ -1421,7 +1540,7 @@ async function pushOff(quiet){
     if(sub){const ep=sub.endpoint;await sub.unsubscribe();if(SESSION)await sb.from("push_subs").delete().eq("endpoint",ep);}
   }catch(e){}
   PUSH_SYNC=false;
-  if(!quiet){toast("Avisos desativados.");pushUI();}
+  if(!quiet){pushFlag(false);toast("Avisos desativados.");pushUI();}
 }
 async function pushUI(){
   if(!PUSH_OK()){
@@ -1714,7 +1833,7 @@ function drawForn(){
   if(!p){go("home");render();return;}
   const url=fornUrl(p.id);
   p.dist=(MYPOS&&p.lat!=null)?km(MYPOS.lat,MYPOS.lng,p.lat,p.lng):null;
-  $("fornbody").innerHTML='<div class="grid" style="grid-template-columns:1fr;padding-bottom:0">'+card(p)+'</div>';
+  $("fornbody").innerHTML='<div class="grid" style="grid-template-columns:1fr;padding-bottom:0">'+card(p)+'</div>'+galHtml(p);
   bindCards($("fornbody"));
   $("fornUrl").value=url;
   $("fornWa").href="https://wa.me/?text="+encodeURIComponent("Veja "+p.nome+" na Aqui Perto: "+url);
