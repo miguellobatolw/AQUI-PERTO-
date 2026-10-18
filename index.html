@@ -58,6 +58,9 @@ h1{font-size:clamp(34px,8vw,60px);line-height:1.02;letter-spacing:-.03em;margin:
 .chip{flex:none;border:1px solid var(--line);background:var(--chip);border-radius:999px;padding:6px 14px;cursor:pointer;font-size:14px}
 .chip[aria-pressed="true"]{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
 .count{color:var(--muted);font-size:14px;margin:4px 0 12px}
+.locbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0 0}
+.locin{cursor:text;min-width:0;flex:1 1 160px;max-width:280px;font-size:14px}
+.locres{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 0}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(270px,100%),1fr));gap:14px;padding-bottom:40px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px}
 .top{display:flex;gap:12px;align-items:center}
@@ -100,6 +103,13 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
 .kpi b{display:block;font-size:26px;line-height:1.15;color:var(--ink)}
 .legal h3{margin:18px 0 4px;font-size:17px}.legal p,.legal li{font-size:15px;margin:4px 0}.legal ul{padding-left:20px;margin:4px 0}
 footer a{color:inherit;text-decoration:underline}
+#mapa{position:relative;z-index:0;isolation:isolate;height:62vh;min-height:320px;border:1px solid var(--line);border-radius:14px;margin-bottom:40px;background:var(--chip)}
+#mapa .pinm{background:none;border:0}
+#mapa .pm{display:block;width:22px;height:22px;border-radius:50%;background:var(--brand);border:3px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.45)}
+#mapa .pm.me{background:#2f5d9e}
+#mapa .leaflet-popup-content-wrapper,#mapa .leaflet-popup-tip{background:var(--surface);color:var(--ink)}
+#mapa .leaflet-popup-content{font:14px/1.4 "Bricolage Grotesque",system-ui,sans-serif;margin:12px 14px}
+.vt{display:flex;gap:8px;margin:0 0 4px}
 .hide{display:none!important}
 .chip:disabled{opacity:.45;cursor:not-allowed}
 .badge{display:inline-block;background:var(--chip);border-radius:6px;padding:2px 8px;font-size:13px;font-weight:600}
@@ -158,16 +168,26 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
       <select id="zona" aria-label="Zona"></select>
       <button class="btn accent" onclick="render()">Procurar</button>
     </div>
-    <p style="margin:10px 0 0"><button class="chip" onclick="gpsDo('gpsmsg',(z,pos)=>{MYPOS=pos;$('zona').value='';$('raio').classList.remove('hide');render();})">📍 Perto de mim</button> <select id="raio" class="chip hide" onchange="render()" aria-label="Distância máxima"><option value="">Qualquer distância</option><option value="5">até 5 km</option><option value="10">até 10 km</option><option value="25">até 25 km</option><option value="50">até 50 km</option></select> <span class="meta" id="gpsmsg" role="status"></span></p>
+    <div class="locbar">
+      <button class="chip" type="button" onclick="gpsDo('gpsmsg',(z,pos)=>{pos.zona=z;setPos(pos);})">📍 Perto de mim</button>
+      <input class="chip locin" id="loc" type="search" maxlength="60" placeholder="ou escreva a localidade" aria-label="Localidade" autocomplete="address-level2" onkeydown="if(event.key==='Enter'){event.preventDefault();locFind();}">
+      <button class="chip" type="button" onclick="locFind()">Procurar local</button>
+      <select id="raio" class="chip hide" onchange="render()" aria-label="Distância máxima"><option value="">Qualquer distância</option><option value="cobre">Quem atende a minha zona</option><option value="1">até 1 km</option><option value="2">até 2 km</option><option value="5">até 5 km</option><option value="10">até 10 km</option><option value="15">até 15 km</option><option value="25">até 25 km</option><option value="50">até 50 km</option><option value="100">até 100 km</option></select>
+      <button class="chip hide" id="locClr" type="button" onclick="clearPos()">✕ Limpar</button>
+    </div>
+    <div class="locres" id="locres"></div>
+    <p class="meta" style="margin:6px 0 0" id="gpsmsg" role="status"></p>
   </section>
   <div class="tabs" role="tablist">
     <button class="tab" role="tab" id="tab-servico" onclick="setTipo('servico')">Serviços</button>
     <button class="tab" role="tab" id="tab-produto" onclick="setTipo('produto')">Produtores locais</button>
   </div>
   <div class="chips" id="chips"></div>
-  <p style="margin:0 0 4px"><button class="chip" id="fent" aria-pressed="false" onclick="ENT_F=!ENT_F;render()">🚚 Só com entrega ao domicílio</button></p>
+  <p style="margin:0 0 4px"><button class="chip" id="fent" aria-pressed="false" onclick="ENT_F=!ENT_F;render()">🚚 Só com entrega ao domicílio</button> <button class="chip" id="ffav" type="button" aria-pressed="false" onclick="FAV_F=!FAV_F;render()">♥ Favoritos</button></p>
+  <div class="vt" role="group" aria-label="Modo de visualização"><button class="chip" id="vlist" type="button" aria-pressed="true" onclick="setMapa(false)">☰ Lista</button><button class="chip" id="vmap" type="button" aria-pressed="false" onclick="setMapa(true)">🗺️ Mapa</button></div>
   <div class="count" id="count"></div>
   <div class="grid" id="grid"></div>
+  <div id="mapa" class="hide" role="region" aria-label="Mapa de fornecedores"></div>
 </main>
 
 <main id="join" class="hide">
@@ -184,7 +204,11 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
     <label for="jcat">Categoria</label>
     <select class="f" id="jcat"></select>
     <label>Zonas onde atende (escolha uma ou mais)</label>
-    <p style="margin:0 0 8px"><button class="chip" type="button" onclick="gpsDo('jmsg',(z,pos)=>{if(!S.jz.includes(z))S.jz.push(z);drawJZ();JPOS={lat:Math.round(pos.lat*100)/100,lng:Math.round(pos.lng*100)/100};})">📍 Guardar a localização do meu negócio</button> <span class="meta" id="jmsg" role="status"></span><br><span class="note">Guardamos só uma localização aproximada (cerca de 1 km), nunca a morada exata. Os clientes veem a distância no seu perfil.</span></p>
+    <p style="margin:0 0 8px"><button class="chip" type="button" onclick="gpsDo('jmsg',(z,pos)=>{if(!S.jz.includes(z))S.jz.push(z);drawJZ();JPOS={lat:Math.round(pos.lat*100)/100,lng:Math.round(pos.lng*100)/100};JLOC=pos.cidade||'';$('jlocq').value=JLOC;})">📍 Guardar a localização do meu negócio</button> <span class="meta" id="jmsg" role="status"></span><br><span class="note">Guardamos só uma localização aproximada (cerca de 1 km) e o nome da localidade, nunca a morada exata. Os clientes veem a localidade e a distância no seu perfil.</span></p>
+    <div class="locbar" style="margin:0 0 8px"><input class="f" id="jlocq" maxlength="60" placeholder="Ou escreva a localidade (ex.: Amora)" aria-label="Localidade do negócio" style="flex:1 1 180px;min-width:0;width:auto" onkeydown="if(event.key==='Enter'){event.preventDefault();jLocFind();}"> <button class="chip" type="button" onclick="jLocFind()">Procurar local</button></div>
+    <div class="locres" id="jlocres"></div>
+    <div id="jraioswrap" class="hide"><label for="jraios">Atendo até (km a partir da localização do negócio)</label>
+    <input class="f" id="jraios" type="number" inputmode="numeric" min="1" max="200" placeholder="ex.: 20"></div>
     <div class="zones" id="jzonas"></div>
     <div id="jentwrap" class="hide">
       <label class="tg" style="margin-top:16px;font-size:16px;font-weight:600"><input type="checkbox" id="jent" onchange="drawEnt()"> Faço entregas ao domicílio</label>
@@ -299,6 +323,7 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
     <div id="meuspush" style="margin-top:12px"></div>
     <div id="meusmoedas" style="margin-top:12px"></div>
     <div id="meusorc" style="margin-top:12px"></div>
+    <div id="meusmarc" style="margin-top:12px"></div>
     <div id="meuslist" style="margin-top:12px"></div>
     <p style="margin-top:16px"><button class="btn" onclick="go('home');render()">Voltar à pesquisa</button></p>
   </div>
@@ -311,6 +336,7 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
       <button class="tab" id="ct-painel" onclick="crmTab('painel')">Painel</button>
       <button class="tab" id="ct-pedidos" onclick="crmTab('pedidos')">Pedidos</button>
       <button class="tab" id="ct-orcamentos" onclick="crmTab('orcamentos')">Orçamentos</button>
+      <button class="tab" id="ct-marcacoes" onclick="crmTab('marcacoes')">Marcações</button>
       <button class="tab" id="ct-clientes" onclick="crmTab('clientes')">Clientes</button>
       <button class="tab" id="ct-perfil" onclick="crmTab('perfil')">Perfil</button>
       <button class="tab" id="ct-relatorios" onclick="crmTab('relatorios')">Relatórios</button>
@@ -459,6 +485,30 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
   <div class="err" id="orcErr" role="alert"></div>
   <div style="display:flex;gap:8px;margin-top:14px"><button class="btn" onclick="dOrc.close()">Cancelar</button><button class="btn primary" id="orcBtn" onclick="sendOrc()">Enviar pedido</button></div>
 </dialog>
+<dialog id="dMarc">
+  <h2 id="marcTitulo" style="margin:0 0 4px"></h2>
+  <div class="meta">Escolha o dia e a hora. O fornecedor confirma ou propõe outra hora.</div>
+  <label for="marcData">Dia</label>
+  <input class="f" id="marcData" type="date">
+  <label for="marcHora">Hora</label>
+  <select class="f" id="marcHora"></select>
+  <label for="marcNota">Nota (opcional)</label>
+  <textarea class="f" id="marcNota" rows="3" maxlength="300" placeholder="Ex.: fuga na cozinha; morada…"></textarea>
+  <input class="f" id="marcCli" placeholder="O seu nome" maxlength="60" autocomplete="name" aria-label="O seu nome" style="margin-top:12px">
+  <input class="f" id="marcTel" type="tel" inputmode="tel" placeholder="Telemóvel (9 dígitos)" autocomplete="tel" aria-label="Telemóvel" style="margin-top:8px">
+  <div class="err" id="marcErr" role="alert"></div>
+  <div style="display:flex;gap:8px;margin-top:14px"><button class="btn" onclick="dMarc.close()">Cancelar</button><button class="btn primary" id="marcBtn" onclick="sendMarc()">Pedir marcação</button></div>
+</dialog>
+<dialog id="dProp">
+  <h2 style="margin:0 0 4px">Propor outra hora</h2>
+  <div class="meta">O cliente vê a proposta em Os meus pedidos e aceita ou cancela.</div>
+  <label for="propData">Dia</label>
+  <input class="f" id="propData" type="date">
+  <label for="propHora">Hora</label>
+  <select class="f" id="propHora"></select>
+  <div class="err" id="propErr" role="alert"></div>
+  <div style="display:flex;gap:8px;margin-top:14px"><button class="btn" onclick="dProp.close()">Cancelar</button><button class="btn primary" onclick="sendProp()">Enviar proposta</button></div>
+</dialog>
 <dialog id="dGal" style="max-width:min(720px,calc(100% - 32px));padding:14px">
   <img id="galImg" alt="" style="max-width:100%;max-height:75vh;display:block;margin:0 auto;border-radius:10px">
   <p style="text-align:center;margin:12px 0 0"><button class="btn" type="button" onclick="document.getElementById('dGal').close()">Fechar</button></p>
@@ -534,6 +584,7 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"
 const norm=s=>String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 let S={tipo:"servico",cat:"",jtipo:"servico",jz:[],user:null,list:SEED.slice()};
 
+const APP_VERSION="v19";
 const DEMO=!SUPABASE_URL||!SUPABASE_KEY;
 const REC_LINK=/type=recovery/.test(location.hash+location.search),REC_ERR=/otp_expired/.test(location.hash+location.search),OAUTH_ERR=!/otp_expired/.test(location.hash+location.search)&&/[#&?]error=/.test(location.hash+location.search);
 const sb=DEMO?null:supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -541,10 +592,15 @@ let SESSION=null;
 function load(){try{S.user=JSON.parse(localStorage.getItem("aq_user")||"null");}catch(e){}}
 async function loadList(){
   if(DEMO){let l=[];try{l=JSON.parse(localStorage.getItem("aq_mine")||"[]");}catch(e){}S.list=SEED.concat(l);S.list.forEach(p=>{if(!p.prods)p.prods=(PR[p.nome]||[]).map((a,i)=>({id:p.id+"-"+i,nome:a[0],preco:a[1],un:a[2],stock:a[3],ativo:true}));if(p.lat===undefined){const g=GEO.find(x=>x[0]===p.zonas[0]);p.lat=g?g[1]:null;p.lng=g?g[2]:null;}if(p.entrega===undefined){const e=ENT[p.nome];p.entrega=!!e;p.raio=e?e[0]:0;p.taxa=e?e[1]:0;p.min=e?e[2]:0;p.gratis=e?e[3]:0;}if(p.fi===undefined)p.fi=FID[p.nome]||null;});demoAvs();applyUser();return;}
-  const {data,error}=await sb.from("fornecedores").select("*, produtos(*)").order("created_at",{ascending:false});
+  // O telemóvel (coluna tel) NÃO é pedido aqui: só chega a quem tem sessão, via sb.rpc("obter_contacto")
+  const FC="id,user_id,created_at,nome,tipo,cat,zonas,preco,descr,lat,lng,entrega,entrega_raio,entrega_taxa,entrega_min,entrega_gratis,fidelidade,logo,galeria";
+  let q0=await sb.from("fornecedores").select(FC+",localidade,raio_servico,produtos(*)").order("created_at",{ascending:false});
+  if(q0.error&&colErr(q0.error))q0=await sb.from("fornecedores").select(FC+",produtos(*)").order("created_at",{ascending:false});
+  const {data,error}=q0;
   if(error){toast("Não foi possível carregar os fornecedores.");return;}
   const uid=SESSION&&SESSION.user.id;
-  S.list=data.map(r=>({id:r.id,nome:r.nome,tipo:r.tipo,cat:r.cat,zonas:r.zonas,preco:r.preco||"",desc:r.descr||"",tel:r.tel,rating:0,n:0,lat:r.lat==null?null:Number(r.lat),lng:r.lng==null?null:Number(r.lng),entrega:!!r.entrega,raio:Number(r.entrega_raio)||0,taxa:Number(r.entrega_taxa)||0,min:Number(r.entrega_min)||0,gratis:Number(r.entrega_gratis)||0,fi:r.fidelidade&&r.fidelidade.ativo?r.fidelidade:null,logo:r.logo||"",galeria:r.galeria||[],prods:(r.produtos||[]).map(x=>({id:x.id,nome:x.nome,preco:Number(x.preco),un:x.un,stock:x.stock==null?null:Number(x.stock),ativo:x.ativo,foto:x.foto||""})),mine:r.user_id===uid}));
+  S.list=data.map(r=>({id:r.id,nome:r.nome,tipo:r.tipo,cat:r.cat,zonas:r.zonas,preco:r.preco||"",desc:r.descr||"",tel:"",rating:0,n:0,lat:r.lat==null?null:Number(r.lat),lng:r.lng==null?null:Number(r.lng),entrega:!!r.entrega,raio:Number(r.entrega_raio)||0,taxa:Number(r.entrega_taxa)||0,min:Number(r.entrega_min)||0,gratis:Number(r.entrega_gratis)||0,fi:r.fidelidade&&r.fidelidade.ativo?r.fidelidade:null,logo:r.logo||"",galeria:r.galeria||[],localidade:r.localidade||"",raioS:Number(r.raio_servico)||0,prods:(r.produtos||[]).map(x=>({id:x.id,nome:x.nome,preco:Number(x.preco),un:x.un,stock:x.stock==null?null:Number(x.stock),ativo:x.ativo,foto:x.foto||""})),mine:r.user_id===uid}));
+  await loadMyTels();
   try{const rt=await sb.from("fornecedor_rating").select("fornecedor_id,media,n");(rt.data||[]).forEach(x=>{const p=S.list.find(y=>y.id===x.fornecedor_id);if(p){p.rating=Number(x.media)||0;p.n=Number(x.n)||0;}});}catch(e){}
   applyUser();
 }
@@ -553,7 +609,7 @@ function saveMine(){try{localStorage.setItem("aq_mine",JSON.stringify(S.list.fil
 function toast(t){const e=$("toast");e.textContent=t;e.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display="none",2600);}
 
 function fillZones(sel,first){sel.innerHTML=(first?`<option value="">${first}</option>`:"")+Z.map(z=>`<option>${z}</option>`).join("");}
-let VIEW="boot",LM="login",LR="cliente",OBP="servico",NEWID="",CAT_ID="",PHOTO_PID="",NEWBLOB=null,ORD_F="",CT="painel",PF="novo",RP="tudo",PED=[],NOTAS={},SEG={},MYPOS=null,JPOS=null,EDIT_ID="",ENT_F=false,OM=false,ENT_D=null,RW="",MOEDAS={},MOV={},IS_ADMIN=false,MOD=[],DEN_ID="",POP=false,FORN_ID="",QR_SVG="";
+let VIEW="boot",LM="login",LR="cliente",OBP="servico",NEWID="",CAT_ID="",PHOTO_PID="",NEWBLOB=null,ORD_F="",CT="painel",PF="novo",RP="tudo",PED=[],NOTAS={},SEG={},MYPOS=null,JPOS=null,JLOC="",LOCRES=[],JLOCRES=[],SQL_MISS=false,EDIT_ID="",ENT_F=false,OM=false,ENT_D=null,RW="",MOEDAS={},MOV={},IS_ADMIN=false,MOD=[],DEN_ID="",POP=false,FORN_ID="",QR_SVG="";
 function go(v){const prev=VIEW;VIEW=v;if(v!=="join"&&EDIT_ID){EDIT_ID="";clearJoin();}["home","join","login","ob","cat","crm","meus","newpass","role","mod","forn","legal"].forEach(x=>$(x).classList.toggle("hide",x!==v));if(v==="join"){joinMode();jTipo(S.jtipo);}scrollTo(0,0);navSync(v,prev);}
 function goProv(){if(EDIT_ID){EDIT_ID="";clearJoin();}if(DEMO||SESSION||S.user)go("join");else openLogin("signup","fornecedor");}
 function setLR(r){LR=r;drawLogin();}
@@ -610,7 +666,7 @@ let LEGAL_BACK="home";
 const LEGAL_TXT={
 priv:{t:"Política de privacidade",h:()=>`<p class="meta">Versão de ${esc(LEGAL.data)}.</p>
 <h3>1. Quem é o responsável</h3><p>${esc(LEGAL.resp)}, contacto: ${esc(LEGAL.email)}.</p>
-<h3>2. Que dados tratamos</h3><ul><li>Conta: e-mail, nome, zona, telemóvel (opcional) e se é cliente ou fornecedor.</li><li>Fornecedores: nome do negócio, categoria, zonas, preços, descrição, telemóvel, fotografias, entregas, fidelidade e localização aproximada (arredondada a cerca de 1 km, nunca a morada exata).</li><li>Pedidos: produtos, valores, nota, nome e telemóvel do cliente e, nas entregas, a morada indicada.</li><li>Pedidos de orçamento: descrição, localidade, data pretendida, nome, telemóvel e até 3 fotografias, guardadas em armazenamento privado.</li><li>Notas privadas e datas de seguimento que o fornecedor regista sobre clientes, e moedas de fidelidade.</li><li>Dados técnicos do aparelho para os avisos de novos pedidos, se os ativar.</li></ul>
+<h3>2. Que dados tratamos</h3><ul><li>Conta: e-mail, nome, zona, telemóvel (opcional) e se é cliente ou fornecedor.</li><li>Fornecedores: nome do negócio, categoria, zonas, preços, descrição, telemóvel, fotografias, entregas, fidelidade e localização aproximada (arredondada a cerca de 1 km, nunca a morada exata), nome da localidade e raio de atendimento. A posição que um cliente usa para pesquisar fica só guardada no seu aparelho; para a converter em localidade enviamos coordenadas arredondadas a cerca de 1 km ao serviço OpenStreetMap Nominatim.</li><li>Pedidos: produtos, valores, nota, nome e telemóvel do cliente e, nas entregas, a morada indicada.</li><li>Pedidos de orçamento: descrição, localidade, data pretendida, nome, telemóvel e até 3 fotografias, guardadas em armazenamento privado.</li><li>Notas privadas e datas de seguimento que o fornecedor regista sobre clientes, e moedas de fidelidade.</li><li>Dados técnicos do aparelho para os avisos de novos pedidos, se os ativar.</li></ul>
 <h3>3. Localização</h3><p>A localização do GPS é usada no seu aparelho para ordenar por distância e não é guardada. Para obter o nome da localidade podem ser enviadas coordenadas arredondadas (cerca de 1 km) ao serviço OpenStreetMap (Nominatim).</p>
 <h3>4. Para que usamos e porquê</h3><p>Criar e gerir a conta e os pedidos (execução do serviço); mostrar fornecedores perto de si e enviar avisos (o seu consentimento); manter a app segura (interesse legítimo). Não vendemos dados nem fazemos publicidade.</p>
 <h3>5. Quem vê os dados</h3><p>O fornecedor vê o nome, o telemóvel e a morada de entrega dos clientes que lhe fazem pedidos, e, nos pedidos de orçamento, a descrição, a localidade e as fotografias enviadas. Os clientes veem os dados públicos do fornecedor, incluindo o telemóvel. As avaliações (estrelas, comentário e primeiro nome do cliente) são públicas. As denúncias de avaliações ficam registadas e só a equipa da app as vê. Usamos como prestadores: Supabase (base de dados, contas e fotografias), GitHub Pages (alojamento), Google (se entrar com Google) e OpenStreetMap.</p>
@@ -633,7 +689,7 @@ function showLegal(k){
   if(VIEW!=="legal")LEGAL_BACK=VIEW;
   $("legaltitle").textContent=LEGAL_TXT[k].t;$("legalbody").innerHTML=LEGAL_TXT[k].h();go("legal");
 }
-const AQ_KEYS=["aq_mine","aq_moedas","aq_notas","aq_ped","aq_seg","aq_user","aq_role","aq_avs","aq_orc"];
+const AQ_KEYS=["aq_mine","aq_moedas","aq_notas","aq_ped","aq_seg","aq_user","aq_role","aq_avs","aq_orc","aq_favs"];
 async function apagarConta(){
   if(!confirm("Vai apagar a sua conta e todos os dados associados (perfis, produtos, fotografias, pedidos). Isto não pode ser desfeito. Continuar?"))return;
   const t=prompt("Para confirmar, escreva APAGAR:");
@@ -856,7 +912,7 @@ function setOM(v){
 async function chkEnt(){
   const p=S.list.find(x=>x.id===ORD_F),m=$("entmsg");m.textContent="A procurar a sua localização…";
   try{const pos=await gpsPos();ENT_D=p&&p.lat!=null?km(pos.lat,pos.lng,p.lat,p.lng):null;if(ENT_D==null)m.textContent="Não foi possível calcular a distância.";else showEnt(p);}
-  catch(x){ENT_D=null;m.textContent=x.message+" Pode enviar o pedido; o fornecedor confirma a morada.";}
+  catch(x){if(MYPOS&&p&&p.lat!=null){ENT_D=km(MYPOS.lat,MYPOS.lng,p.lat,p.lng);showEnt(p);return;}ENT_D=null;m.textContent=x.message+" Pode enviar o pedido; o fornecedor confirma a morada.";}
 }
 function ordErr(m){
   m=m||"";
@@ -929,8 +985,9 @@ function moedasCli(c){
 function drawCrm(){drawCrm1();if(CT==="painel")pushUI();}
 function drawCrm1(){
   const L=myPed(),nv=L.filter(o=>o.estado==="novo").length,B=$("crmbody");
-  ["painel","pedidos","orcamentos","clientes","perfil","relatorios"].forEach(t=>$("ct-"+t).setAttribute("aria-selected",t===CT));
+  ["painel","pedidos","orcamentos","marcacoes","clientes","perfil","relatorios"].forEach(t=>$("ct-"+t).setAttribute("aria-selected",t===CT));
   {const n=orcNovos();$("ct-orcamentos").textContent="Orçamentos"+(n?" ("+n+")":"");}
+  {const n=marcNovas();$("ct-marcacoes").textContent="Marcações"+(n?" ("+n+")":"");}
   {const t=$("ct-"+CT),q=t&&t.parentElement;if(q)q.scrollLeft=Math.max(0,t.offsetLeft-(q.clientWidth-t.offsetWidth)/2);}
   $("ct-pedidos").textContent="Pedidos"+(nv?" ("+nv+")":"");
   if(CT==="painel"){
@@ -942,10 +999,10 @@ function drawCrm1(){
     const fl=L.filter(o=>PF==="todos"||o.estado===PF);
     B.innerHTML=`<div class="chips">${["novo","confirmado","concluido","cancelado","todos"].map(f=>`<button class="chip" data-f="${f}" aria-pressed="${PF===f}">${f==="todos"?"Todos":EST[f]}</button>`).join("")}</div>`+(fl.length?fl.map(ordRow).join(""):'<p class="meta">Sem pedidos nesta lista.</p>');
   }else if(CT==="perfil"){
-    B.innerHTML=S.list.filter(p=>p.mine).map(p=>`<div class="prow"><div style="flex:1;min-width:min(200px,100%)"><strong>${esc(p.nome)}</strong><div class="meta">${esc(p.cat)} · ${esc(p.zonas.join(", "))}<br>${esc(p.tel)} · ${p.lat!=null?"📍 com localização":"sem localização (os clientes não veem a distância)"}${p.entrega?" · 🚚 entrega até "+p.raio+" km ("+(p.taxa?eur(p.taxa):"grátis")+(p.gratis>0?", grátis acima de "+eur(p.gratis):"")+(p.min>0?", mínimo "+eur(p.min):"")+")":""}${p.fi&&p.fi.ativo?" · 🪙 programa de moedas ativo":""}</div></div><div class="stk" style="flex-wrap:wrap"><button class="btn" data-forn="${esc(p.id)}">Partilhar / QR</button><button class="btn primary" data-edit="${esc(p.id)}">Editar</button></div></div>`).join("")+'<p style="margin-top:14px"><button class="btn" data-newprof="1">Novo perfil</button></p>';
+    B.innerHTML=S.list.filter(p=>p.mine).map(p=>`<div class="prow"><div style="flex:1;min-width:min(200px,100%)"><strong>${esc(p.nome)}</strong><div class="meta">${esc(p.cat)} · ${esc(p.zonas.join(", "))}<br>${esc(p.tel)} · ${p.lat!=null?"📍 "+esc(p.localidade||"com localização"):"sem localização (os clientes não veem a distância)"}${p.entrega?" · 🚚 entrega até "+p.raio+" km ("+(p.taxa?eur(p.taxa):"grátis")+(p.gratis>0?", grátis acima de "+eur(p.gratis):"")+(p.min>0?", mínimo "+eur(p.min):"")+")":""}${p.fi&&p.fi.ativo?" · 🪙 programa de moedas ativo":""}</div></div><div class="stk" style="flex-wrap:wrap"><button class="btn" data-forn="${esc(p.id)}">Partilhar / QR</button><button class="btn primary" data-edit="${esc(p.id)}">Editar</button></div></div>`).join("")+'<p style="margin-top:14px"><button class="btn" data-newprof="1">Novo perfil</button></p>';
   }else if(CT==="relatorios"){
     B.innerHTML=relatorio(L);
-  }else if(CT==="orcamentos"){
+  }else if(CT==="marcacoes"){B.innerHTML=marcSup();}else if(CT==="orcamentos"){
     B.innerHTML=orcSup();orcSign(B);
   }else{
     const m={};
@@ -1231,6 +1288,92 @@ async function gpsDo(msgId,apply){
     apply(z,pos);m.textContent="Localização obtida"+(pos.cidade?": "+pos.cidade:"")+" (distrito de "+z+").";
   }catch(e){m.textContent=e.message;}
 }
+// ---- localização: pesquisa por localidade escrita, raio e persistência local (a posição do cliente nunca sai do aparelho)
+const RAIOS=[1,2,5,10,15,25,50,100];
+async function geoFind(q){
+  const c=new AbortController(),t=setTimeout(()=>c.abort(),7000);
+  try{
+    const r=await fetch("https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&countrycodes=pt&limit=6&accept-language=pt&q="+encodeURIComponent(q),{signal:c.signal});
+    if(!r.ok)return null;
+    const seen=new Set(),out=[];
+    (await r.json()).forEach(x=>{
+      const lat=Number(x.lat),lng=Number(x.lon),z=zoneOf(lat,lng);if(!z||!isFinite(lat)||!isFinite(lng))return;
+      const nome=nomeLocal(x.address)||x.name||String(x.display_name||"").split(",")[0];
+      const k=nome+"|"+z;if(!nome||seen.has(k))return;seen.add(k);
+      out.push({lat:Math.round(lat*100)/100,lng:Math.round(lng*100)/100,cidade:nome,zona:z});
+    });
+    return out;
+  }catch(e){return null;}
+  finally{clearTimeout(t);}
+}
+function setPos(pos){
+  MYPOS=pos;$("zona").value="";$("raio").classList.remove("hide");$("locClr").classList.remove("hide");
+  if(!$("raio").value)$("raio").value="cobre";
+  $("locres").innerHTML="";$("loc").value="";
+  try{localStorage.setItem("aq_pos",JSON.stringify({lat:Math.round(pos.lat*100)/100,lng:Math.round(pos.lng*100)/100,cidade:pos.cidade||"",zona:pos.zona||""}));}catch(e){}
+  render();
+}
+function clearPos(){
+  MYPOS=null;$("raio").value="";$("raio").classList.add("hide");$("locClr").classList.add("hide");$("gpsmsg").textContent="";$("locres").innerHTML="";
+  try{localStorage.removeItem("aq_pos");}catch(e){}
+  render();
+}
+function restorePos(){
+  try{
+    const p=JSON.parse(localStorage.getItem("aq_pos")||"null");
+    if(p&&isFinite(p.lat)&&isFinite(p.lng)){
+      MYPOS={lat:Number(p.lat),lng:Number(p.lng),cidade:String(p.cidade||""),zona:String(p.zona||"")};
+      $("raio").classList.remove("hide");$("locClr").classList.remove("hide");$("raio").value="cobre";
+      $("gpsmsg").textContent="A usar a última localização"+(MYPOS.cidade?": "+MYPOS.cidade:"")+".";
+    }
+  }catch(e){}
+}
+function setRaio(n){$("raio").value=String(n);render();}
+function listRes(box,L,fn){
+  box.innerHTML=L.map((x,i)=>`<button type="button" class="chip" data-i="${i}">${esc(x.cidade)} · ${esc(x.zona)}</button>`).join("");
+  box.querySelectorAll(".chip").forEach(b=>b.onclick=()=>fn(Number(b.dataset.i)));
+}
+async function locFind(){
+  const q=$("loc").value.trim(),m=$("gpsmsg"),box=$("locres");box.innerHTML="";
+  if(q.length<2){m.textContent="Escreva o nome da localidade.";return;}
+  m.textContent="A procurar «"+q+"»…";
+  const L=await geoFind(q);
+  if(L===null){m.textContent="Não foi possível procurar agora. Tente outra vez ou use «Perto de mim».";return;}
+  if(!L.length){m.textContent="Não encontrámos essa localidade em Portugal.";return;}
+  LOCRES=L;
+  if(L.length===1){pickLoc(0);return;}
+  m.textContent="Escolha a localidade certa:";listRes(box,L,pickLoc);
+}
+function pickLoc(i){
+  const x=LOCRES[i];if(!x)return;
+  setPos({lat:x.lat,lng:x.lng,cidade:x.cidade,zona:x.zona});
+  $("gpsmsg").textContent="Localização: "+x.cidade+" (distrito de "+x.zona+").";
+}
+async function jLocFind(){
+  const q=$("jlocq").value.trim(),m=$("jmsg"),box=$("jlocres");box.innerHTML="";
+  if(q.length<2){m.textContent="Escreva o nome da localidade.";return;}
+  m.textContent="A procurar «"+q+"»…";
+  const L=await geoFind(q);
+  if(L===null){m.textContent="Não foi possível procurar agora. Tente outra vez ou use o botão 📍.";return;}
+  if(!L.length){m.textContent="Não encontrámos essa localidade em Portugal.";return;}
+  JLOCRES=L;
+  if(L.length===1){jPickLoc(0);return;}
+  m.textContent="Escolha a localidade certa:";listRes(box,L,jPickLoc);
+}
+function jPickLoc(i){
+  const x=JLOCRES[i];if(!x)return;
+  if(!S.jz.includes(x.zona))S.jz.push(x.zona);drawJZ();
+  JPOS={lat:x.lat,lng:x.lng};JLOC=x.cidade;$("jlocq").value=x.cidade;$("jlocres").innerHTML="";
+  $("jmsg").textContent="Localização guardada: "+x.cidade+" ("+x.zona+").";
+}
+const exV=p=>({localidade:p.localidade||null,raio_servico:p.raioS||null});
+const colErr=e=>/localidade|raio_servico|column|schema cache/i.test((e&&e.message)||"");
+function servBadge(p){
+  if(p.tipo!=="servico"||!p.raioS)return"";
+  let s="🧭 Atende até "+p.raioS+" km";
+  if(p.dist!=null)s+=p.dist<=p.raioS?" · chega até si":" · fora do seu raio";
+  return `<div><span class="badge">${esc(s)}</span></div>`;
+}
 function joinMode(){
   const e=!!EDIT_ID;
   $("jtitle").textContent=e?"Editar perfil":"Inscreva o seu negócio";
@@ -1239,7 +1382,7 @@ function joinMode(){
 }
 function clearJoin(){
   ["jnome","jpreco","jdesc","jtel"].forEach(i=>$(i).value="");
-  S.jz=[];JPOS=null;$("jmsg").textContent="";$("jerr").textContent="";drawJZ();$("jmedia").classList.add("hide");
+  S.jz=[];JPOS=null;JLOC="";$("jlocq").value="";$("jlocres").innerHTML="";$("jraios").value="";$("jmsg").textContent="";$("jerr").textContent="";drawJZ();$("jmedia").classList.add("hide");
   $("jent").checked=false;$("jraio").value="";$("jtaxa").value="";$("jmin").value="";$("jgratis").value="";drawEnt();$("jfid").checked=false;$("jppe").value=1;["jfecusto","jfpnome","jfpvalor","jfpcusto"].forEach(i=>$(i).value="");drawFidForm();
 }
 function openEdit(id){
@@ -1249,8 +1392,8 @@ function openEdit(id){
   $("jpreco").value=p.preco||"";$("jdesc").value=p.desc==="Sem descrição."?"":p.desc;$("jtel").value=p.tel;
   $("jent").checked=!!p.entrega;$("jraio").value=p.entrega?p.raio:"";$("jtaxa").value=p.entrega&&p.taxa?p.taxa:"";$("jmin").value=p.entrega&&p.min?p.min:"";$("jgratis").value=p.entrega&&p.gratis?p.gratis:"";drawEnt();
   {const fi=p.fi;$("jfid").checked=!!(fi&&fi.ativo);$("jppe").value=fi?fi.ppe:1;$("jfecusto").value=fi&&fi.ent?fi.ent.custo:"";$("jfpnome").value=fi&&fi.prod?fi.prod.nome:"";$("jfpvalor").value=fi&&fi.prod?fi.prod.valor:"";$("jfpcusto").value=fi&&fi.prod?fi.prod.custo:"";drawFidForm();}
-  JPOS=p.lat!=null?{lat:p.lat,lng:p.lng}:null;
-  $("jmsg").textContent=JPOS?"Localização aproximada guardada.":"Sem localização guardada.";$("jerr").textContent="";
+  JPOS=p.lat!=null?{lat:p.lat,lng:p.lng}:null;JLOC=p.localidade||"";$("jlocq").value=JLOC;$("jlocres").innerHTML="";$("jraios").value=p.raioS||"";
+  $("jmsg").textContent=JPOS?(JLOC?"Localização guardada: "+JLOC+".":"Localização aproximada guardada."):"Sem localização guardada.";$("jerr").textContent="";
   mediaMsg("");drawMedia();
 }
 function obP(t){OBP=t;["servico","produto"].forEach(x=>$("op-"+x).setAttribute("aria-pressed",x===t));}
@@ -1269,22 +1412,106 @@ function setTipo(t){S.tipo=t;S.cat="";render();}
 function setCat(c){S.cat=S.cat===c?"":c;render();}
 
 function render(){
-  $("fent").setAttribute("aria-pressed",ENT_F);
+  $("fent").setAttribute("aria-pressed",ENT_F);$("ffav").setAttribute("aria-pressed",FAV_F);$("ffav").textContent="♥ Favoritos"+(FAV.size?" ("+FAV.size+")":"");
   ["servico","produto"].forEach(t=>$("tab-"+t).setAttribute("aria-selected",t===S.tipo));
   $("chips").innerHTML=CATS[S.tipo].map(c=>`<button class="chip" aria-pressed="${S.cat===c}" data-c="${esc(c)}">${esc(c)}</button>`).join("");
   document.querySelectorAll("#chips .chip").forEach(b=>b.onclick=()=>setCat(b.dataset.c));
-  const z=$("zona").value,q=norm($("q").value.trim()),R=Number($("raio").value)||0;
+  const z=$("zona").value,q=norm($("q").value.trim()),COB=$("raio").value==="cobre",R=Number($("raio").value)||0,NX=R?(RAIOS.find(x=>x>R)||0):0;
   S.list.forEach(p=>{p.dist=(MYPOS&&p.lat!=null)?km(MYPOS.lat,MYPOS.lng,p.lat,p.lng):null;});
-  const r=S.list.filter(p=>p.tipo===S.tipo&&(!ENT_F||p.entrega)&&(!S.cat||p.cat===S.cat)&&(!z||p.zonas.includes(z))&&(!q||norm(p.nome+" "+p.cat+" "+p.desc+" "+(p.prods||[]).map(x=>x.nome).join(" ")).includes(q))&&(!R||(p.dist!=null&&p.dist<=R))).sort((a,b)=>MYPOS?((a.dist==null)-(b.dist==null)||(a.dist-b.dist)||(b.rating-a.rating)):(b.rating-a.rating));
-  $("count").textContent=r.length+(r.length===1?" resultado":" resultados")+(MYPOS?" perto de si"+(MYPOS.cidade?" ("+MYPOS.cidade+")":"")+(R?" (até "+R+" km)":""):(z?" em "+z:" em todo o país"));
-  $("grid").innerHTML=r.length?r.map(card).join(""):`<div class="empty"><strong>Ainda ninguém${z?" em "+esc(z):""} com esta pesquisa.</strong><p class="meta">Tente outra zona ou categoria, ou convide um fornecedor que conheça.</p><button class="btn primary" onclick="go('join')">Inscrever um fornecedor</button></div>`;
+  // "Quem atende a minha zona": serviços com raio próprio só aparecem se o cliente estiver dentro dele; os restantes, até 25 km (produtos com entrega: o maior dos dois)
+  const cobre=p=>{if(!MYPOS)return true;if(p.dist==null)return !!(MYPOS.zona&&p.zonas.includes(MYPOS.zona));if(p.tipo==="servico"&&p.raioS>0)return p.dist<=p.raioS;return p.dist<=Math.max(25,p.entrega?p.raio:0);};
+  const r=S.list.filter(p=>p.tipo===S.tipo&&(!ENT_F||p.entrega)&&(!FAV_F||FAV.has(String(p.id)))&&(!S.cat||p.cat===S.cat)&&(FAV_F||!z||p.zonas.includes(z))&&(!q||norm(p.nome+" "+p.cat+" "+p.desc+" "+(p.prods||[]).map(x=>x.nome).join(" ")).includes(q))&&(FAV_F||!R||(p.dist!=null?p.dist<=R:!!(MYPOS&&MYPOS.zona&&p.zonas.includes(MYPOS.zona))))&&(FAV_F||!COB||cobre(p))).sort((a,b)=>MYPOS?((a.dist==null)-(b.dist==null)||(a.dist-b.dist)||(b.rating-a.rating)):(b.rating-a.rating));
+  $("count").textContent=r.length+(r.length===1?" resultado":" resultados")+(MYPOS?" perto de si"+(MYPOS.cidade?" ("+MYPOS.cidade+")":"")+(R?" (até "+R+" km)":"")+(COB?" (quem atende a sua zona)":"")+((MYPOS&&(R||COB)&&r.some(p=>p.dist==null))?" · "+r.filter(p=>p.dist==null).length+" sem localização exata":""):(z?" em "+z:" em todo o país"));
+  if(FAV_F)$("count").textContent=r.length+(r.length===1?" favorito":" favoritos");
+  $("grid").innerHTML=r.length?r.map(card).join(""):`<div class="empty"><strong>Ainda ninguém${z?" em "+esc(z):""} com esta pesquisa.</strong>${FAV_F?`<p class="meta">Ainda não guardou favoritos neste separador. Toque no ♡ de um fornecedor para o guardar.</p>`:COB?`<p class="meta">Ninguém atende a sua zona com esta pesquisa. Veja quem está mais longe.</p><button class="btn accent" onclick="setRaio(50)">Ver até 50 km</button> `:NX?`<p class="meta">Nada num raio de ${R} km. Alargue a distância ou tente outra categoria.</p><button class="btn accent" onclick="setRaio(${NX})">Alargar para ${NX} km</button> `:`<p class="meta">Tente outra zona ou categoria, ou convide um fornecedor que conheça.</p>`}<button class="btn primary" onclick="go('join')">Inscrever um fornecedor</button></div>`;
+  mapSync(r);
+  document.querySelectorAll("[data-fav]").forEach(b=>b.onclick=()=>toggleFav(b.dataset.fav));
   document.querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>openCont(b.dataset.id));
   document.querySelectorAll("[data-prod]").forEach(b=>b.onclick=()=>openProd(b.dataset.prod));
   document.querySelectorAll("[data-rev]").forEach(b=>b.onclick=()=>openRev(b.dataset.rev));
   document.querySelectorAll("[data-orc]").forEach(b=>b.onclick=()=>openOrc(b.dataset.orc));
+  document.querySelectorAll("[data-marc]").forEach(b=>b.onclick=()=>openMarc(b.dataset.marc));
   document.querySelectorAll("[data-forn]").forEach(b=>b.onclick=()=>openForn(b.dataset.forn));
   document.querySelectorAll("[data-share]").forEach(b=>b.onclick=()=>shareProv(b.dataset.share));
   document.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{if(!confirm("Apagar este perfil?"))return;const pd=S.list.find(x=>x.id===b.dataset.del);const {error}=await sb.from("fornecedores").delete().eq("id",b.dataset.del);if(error)toast("Não foi possível apagar.");else{if(pd){await dropPath(pd.logo);for(const x of pd.galeria||[])await dropPath(x);}await loadList();render();}});
+}
+// ---- favoritos (localStorage + tabela "favoritos" para quem tem sessão)
+let FAV=new Set(),FAV_F=false,FAV_UID="";
+try{FAV=new Set((JSON.parse(localStorage.getItem("aq_favs")||"[]")).map(String));}catch(e){}
+function favSave(){try{localStorage.setItem("aq_favs",JSON.stringify([...FAV]));}catch(e){}}
+async function favSync(){
+  if(DEMO||!SESSION){FAV_UID="";return;}
+  const uid=SESSION.user.id;if(FAV_UID===uid)return;FAV_UID=uid;
+  try{
+    const {data,error}=await sb.from("favoritos").select("fornecedor_id");
+    if(error)return; // tabela ainda não criada: continua só no dispositivo
+    const remote=new Set((data||[]).map(r=>String(r.fornecedor_id)));
+    const add=[...FAV].filter(id=>!remote.has(id));
+    if(add.length)await sb.from("favoritos").upsert(add.map(id=>({fornecedor_id:id})),{onConflict:"user_id,fornecedor_id",ignoreDuplicates:true});
+    remote.forEach(id=>FAV.add(id));favSave();render();
+  }catch(e){}
+}
+async function toggleFav(id){
+  id=String(id);const on=!FAV.has(id);
+  if(on)FAV.add(id);else FAV.delete(id);
+  favSave();render();
+  const n=[...document.querySelectorAll("[data-fav]")].find(x=>x.dataset.fav===id);if(n)n.focus();
+  toast(on?"Guardado nos favoritos.":"Removido dos favoritos.");
+  if(!DEMO&&SESSION){try{if(on)await sb.from("favoritos").upsert({fornecedor_id:id},{onConflict:"user_id,fornecedor_id",ignoreDuplicates:true});else await sb.from("favoritos").delete().eq("fornecedor_id",id);}catch(e){}}
+}
+// ---- vista de mapa (Leaflet carregado só quando se abre o mapa)
+let MAPV=false,MAP=null,MAPL=null,MAPC=null,LF=null;
+function loadLeaflet(){
+  if(window.L)return Promise.resolve(window.L);
+  if(LF)return LF;
+  LF=new Promise((ok,ko)=>{
+    const l=document.createElement("link");l.rel="stylesheet";l.href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css";document.head.appendChild(l);
+    const sc=document.createElement("script");sc.src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js";
+    sc.onload=()=>ok(window.L);sc.onerror=()=>{LF=null;ko(new Error("leaflet"));};document.head.appendChild(sc);
+  });
+  return LF;
+}
+function setMapa(on){
+  MAPV=on;$("vlist").setAttribute("aria-pressed",!on);$("vmap").setAttribute("aria-pressed",on);
+  render();
+}
+async function mapSync(r){
+  $("grid").classList.toggle("hide",MAPV);$("mapa").classList.toggle("hide",!MAPV);
+  if(!MAPV)return;
+  const pts=r.filter(p=>p.lat!=null&&p.lng!=null);
+  $("count").textContent+=" · "+pts.length+" no mapa"+(pts.length<r.length?" ("+(r.length-pts.length)+" sem localização exata)":"");
+  let L;try{L=await loadLeaflet();}catch(e){$("count").textContent+=" · Não foi possível carregar o mapa.";return;}
+  if(!MAPV)return;
+  if(!MAP){
+    MAP=L.map("mapa",{scrollWheelZoom:false}).setView([39.6,-8],6);
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(MAP);
+    MAPL=L.layerGroup().addTo(MAP);MAPC=L.layerGroup().addTo(MAP);
+    MAP.on("popupclose",()=>MAPC.clearLayers());
+    MAP.on("popupopen",ev=>{
+      const el=ev.popup.getElement();if(!el)return;
+      el.querySelectorAll("[data-mc]").forEach(b=>b.onclick=()=>openCont(b.dataset.mc));
+      el.querySelectorAll("[data-mf]").forEach(b=>b.onclick=()=>openForn(b.dataset.mf));
+    });
+  }
+  MAP.invalidateSize();MAPL.clearLayers();MAPC.clearLayers();
+  const b=[],seen={};
+  if(MYPOS){L.marker([MYPOS.lat,MYPOS.lng],{icon:L.divIcon({className:"pinm",html:'<span class="pm me"></span>',iconSize:[22,22]}),title:"A sua localização",keyboard:false}).addTo(MAPL);b.push([MYPOS.lat,MYPOS.lng]);}
+  pts.forEach(p=>{
+    // vários fornecedores com a mesma localização aproximada: afasta-os ligeiramente para não ficarem sobrepostos
+    const key=p.lat+","+p.lng,k=seen[key]=(seen[key]??-1)+1;
+    let la=p.lat,lo=p.lng;
+    if(k>0){const a=k*Math.PI/3,d=0.002*(1+Math.floor((k-1)/6));la+=d*Math.sin(a);lo+=d*Math.cos(a);}
+    const cov=p.tipo==="servico"?p.raioS:(p.entrega?p.raio:0);
+    const html='<strong>'+esc(p.nome)+'</strong><br>'+esc(p.cat)+(p.dist!=null?' · a '+fmtKm(p.dist)+' km':'')+'<br>'
+      +(p.n?'★ '+p.rating.toFixed(1).replace(".",",")+' ('+p.n+')':'Novo na app')
+      +(cov>0?'<br>'+(p.tipo==="servico"?'Atende até ':'Entrega até ')+cov+' km':'')
+      +'<div style="margin-top:8px;display:flex;gap:6px"><button type="button" class="btn primary" data-mc="'+esc(p.id)+'" style="padding:4px 12px">Contactar</button><button type="button" class="btn" data-mf="'+esc(p.id)+'" style="padding:4px 12px">Perfil</button></div>';
+    const m=L.marker([la,lo],{icon:L.divIcon({className:"pinm",html:'<span class="pm"></span>',iconSize:[22,22]}),title:p.nome}).bindPopup(html).addTo(MAPL);
+    if(cov>0)m.on("popupopen",()=>{MAPC.clearLayers();L.circle([p.lat,p.lng],{radius:cov*1000,color:"#0f5c4d",weight:2,fillOpacity:.08}).addTo(MAPC);});
+    b.push([la,lo]);
+  });
+  if(b.length>1)MAP.fitBounds(b,{padding:[30,30],maxZoom:13});
+  else if(b.length===1)MAP.setView(b[0],12);
 }
 function fiBadge(p){
   const f=myFid(p);if(!f)return"";
@@ -1300,20 +1527,33 @@ function entBadge(p){
   return `<div><span class="badge">${esc(s)}</span></div>`;
 }
 function card(p){
-  const col=COLORS[(p.nome.charCodeAt(0)+p.nome.length)%COLORS.length];
+  const col=COLORS[(p.nome.charCodeAt(0)+p.nome.length)%COLORS.length],fv=FAV.has(String(p.id));
   return `<article class="card"><div class="top"><div class="av" style="background:${col}" aria-hidden="true">${p.logo?`<img src="${esc(imgUrl({foto:p.logo}))}" alt="" loading="lazy">`:esc(p.nome[0])}</div>
-  <div><h3><button type="button" class="linkb" data-forn="${esc(p.id)}" style="font-weight:inherit;color:inherit">${esc(p.nome)}</button>${p.mine?'<span class="mine">O meu</span>':""}</h3><div class="meta">${esc(p.cat)} · ${esc(p.zonas.slice(0,3).join(", "))}${p.dist!=null?" · a "+(p.dist<10?p.dist.toFixed(1).replace(".",","):Math.round(p.dist))+" km":""}</div></div><button type="button" class="btn" style="margin-left:auto;padding:6px 10px;flex:none" data-share="${esc(p.id)}" aria-label="Partilhar ${esc(p.nome)}">🔗</button></div>
-  <p>${esc(p.desc)}</p>${prodBtn(p)}${entBadge(p)}${fiBadge(p)}
+  <div><h3><button type="button" class="linkb" data-forn="${esc(p.id)}" style="font-weight:inherit;color:inherit">${esc(p.nome)}</button>${p.mine?'<span class="mine">O meu</span>':""}</h3><div class="meta">${esc(p.cat)} · ${p.localidade?"📍 "+esc(p.localidade)+" · ":""}${esc(p.zonas.slice(0,3).join(", "))}${p.dist!=null?" · a "+(p.dist<10?p.dist.toFixed(1).replace(".",","):Math.round(p.dist))+" km":""}</div></div>${p.mine?"":`<button type="button" class="btn" style="margin-left:auto;padding:6px 10px;flex:none;color:${fv?"#c0392b":"inherit"}" data-fav="${esc(p.id)}" aria-pressed="${fv}" aria-label="${fv?"Remover dos favoritos":"Guardar nos favoritos"}: ${esc(p.nome)}">${fv?"♥":"♡"}</button>`}<button type="button" class="btn" style="margin-left:${p.mine?"auto":"0"};padding:6px 10px;flex:none" data-share="${esc(p.id)}" aria-label="Partilhar ${esc(p.nome)}">🔗</button></div>
+  <p>${esc(p.desc)}</p>${prodBtn(p)}${entBadge(p)}${servBadge(p)}${fiBadge(p)}
   <div class="foot"><div><span class="price">${esc(p.preco||"Sob consulta")}</span><br>${p.n?`<button type="button" class="star linkb" data-rev="${esc(p.id)}" aria-label="Ver avaliações de ${esc(p.nome)}">★ ${p.rating.toFixed(1).replace(".",",")} <span class="meta">(${p.n})</span></button>`:"<span class='meta'>Novo na app</span>"}</div>
-  <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">${p.tipo==="servico"&&!p.mine?`<button class="btn accent" data-orc="${esc(p.id)}">Pedir orçamento</button>`:""}${p.mine&&!DEMO?`<button class="btn" data-del="${p.id}">Apagar</button>`:""}<button class="btn primary" data-id="${p.id}">Contactar</button></div></div></article>`;
+  <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">${p.tipo==="servico"&&!p.mine?`<button class="btn accent" data-orc="${esc(p.id)}">Pedir orçamento</button><button class="btn" data-marc="${esc(p.id)}">Marcar</button>`:""}${p.mine&&!DEMO?`<button class="btn" data-del="${p.id}">Apagar</button>`:""}<button class="btn primary" data-id="${p.id}">Contactar</button></div></div></article>`;
 }
-function openCont(id){
+async function loadMyTels(){
+  if(DEMO||!SESSION)return;
+  for(const p of S.list.filter(x=>x.mine&&!x.tel)){try{const {data}=await sb.rpc("obter_contacto",{p_id:String(p.id)});p.tel=data||"";}catch(e){}}
+}
+const isLogged=()=>DEMO?!!S.user:!!SESSION;
+async function openCont(id){
   const p=S.list.find(x=>x.id===id);if(!p)return;
-  $("ctNome").textContent=p.nome;$("ctMeta").textContent=p.cat+" · "+p.zonas.join(", ");
-  const d=p.tel.replace(/\D/g,"");
-  $("ctTel").textContent=p.tel.replace(/(\d{3})(\d{3})(\d{3})/,"$1 $2 $3");
-  $("ctCall").href="tel:+351"+d;$("ctWa").href="https://wa.me/351"+d;
-  $("dCont").showModal();
+  if(!isLogged()){toast("Inicie sessão para ver o contacto.");openLogin("login");return;}
+  $("ctNome").textContent=p.nome;$("ctMeta").textContent=p.cat+" · "+(p.localidade?p.localidade+" · ":"")+p.zonas.join(", ");
+  const btns=[$("ctCall"),$("ctWa")],show=v=>btns.forEach(b=>b.classList.toggle("hide",!v));
+  $("ctTel").textContent="A obter contacto…";show(false);$("dCont").showModal();
+  let tel=p.tel||"";
+  if(!tel&&!DEMO){
+    try{const {data,error}=await sb.rpc("obter_contacto",{p_id:String(p.id)});if(error)throw error;tel=data||"";if(tel)p.tel=tel;}
+    catch(e){$("ctTel").textContent=/limite/.test((e&&e.message)||"")?"Viu muitos contactos numa hora. Tente mais tarde.":"Não foi possível obter o contacto.";return;}
+  }
+  if(!tel){$("ctTel").textContent="Contacto indisponível.";return;}
+  const d=tel.replace(/\D/g,"");
+  $("ctTel").textContent=tel.replace(/(\d{3})(\d{3})(\d{3})/,"$1 $2 $3");
+  $("ctCall").href="tel:+351"+d;$("ctWa").href="https://wa.me/351"+d;show(true);
 }
 function applyUser(){
   $("hello").textContent=S.user?"Olá, "+S.user.nome:"";
@@ -1325,7 +1565,7 @@ function applyUser(){
   $("btnIn").classList.toggle("hide",on);$("btnOut").classList.toggle("hide",!on);
 }
 function drawFidForm(){$("jfidbox").classList.toggle("hide",!$("jfid").checked);}
-function drawEnt(){$("jentbox").classList.toggle("hide",!$("jent").checked);$("jfident").classList.toggle("hide",!($("jent").checked&&S.jtipo==="produto"));}
+function drawEnt(){$("jraioswrap").classList.toggle("hide",S.jtipo!=="servico");$("jentbox").classList.toggle("hide",!$("jent").checked);$("jfident").classList.toggle("hide",!($("jent").checked&&S.jtipo==="produto"));}
 function jTipo(t){
   $("jentwrap").classList.toggle("hide",t!=="produto");
   S.jtipo=t;drawEnt();["servico","produto"].forEach(x=>$("j-"+x).setAttribute("aria-pressed",x===t));
@@ -1338,7 +1578,8 @@ function drawJZ(){
 async function saveProv(){
   const nome=$("jnome").value.trim(),tel=$("jtel").value.replace(/\D/g,"").replace(/^351/,"");
   const ent=S.jtipo==="produto"&&$("jent").checked,raio=Math.round(Number($("jraio").value)),taxa=Math.max(0,Math.round(Number($("jtaxa").value||0)*100)/100),mn=Math.max(0,Math.round(Number($("jmin").value||0)*100)/100),gr=Math.max(0,Math.round(Number($("jgratis").value||0)*100)/100),fon=$("jfid").checked,ppe=Math.round(Number($("jppe").value||0)*10)/10,fec=ent?Math.round(Number($("jfecusto").value||0)):0,fpn=$("jfpnome").value.trim(),fpv=Math.round(Number($("jfpvalor").value||0)*100)/100,fpc=Math.round(Number($("jfpcusto").value||0));
-  let e="";
+  let e="";SQL_MISS=false;
+  const raioS=S.jtipo==="servico"&&$("jraios").value!==""?Math.round(Number($("jraios").value)):0;
   if(!nome)e="Indique o nome ou a marca.";
   else if(!S.jz.length)e="Escolha pelo menos uma zona.";
   else if(tel.length!==9)e="O telemóvel deve ter 9 dígitos.";
@@ -1346,26 +1587,32 @@ async function saveProv(){
   else if(ent&&gr>0&&taxa===0)e="Com taxa a 0 € a entrega já é grátis. Deixe «grátis a partir de» em branco ou defina uma taxa.";
   else if(ent&&gr>0&&mn>0&&gr<=mn)e="O valor para entrega grátis tem de ser superior ao pedido mínimo.";
   else if(ent&&!JPOS)e="Para definir o raio, guarde primeiro a localização do negócio (botão 📍 acima).";
+  else if(S.jtipo==="servico"&&$("jraios").value!==""&&!(raioS>=1&&raioS<=200))e="Indique o raio de atendimento em km (entre 1 e 200).";
+  else if(raioS>0&&!JPOS)e="Para definir o raio de atendimento, guarde primeiro a localização do negócio (botão 📍 ou escreva a localidade).";
   else if(fon&&!(ppe>0))e="Indique quantas moedas o cliente ganha por cada 1 €.";
   else if(fon&&(fpn||fpv||fpc)&&!(fpn&&fpv>0&&fpc>0))e="Complete o produto grátis: nome, valor em € e custo em moedas.";
   else if(fon&&!(fec>0||(fpn&&fpv>0&&fpc>0)))e="Defina pelo menos uma recompensa: entrega grátis ou um produto grátis.";
   $("jerr").textContent=e;if(e)return;
   const FI=fon?{ativo:true,ppe,ent:fec>0?{custo:fec}:null,prod:(fpn&&fpv>0&&fpc>0)?{nome:fpn,valor:fpv,custo:fpc}:null}:null;
-  const p={nome,tipo:S.jtipo,cat:$("jcat").value,zonas:S.jz.slice(),preco:$("jpreco").value.trim(),desc:$("jdesc").value.trim()||"Sem descrição.",tel,entrega:ent,raio:ent?raio:0,taxa:ent?taxa:0,min:ent?mn:0,gratis:ent?gr:0,fi:FI};
+  const p={nome,tipo:S.jtipo,cat:$("jcat").value,zonas:S.jz.slice(),preco:$("jpreco").value.trim(),desc:$("jdesc").value.trim()||"Sem descrição.",tel,entrega:ent,raio:ent?raio:0,taxa:ent?taxa:0,min:ent?mn:0,gratis:ent?gr:0,fi:FI,localidade:JLOC,raioS};
   if(EDIT_ID){
     const loc=JPOS?{lat:JPOS.lat,lng:JPOS.lng}:{};
-    if(DEMO){const f=S.list.find(x=>x.id===EDIT_ID);if(f){Object.assign(f,{nome:p.nome,cat:p.cat,zonas:p.zonas,preco:p.preco,desc:p.desc,tel:p.tel,entrega:p.entrega,raio:p.raio,taxa:p.taxa,min:p.min,gratis:p.gratis,fi:p.fi},loc);saveMine();}}
+    if(DEMO){const f=S.list.find(x=>x.id===EDIT_ID);if(f){Object.assign(f,{nome:p.nome,cat:p.cat,zonas:p.zonas,preco:p.preco,desc:p.desc,tel:p.tel,entrega:p.entrega,raio:p.raio,taxa:p.taxa,min:p.min,gratis:p.gratis,fi:p.fi,localidade:p.localidade,raioS:p.raioS},loc);saveMine();}}
     else{
-      const {error}=await sb.from("fornecedores").update({nome:p.nome,cat:p.cat,zonas:p.zonas,preco:p.preco,descr:p.desc,tel:p.tel,entrega:p.entrega,entrega_raio:p.entrega?p.raio:null,entrega_taxa:p.entrega?p.taxa:null,entrega_min:p.entrega&&p.min?p.min:null,entrega_gratis:p.entrega&&p.gratis?p.gratis:null,fidelidade:p.fi,...loc}).eq("id",EDIT_ID);
+      const upd={nome:p.nome,cat:p.cat,zonas:p.zonas,preco:p.preco,descr:p.desc,tel:p.tel,entrega:p.entrega,entrega_raio:p.entrega?p.raio:null,entrega_taxa:p.entrega?p.taxa:null,entrega_min:p.entrega&&p.min?p.min:null,entrega_gratis:p.entrega&&p.gratis?p.gratis:null,fidelidade:p.fi,...loc};
+      let {error}=await sb.from("fornecedores").update({...upd,...exV(p)}).eq("id",EDIT_ID);
+      if(error&&colErr(error)){({error}=await sb.from("fornecedores").update(upd).eq("id",EDIT_ID));if(!error)SQL_MISS=true;}
       if(error){$("jerr").textContent="Não foi possível guardar as alterações. Tente outra vez.";return;}
       await loadList();
     }
-    toast("Perfil atualizado.");await openCrm();return;
+    toast(SQL_MISS?"Perfil atualizado, mas falta atualizar a base de dados (localidade e raio).":"Perfil atualizado.");await openCrm();return;
   }
   if(DEMO){NEWID="m"+Date.now();S.list.push({...p,id:NEWID,rating:0,n:0,mine:true,prods:[],lat:JPOS?JPOS.lat:null,lng:JPOS?JPOS.lng:null});saveMine();}
   else{
     if(!SESSION){openLogin("signup","fornecedor");return;}
-    const {data:ins,error}=await sb.from("fornecedores").insert({nome:p.nome,tipo:p.tipo,cat:p.cat,zonas:p.zonas,preco:p.preco,descr:p.desc,tel:p.tel,entrega:p.entrega,entrega_raio:p.entrega?p.raio:null,entrega_taxa:p.entrega?p.taxa:null,entrega_min:p.entrega&&p.min?p.min:null,entrega_gratis:p.entrega&&p.gratis?p.gratis:null,fidelidade:p.fi,...(JPOS?{lat:JPOS.lat,lng:JPOS.lng}:{})}).select("id").single();
+    const row={nome:p.nome,tipo:p.tipo,cat:p.cat,zonas:p.zonas,preco:p.preco,descr:p.desc,tel:p.tel,entrega:p.entrega,entrega_raio:p.entrega?p.raio:null,entrega_taxa:p.entrega?p.taxa:null,entrega_min:p.entrega&&p.min?p.min:null,entrega_gratis:p.entrega&&p.gratis?p.gratis:null,fidelidade:p.fi,...(JPOS?{lat:JPOS.lat,lng:JPOS.lng}:{})};
+    let {data:ins,error}=await sb.from("fornecedores").insert({...row,...exV(p)}).select("id").single();
+    if(error&&colErr(error)){({data:ins,error}=await sb.from("fornecedores").insert(row).select("id").single());if(!error)SQL_MISS=true;}
     if(error){$("jerr").textContent="Não foi possível publicar. Tente outra vez.";return;}
     NEWID=ins.id;await loadList();
   }
@@ -1373,7 +1620,7 @@ async function saveProv(){
   if(!DEMO)await sb.from("perfis").upsert({user_id:SESSION.user.id,papel:"fornecedor",nome:p.nome,zona:p.zonas[0]});
   clearJoin();
   S.tipo=p.tipo;S.cat="";$("zona").value="";$("q").value="";
-  render();openCat(NEWID);toast("Perfil publicado. Agora adicione os seus produtos.");
+  render();openCat(NEWID);toast(SQL_MISS?"Perfil publicado, mas falta atualizar a base de dados (localidade e raio).":"Perfil publicado. Agora adicione os seus produtos.");
 }
 
 // ---- logótipo e galeria do perfil (guardam-se logo ao escolher; bucket "produtos")
@@ -1491,11 +1738,30 @@ $("crmbody").addEventListener("change",async e=>{
   const {error}=await sb.from("notas_cliente").upsert({user_id:SESSION.user.id,cliente_id:k,nota:NOTAS[k]||"",seguir_em:SEG[k]||null});
   toast(error?"Não foi possível guardar.":"Guardado.");
 });
-setInterval(async()=>{
-  if(DEMO||(VIEW!=="crm"&&VIEW!=="meus"))return;
-  const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName))return;
+// ---- atualização em tempo real (Supabase Realtime) + rede de segurança lenta
+let RT=null,RT_T=0,RT_UID="";
+async function rtRefresh(){
+  if(DEMO||!SESSION||(VIEW!=="crm"&&VIEW!=="meus"))return;
+  const a=document.activeElement;
+  if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)){RT_T=setTimeout(rtRefresh,5000);return;}
   await loadPed();await loadOrc();if(VIEW==="crm")drawCrm();else drawMeus();
-},45000);
+}
+function rtKick(){clearTimeout(RT_T);RT_T=setTimeout(rtRefresh,500);}
+function rtSync(){
+  if(DEMO)return;
+  const uid=SESSION?SESSION.user.id:"";
+  if(uid===RT_UID&&(RT||!uid))return;
+  if(RT){try{sb.removeChannel(RT);}catch(e){}RT=null;}
+  RT_UID=uid;
+  if(!uid)return;
+  RT=sb.channel("aq-live-"+uid)
+    .on("postgres_changes",{event:"*",schema:"public",table:"pedidos"},rtKick)
+    .on("postgres_changes",{event:"*",schema:"public",table:"orcamentos"},rtKick)
+    .on("postgres_changes",{event:"*",schema:"public",table:"marcacoes"},rtKick)
+    .subscribe();
+}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)rtKick();});
+setInterval(()=>{rtSync();if(!document.hidden)rtKick();},180000);
 // ---- avisos push ao fornecedor (pedidos novos)
 const urlB64=s=>{const p="=".repeat((4-s.length%4)%4),r=atob((s+p).replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from(r,c=>c.charCodeAt(0));};
 const PUSH_OK=()=>!DEMO&&!!VAPID_PUBLIC&&"serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;
@@ -1696,7 +1962,8 @@ const saveOrcLS=()=>{try{localStorage.setItem("aq_orc",JSON.stringify(ORC));}cat
 const hojeISO=()=>new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
 const dtP=d=>new Date(d).toLocaleDateString("pt-PT");
 const fmtD=d=>new Date(d+"T12:00:00").toLocaleDateString("pt-PT");
-async function loadOrc(){
+async function loadOrc(){await loadOrc0();await loadMarc();}
+async function loadOrc0(){
   if(DEMO){ORC=lsOrc();return;}
   if(!SESSION){ORC=[];return;}
   const {data}=await sb.from("orcamentos").select("*").order("created_at",{ascending:false});
@@ -1730,7 +1997,7 @@ function openOrc(id){
   ORC_ID=id;ORC_B=[];
   $("orcTitulo").textContent="Pedir orçamento a "+p.nome;
   ["orcDesc","orcLocal","orcData","orcTel"].forEach(i=>$(i).value="");$("orcUrg").checked=false;$("orcFotos").value="";$("orcPv").innerHTML="";$("orcErr").textContent="";
-  $("orcData").min=hojeISO();$("orcCli").value=S.user?S.user.nome:"";$("orcBtn").disabled=false;
+  $("orcData").min=hojeISO();if(MYPOS&&MYPOS.cidade)$("orcLocal").value=MYPOS.cidade;$("orcCli").value=S.user?S.user.nome:"";$("orcBtn").disabled=false;
   $("dOrc").showModal();
 }
 $("orcFotos").addEventListener("change",async e=>{
@@ -1801,6 +2068,7 @@ async function declOrc(id){
 $("crmbody").addEventListener("click",e=>{const b=e.target.closest("button[data-oz]");if(!b)return;if(b.dataset.oz==="resp")openResp(b.dataset.oid);else if(b.dataset.oz==="decl")declOrc(b.dataset.oid);});
 // cliente
 function drawMeusOrc(){
+  drawMeusMarc();
   const uid=SESSION&&SESSION.user.id,L=ORC.filter(o=>DEMO||o.cid===uid),b=$("meusorc");
   if(!L.length){b.innerHTML="";return;}
   b.innerHTML='<h3 style="margin:0 0 4px">Os meus pedidos de orçamento</h3>'+L.map(o=>{
@@ -1817,6 +2085,110 @@ async function decOrc(id,a){
   drawMeus();
 }
 $("meusorc").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;if(b.dataset.oc)decOrc(b.dataset.oid,b.dataset.oc);else if(b.dataset.contact)openCont(b.dataset.contact);});
+// ---- marcações de serviços (tabela "marcacoes" + RPCs pedir/responder/decidir_marcacao)
+let MARC=[],MARC_ID="",PROP_ID="";
+const HORAS=[];for(let h=8;h<=20;h++){HORAS.push(String(h).padStart(2,"0")+":00");if(h<20)HORAS.push(String(h).padStart(2,"0")+":30");}
+["marcHora","propHora"].forEach(i=>{$(i).innerHTML=HORAS.map(h=>`<option>${h}</option>`).join("");$(i).value="09:00";});
+const MARC_EST={pendente:"Aguarda resposta",proposta:"Nova hora proposta",confirmada:"Confirmada",recusada:"Recusada",cancelada:"Cancelada"};
+const MARC_K={pendente:"meta",proposta:"meta",confirmada:"ok",recusada:"out",cancelada:"out"};
+const fProv=id=>S.list.find(x=>String(x.id)===String(id));
+const marcQuando=(d,h)=>fmtD(d)+" às "+h;
+async function loadMarc(){
+  if(DEMO||!SESSION){MARC=[];return;}
+  const {data,error}=await sb.from("marcacoes").select("*").order("data",{ascending:true}).order("hora",{ascending:true});
+  if(error){MARC=[];return;} // tabela ainda não criada
+  MARC=(data||[]).map(r=>({id:r.id,fid:r.fornecedor_id,cid:r.cliente_id,nome:r.cliente_nome,tel:r.cliente_tel,data:r.data,hora:r.hora,nota:r.nota||"",estado:r.estado,pd:r.prop_data||"",ph:r.prop_hora||"",criado:r.created_at}));
+}
+const myMarc=()=>{const ids=new Set(S.list.filter(p=>p.mine).map(p=>String(p.id)));return MARC.filter(m=>ids.has(String(m.fid)));};
+const marcNovas=()=>myMarc().filter(m=>m.estado==="pendente").length;
+function openMarc(id){
+  const p=fProv(id);if(!p)return;
+  if(DEMO){toast("As marcações precisam da base de dados ligada.");return;}
+  if(!SESSION){openLogin("signup","cliente");return;}
+  MARC_ID=id;$("marcTitulo").textContent="Marcar com "+p.nome;
+  $("marcData").min=hojeISO();$("marcData").value="";$("marcHora").value="09:00";$("marcNota").value="";$("marcErr").textContent="";
+  $("marcCli").value=S.user?S.user.nome:"";$("marcTel").value=(S.user&&S.user.tel)||"";$("marcBtn").disabled=false;
+  $("dMarc").showModal();
+}
+function marcErr(m){
+  m=m||"";
+  if(/limite/i.test(m))return"Já pediu muitas marcações hoje. Tente amanhã.";
+  if(/proprio/i.test(m))return"Não pode marcar no seu próprio perfil.";
+  if(/indispon/i.test(m))return"Este fornecedor já não está disponível.";
+  if(/ocupado/i.test(m))return"Essa hora já está ocupada. Escolha outra.";
+  if(/data|hora/i.test(m))return"Escolha um dia e uma hora válidos.";
+  return"Não foi possível pedir a marcação. Tente outra vez.";
+}
+async function sendMarc(){
+  const e=$("marcErr");e.textContent="";
+  const p=fProv(MARC_ID);if(!p)return;
+  const data=$("marcData").value,hora=$("marcHora").value,nota=$("marcNota").value.trim(),nome=$("marcCli").value.trim(),tel=$("marcTel").value.replace(/\D/g,"").replace(/^351/,"");
+  if(!data){e.textContent="Escolha o dia.";return;}
+  if(data<hojeISO()){e.textContent="Esse dia já passou.";return;}
+  if(nome.length<2){e.textContent="Indique o seu nome.";return;}
+  if(tel.length!==9){e.textContent="O telemóvel deve ter 9 dígitos.";return;}
+  if(!SESSION){$("dMarc").close();openLogin("signup","cliente");return;}
+  const btn=$("marcBtn");btn.disabled=true;
+  const {error}=await sb.rpc("pedir_marcacao",{p_fornecedor:String(p.id),p_nome:nome,p_tel:tel,p_data:data,p_hora:hora,p_nota:nota||null});
+  btn.disabled=false;
+  if(error){e.textContent=marcErr(error.message);return;}
+  $("dMarc").close();await loadMarc();toast("Marcação pedida a "+p.nome+". Acompanhe em Os meus pedidos.");
+}
+// fornecedor
+function marcSup(){
+  const L=myMarc(),multi=S.list.filter(p=>p.mine).length>1,hoje=hojeISO();
+  if(!L.length)return'<p class="meta">Ainda não recebeu marcações. Só os perfis de serviços as recebem.</p>';
+  const act=L.filter(m=>m.estado==="pendente"||m.estado==="proposta"||(m.estado==="confirmada"&&m.data>=hoje)),old=L.filter(m=>!act.includes(m));
+  const row=m=>{
+    const f=fProv(m.fid),bt=(a,t,c)=>`<button class="btn ${c||""}" data-mz="${a}" data-mid="${esc(m.id)}">${t}</button>`;
+    const ac=(m.estado==="pendente"?bt("confirmar","Confirmar","primary"):"")+((m.estado==="pendente"||m.estado==="proposta")?bt("propor","Propor outra hora")+bt("recusar","Recusar"):"")+(m.estado==="confirmada"?bt("cancelar","Cancelar"):"");
+    return `<div class="prow" style="align-items:flex-start"><div style="flex:1;min-width:min(200px,100%)"><strong>${esc(m.nome)}</strong> <span class="meta">· ${esc(marcQuando(m.data,m.hora))}</span>${multi&&f?`<div class="meta">Para: ${esc(f.nome)}</div>`:""}<div class="meta"><a href="tel:+351${esc(m.tel)}">${esc(m.tel)}</a></div>${m.nota?`<div>${esc(m.nota)}</div>`:""}${m.estado==="proposta"?`<div class="meta">Proposta enviada: ${esc(marcQuando(m.pd,m.ph))}</div>`:""}<span class="${MARC_K[m.estado]}">${MARC_EST[m.estado]}</span></div><div class="stk" style="flex-wrap:wrap">${ac}</div></div>`;
+  };
+  return'<h3 style="margin:0 0 4px">Por tratar e próximas</h3>'+(act.length?act.map(row).join(""):'<p class="meta">Nada pendente.</p>')+(old.length?'<h3 style="margin:18px 0 4px">Histórico</h3>'+old.slice(-10).reverse().map(row).join(""):"");
+}
+async function marcResp(id,acao,d,h){
+  const {error}=await sb.rpc("responder_marcacao",{p_id:id,p_acao:acao,p_data:d||null,p_hora:h||null});
+  if(error){toast(/ocupado/i.test(error.message||"")?"Já tem outra marcação confirmada a essa hora.":"Não foi possível guardar. Atualize e tente outra vez.");await loadMarc();drawCrm();return false;}
+  await loadMarc();drawCrm();return true;
+}
+function openProp(id){
+  const m=MARC.find(x=>x.id===id);if(!m)return;
+  PROP_ID=id;$("propData").min=hojeISO();$("propData").value=m.data>=hojeISO()?m.data:"";$("propHora").value=m.hora;$("propErr").textContent="";$("dProp").showModal();
+}
+async function sendProp(){
+  const e=$("propErr");e.textContent="";
+  const d=$("propData").value,h=$("propHora").value;
+  if(!d||d<hojeISO()){e.textContent="Escolha um dia válido.";return;}
+  if(await marcResp(PROP_ID,"propor",d,h)){$("dProp").close();toast("Proposta enviada ao cliente.");}
+}
+$("crmbody").addEventListener("click",async e=>{
+  const b=e.target.closest("button[data-mz]");if(!b)return;
+  const id=b.dataset.mid,a=b.dataset.mz;
+  if(a==="propor"){openProp(id);return;}
+  if(a==="recusar"&&!confirm("Recusar esta marcação?"))return;
+  if(a==="cancelar"&&!confirm("Cancelar esta marcação confirmada? O cliente vê o cancelamento."))return;
+  if(await marcResp(id,a)&&a==="confirmar")toast("Marcação confirmada.");
+});
+// cliente
+function drawMeusMarc(){
+  const b=$("meusmarc");if(!b)return;
+  const uid=SESSION&&SESSION.user.id,L=MARC.filter(m=>m.cid===uid);
+  if(!L.length){b.innerHTML="";return;}
+  b.innerHTML='<h3 style="margin:0 0 4px">As minhas marcações</h3>'+L.slice().sort((x,y)=>String(y.data+y.hora).localeCompare(String(x.data+x.hora))).map(m=>{
+    const f=fProv(m.fid),bt=(a,t,c)=>`<button class="btn ${c||""}" data-mk="${a}" data-mid="${esc(m.id)}">${t}</button>`;
+    const ac=(m.estado==="proposta"?bt("aceitar","Aceitar nova hora","primary"):"")+((m.estado==="pendente"||m.estado==="proposta"||m.estado==="confirmada")?bt("cancelar","Cancelar"):"")+(f?`<button class="btn" data-contact="${esc(f.id)}">Contactar</button>`:"");
+    return `<div class="prow" style="align-items:flex-start"><div style="flex:1;min-width:min(200px,100%)"><strong>${esc(f?f.nome:"Fornecedor")}</strong> <span class="meta">· ${esc(marcQuando(m.data,m.hora))}</span>${m.nota?`<div>${esc(m.nota)}</div>`:""}${m.estado==="proposta"?`<div class="meta">🕒 O fornecedor propõe: ${esc(marcQuando(m.pd,m.ph))}</div>`:""}<span class="${MARC_K[m.estado]}">${MARC_EST[m.estado]}</span></div><div class="stk" style="flex-wrap:wrap">${ac}</div></div>`;
+  }).join("");
+}
+$("meusmarc").addEventListener("click",async e=>{
+  const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.contact){openCont(b.dataset.contact);return;}
+  const a=b.dataset.mk;if(!a)return;
+  if(a==="cancelar"&&!confirm("Cancelar esta marcação?"))return;
+  const {error}=await sb.rpc("decidir_marcacao",{p_id:b.dataset.mid,p_acao:a});
+  if(error){toast(/ocupado/i.test(error.message||"")?"Essa hora já foi ocupada. Fale com o fornecedor.":"Não foi possível guardar. Atualize e tente outra vez.");}
+  await loadMarc();drawMeus();
+});
 // ---- perfil do fornecedor, link direto, partilha e QR code
 const fornUrl=id=>location.origin+location.pathname+"?f="+encodeURIComponent(id);
 function bindCards(root){
@@ -1824,6 +2196,7 @@ function bindCards(root){
   root.querySelectorAll("[data-prod]").forEach(b=>b.onclick=()=>openProd(b.dataset.prod));
   root.querySelectorAll("[data-rev]").forEach(b=>b.onclick=()=>openRev(b.dataset.rev));
   root.querySelectorAll("[data-orc]").forEach(b=>b.onclick=()=>openOrc(b.dataset.orc));
+  root.querySelectorAll("[data-marc]").forEach(b=>b.onclick=()=>openMarc(b.dataset.marc));
   root.querySelectorAll("[data-forn]").forEach(b=>b.onclick=()=>openForn(b.dataset.forn));
   root.querySelectorAll("[data-share]").forEach(b=>b.onclick=()=>shareProv(b.dataset.share));
 }
@@ -1881,15 +2254,16 @@ $("pfoto").addEventListener("change",async e=>{
   catch(x){$("perr").textContent=(x&&x.reason)||"Não foi possível usar essa imagem.";return;}
   im.src=URL.createObjectURL(NEWBLOB);im.classList.remove("hide");
 });
+restorePos();
 (async()=>{
   if(!DEMO){
-    const {data}=await sb.auth.getSession();SESSION=data.session;
+    const {data}=await sb.auth.getSession();SESSION=data.session;rtSync();favSync();
     sb.auth.onAuthStateChange(async(ev,sess)=>{
       if(ev==="INITIAL_SESSION")return;
-      SESSION=sess;
+      SESSION=sess;rtSync();favSync();
       if(ev==="PASSWORD_RECOVERY"){go("newpass");return;}
       if(VIEW==="newpass")return;
-      if(ev==="SIGNED_OUT"){S.user=null;IS_ADMIN=false;MOD=[];applyUser();await loadList();render();go("login");return;}
+      if(ev==="SIGNED_OUT"){FAV=new Set();favSave();FAV_UID="";FAV_F=false;S.user=null;IS_ADMIN=false;MOD=[];applyUser();await loadList();render();go("login");return;}
       if(sess&&(VIEW==="login"||VIEW==="boot"))await afterAuth();else{await loadList();render();}
     });
   }
