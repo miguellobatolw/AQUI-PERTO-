@@ -111,6 +111,20 @@ footer a{color:inherit;text-decoration:underline}
 #mapa .leaflet-popup-content{font:14px/1.4 "Bricolage Grotesque",system-ui,sans-serif;margin:12px 14px}
 .vt{display:flex;gap:8px;margin:0 0 4px}
 .hide{display:none!important}
+#poster{display:none}
+@media print{
+  body.pp .wrap,body.pp dialog,body.pp .toast{display:none!important}
+  body.pp{background:#fff!important;color:#000!important}
+  body.pp #poster{display:flex!important;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:95vh;padding:24px;font-family:"Bricolage Grotesque",system-ui,sans-serif;color:#14262b}
+  #poster .pk{font-size:22px;letter-spacing:.08em;text-transform:uppercase;color:#0f5c4d;font-weight:800}
+  #poster h1{font-size:54px;max-width:none;margin:14px 0 4px;color:#14262b}
+  #poster .pc{font-size:24px;color:#444;margin-bottom:26px}
+  #poster .pq{width:380px;max-width:80%;margin:0 auto 18px}
+  #poster .pq svg{width:100%;height:auto;display:block}
+  #poster .pt{font-size:26px;font-weight:700}
+  #poster .pu{font-size:16px;color:#444;margin-top:10px;word-break:break-all}
+  #poster .pf{margin-top:30px;font-size:14px;color:#666}
+}
 .chip:disabled{opacity:.45;cursor:not-allowed}
 .badge{display:inline-block;background:var(--chip);border-radius:6px;padding:2px 8px;font-size:13px;font-weight:600}
 .note{font-size:13px;color:var(--muted);margin-top:14px}
@@ -185,6 +199,7 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
   <div class="chips" id="chips"></div>
   <p style="margin:0 0 4px"><button class="chip" id="fent" aria-pressed="false" onclick="ENT_F=!ENT_F;render()">🚚 Só com entrega ao domicílio</button> <button class="chip" id="ffav" type="button" aria-pressed="false" onclick="FAV_F=!FAV_F;render()">♥ Favoritos</button></p>
   <div class="vt" role="group" aria-label="Modo de visualização"><button class="chip" id="vlist" type="button" aria-pressed="true" onclick="setMapa(false)">☰ Lista</button><button class="chip" id="vmap" type="button" aria-pressed="false" onclick="setMapa(true)">🗺️ Mapa</button></div>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:4px 0"><label for="ordsel" class="meta" style="margin:0;font-weight:400">Ordenar</label><select id="ordsel" class="chip" onchange="ORD_S=this.value;render()" aria-label="Ordenar resultados"><option value="auto">Recomendados</option><option value="rating">Melhor avaliados</option><option value="dist">Mais perto</option><option value="novo">Mais recentes</option><option value="nome">Nome (A–Z)</option></select></div>
   <div class="count" id="count"></div>
   <div class="grid" id="grid"></div>
   <div id="mapa" class="hide" role="region" aria-label="Mapa de fornecedores"></div>
@@ -207,6 +222,7 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
     <p style="margin:0 0 8px"><button class="chip" type="button" onclick="gpsDo('jmsg',(z,pos)=>{if(!S.jz.includes(z))S.jz.push(z);drawJZ();JPOS={lat:Math.round(pos.lat*100)/100,lng:Math.round(pos.lng*100)/100};JLOC=pos.cidade||'';$('jlocq').value=JLOC;})">📍 Guardar a localização do meu negócio</button> <span class="meta" id="jmsg" role="status"></span><br><span class="note">Guardamos só uma localização aproximada (cerca de 1 km) e o nome da localidade, nunca a morada exata. Os clientes veem a localidade e a distância no seu perfil.</span></p>
     <div class="locbar" style="margin:0 0 8px"><input class="f" id="jlocq" maxlength="60" placeholder="Ou escreva a localidade (ex.: Amora)" aria-label="Localidade do negócio" style="flex:1 1 180px;min-width:0;width:auto" onkeydown="if(event.key==='Enter'){event.preventDefault();jLocFind();}"> <button class="chip" type="button" onclick="jLocFind()">Procurar local</button></div>
     <div class="locres" id="jlocres"></div>
+    <div id="jhorwrap" class="hide"><label>Horário de atendimento (para marcações)</label><div id="jhor"></div><p class="note">Deixe tudo desmarcado para aceitar marcações a qualquer hora. Só dias e horas dentro do horário podem ser pedidos.</p></div>
     <div id="jraioswrap" class="hide"><label for="jraios">Atendo até (km a partir da localização do negócio)</label>
     <input class="f" id="jraios" type="number" inputmode="numeric" min="1" max="200" placeholder="ex.: 20"></div>
     <div class="zones" id="jzonas"></div>
@@ -242,8 +258,9 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
     <input class="f" id="jpreco" maxlength="40" placeholder="Ex.: 25 €/hora ou 3 €/kg">
     <label for="jdesc">Descrição</label>
     <textarea class="f" id="jdesc" rows="3" maxlength="240" placeholder="O que faz, há quanto tempo, horários…"></textarea>
-    <label for="jtel">Telemóvel</label>
+    <label for="jtel">Telemóvel (opcional)</label>
     <input class="f" id="jtel" type="tel" inputmode="tel" placeholder="9XX XXX XXX" autocomplete="tel">
+    <p class="note" style="margin-top:6px">Sem telemóvel, os clientes contactam-no por mensagem dentro da app.</p>
     <div id="jmedia" class="hide">
       <label>Logótipo</label>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
@@ -322,6 +339,7 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
     <div class="meta">Acompanhe o estado dos pedidos que fez aos fornecedores.</div>
     <div id="meuspush" style="margin-top:12px"></div>
     <div id="meusmoedas" style="margin-top:12px"></div>
+    <div id="meusmsg" style="margin-top:12px"></div>
     <div id="meusorc" style="margin-top:12px"></div>
     <div id="meusmarc" style="margin-top:12px"></div>
     <div id="meuslist" style="margin-top:12px"></div>
@@ -337,6 +355,7 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
       <button class="tab" id="ct-pedidos" onclick="crmTab('pedidos')">Pedidos</button>
       <button class="tab" id="ct-orcamentos" onclick="crmTab('orcamentos')">Orçamentos</button>
       <button class="tab" id="ct-marcacoes" onclick="crmTab('marcacoes')">Marcações</button>
+      <button class="tab" id="ct-mensagens" onclick="crmTab('mensagens')">Mensagens</button>
       <button class="tab" id="ct-clientes" onclick="crmTab('clientes')">Clientes</button>
       <button class="tab" id="ct-perfil" onclick="crmTab('perfil')">Perfil</button>
       <button class="tab" id="ct-relatorios" onclick="crmTab('relatorios')">Relatórios</button>
@@ -350,6 +369,7 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
   <div class="panel" style="max-width:760px">
     <h2>O meu catálogo</h2>
     <div class="meta">Produtos e serviços que os clientes veem no seu perfil. Deixe o stock em branco se não o quiser controlar.</div>
+    <div id="catck"></div>
     <div id="catsel-wrap"><label for="catsel">Perfil</label><select class="f" id="catsel" onchange="CAT_ID=this.value;drawCat()"></select></div>
     <div class="count" id="catsum" style="margin-top:14px"></div>
     <div id="catlist"></div>
@@ -390,6 +410,16 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
   </div>
 </main>
 
+<main id="chat" class="hide">
+  <div class="panel" style="max-width:640px">
+    <div style="display:flex;align-items:center;gap:8px"><button class="btn" onclick="chatBack()" aria-label="Voltar">←</button><div style="flex:1;min-width:0"><h2 id="chatNome" style="font-size:20px;margin:0"></h2><div class="meta" id="chatSub"></div></div></div>
+    <div id="chatMsgs" style="margin:12px 0;max-height:55vh;min-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:6px" role="log" aria-live="polite"></div>
+    <div style="display:flex;gap:8px;align-items:flex-end"><textarea class="f" id="chatTxt" rows="2" maxlength="1000" placeholder="Escreva uma mensagem…" aria-label="Mensagem" style="flex:1"></textarea><button class="btn primary" id="chatSend" onclick="sendMsg()">Enviar</button></div>
+    <div class="err" id="chatErr" role="alert"></div>
+    <p class="note">Só você e o outro participante veem esta conversa. Não partilhe dados de pagamento.</p>
+  </div>
+</main>
+
 <main id="forn" class="hide">
   <div style="padding:8px 0 40px;max-width:560px">
     <p style="margin:4px 0 12px"><button class="btn" onclick="go('home');render()">← Voltar à pesquisa</button></p>
@@ -405,6 +435,7 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
       </div>
       <div id="fornQR" style="width:min(220px,100%);margin:16px 0 8px"></div>
       <button class="btn hide" id="fornQRdl" onclick="dlQR()">Transferir QR code (SVG)</button>
+      <button class="btn hide" id="fornPrint" onclick="printPoster()">Imprimir cartaz (A4)</button>
     </div>
   </div>
 </main>
@@ -439,6 +470,7 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
   <div style="display:flex;gap:8px;flex-wrap:wrap">
     <a class="btn primary" id="ctCall" style="text-decoration:none">Ligar</a>
     <a class="btn accent" id="ctWa" target="_blank" rel="noopener" style="text-decoration:none">WhatsApp</a>
+    <button class="btn primary hide" id="ctMsg" type="button">💬 Mensagem</button>
     <button class="btn" onclick="dCont.close()">Fechar</button>
   </div>
 </dialog>
@@ -545,6 +577,7 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
   <div id="rvList" style="margin-top:8px"></div>
   <div style="margin-top:14px"><button class="btn" onclick="dRev.close()">Fechar</button></div>
 </dialog>
+<div id="poster" aria-hidden="true"></div>
 <div class="toast" id="toast" role="status"></div>
 
 <script>
@@ -595,18 +628,24 @@ async function loadList(){
   // O telemóvel (coluna tel) NÃO é pedido aqui: só chega a quem tem sessão, via sb.rpc("obter_contacto")
   // Leitura com recuo progressivo: se faltar alguma coluna recente na base de dados, tenta com menos colunas em vez de falhar
   const BASE="id,user_id,created_at,nome,tipo,cat,zonas,preco,descr,lat,lng,entrega,entrega_raio,entrega_taxa,entrega_min,entrega_gratis";
-  const NIVEIS=[BASE+",fidelidade,logo,galeria,localidade,raio_servico",BASE+",fidelidade,logo,galeria",BASE+",fidelidade",BASE];
+  const NIVEIS=[BASE+",fidelidade,logo,galeria,localidade,raio_servico,horario",BASE+",fidelidade,logo,galeria,localidade,raio_servico",BASE+",fidelidade,logo,galeria",BASE+",fidelidade",BASE];
   let q0=null;
   for(const cols of NIVEIS){
     q0=await sb.from("fornecedores").select(cols+",produtos(*)").order("created_at",{ascending:false});
     if(!q0.error)break;
   }
   if(q0.error){const q1=await sb.from("fornecedores").select(BASE).order("created_at",{ascending:false});if(!q1.error)q0={data:q1.data.map(r=>({...r,produtos:[]})),error:null};}
-  const {data,error}=q0;
+  let data=q0.data,error=q0.error;
+  if(error){
+    // sem ligação ou falha da base de dados: usa a última lista guardada neste aparelho (só dados públicos)
+    try{const c=JSON.parse(localStorage.getItem("aq_cache")||"null");if(c&&Array.isArray(c.rows)&&c.rows.length){data=c.rows;error=null;CACHED=c.t||1;toast("Sem ligação: a mostrar a última lista guardada"+(c.t?" ("+new Date(c.t).toLocaleDateString("pt-PT")+")":"")+".");}}catch(x){}
+  }else{
+    CACHED=0;try{localStorage.setItem("aq_cache",JSON.stringify({t:Date.now(),rows:data}));}catch(x){}
+  }
   if(error){LOAD_ERR=(error.message||String(error));console.error("loadList:",error);toast("Erro ao carregar fornecedores: "+LOAD_ERR);return false;}
   LOAD_ERR="";
   const uid=SESSION&&SESSION.user.id;
-  S.list=data.map(r=>({id:r.id,nome:r.nome,tipo:r.tipo,cat:r.cat,zonas:r.zonas,preco:r.preco||"",desc:r.descr||"",tel:"",rating:0,n:0,lat:r.lat==null?null:Number(r.lat),lng:r.lng==null?null:Number(r.lng),entrega:!!r.entrega,raio:Number(r.entrega_raio)||0,taxa:Number(r.entrega_taxa)||0,min:Number(r.entrega_min)||0,gratis:Number(r.entrega_gratis)||0,fi:r.fidelidade&&r.fidelidade.ativo?r.fidelidade:null,logo:r.logo||"",galeria:r.galeria||[],localidade:r.localidade||"",raioS:Number(r.raio_servico)||0,prods:(r.produtos||[]).map(x=>({id:x.id,nome:x.nome,preco:Number(x.preco),un:x.un,stock:x.stock==null?null:Number(x.stock),ativo:x.ativo,foto:x.foto||""})),mine:r.user_id===uid}));
+  S.list=data.map(r=>({id:r.id,nome:r.nome,tipo:r.tipo,cat:r.cat,zonas:r.zonas,preco:r.preco||"",desc:r.descr||"",tel:"",rating:0,n:0,lat:r.lat==null?null:Number(r.lat),lng:r.lng==null?null:Number(r.lng),entrega:!!r.entrega,raio:Number(r.entrega_raio)||0,taxa:Number(r.entrega_taxa)||0,min:Number(r.entrega_min)||0,gratis:Number(r.entrega_gratis)||0,fi:r.fidelidade&&r.fidelidade.ativo?r.fidelidade:null,logo:r.logo||"",galeria:r.galeria||[],localidade:r.localidade||"",raioS:Number(r.raio_servico)||0,horario:r.horario&&typeof r.horario==="object"?r.horario:null,prods:(r.produtos||[]).map(x=>({id:x.id,nome:x.nome,preco:Number(x.preco),un:x.un,stock:x.stock==null?null:Number(x.stock),ativo:x.ativo,foto:x.foto||""})),mine:r.user_id===uid,criado:r.created_at||""}));
   await loadMyTels();
   try{const rt=await sb.from("fornecedor_rating").select("fornecedor_id,media,n");(rt.data||[]).forEach(x=>{const p=S.list.find(y=>y.id===x.fornecedor_id);if(p){p.rating=Number(x.media)||0;p.n=Number(x.n)||0;}});}catch(e){}
   applyUser();return true;
@@ -616,8 +655,8 @@ function saveMine(){try{localStorage.setItem("aq_mine",JSON.stringify(S.list.fil
 function toast(t){const e=$("toast");e.textContent=t;e.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display="none",2600);}
 
 function fillZones(sel,first){sel.innerHTML=(first?`<option value="">${first}</option>`:"")+Z.map(z=>`<option>${z}</option>`).join("");}
-let LOAD_ERR="",VIEW="boot",LM="login",LR="cliente",OBP="servico",NEWID="",CAT_ID="",PHOTO_PID="",NEWBLOB=null,ORD_F="",CT="painel",PF="novo",RP="tudo",PED=[],NOTAS={},SEG={},MYPOS=null,JPOS=null,JLOC="",LOCRES=[],JLOCRES=[],SQL_MISS=false,EDIT_ID="",ENT_F=false,OM=false,ENT_D=null,RW="",MOEDAS={},MOV={},IS_ADMIN=false,MOD=[],DEN_ID="",POP=false,FORN_ID="",QR_SVG="";
-function go(v){const prev=VIEW;VIEW=v;if(v!=="join"&&EDIT_ID){EDIT_ID="";clearJoin();}["home","join","login","ob","cat","crm","meus","newpass","role","mod","forn","legal"].forEach(x=>$(x).classList.toggle("hide",x!==v));if(v==="join"){joinMode();jTipo(S.jtipo);}scrollTo(0,0);navSync(v,prev);}
+let CACHED=0,ORD_S="auto",LOAD_ERR="",VIEW="boot",LM="login",LR="cliente",OBP="servico",NEWID="",CAT_ID="",PHOTO_PID="",NEWBLOB=null,ORD_F="",CT="painel",PF="novo",RP="tudo",PED=[],NOTAS={},SEG={},MYPOS=null,JPOS=null,JLOC="",LOCRES=[],JLOCRES=[],SQL_MISS=false,EDIT_ID="",ENT_F=false,OM=false,ENT_D=null,RW="",MOEDAS={},MOV={},IS_ADMIN=false,MOD=[],DEN_ID="",POP=false,FORN_ID="",QR_SVG="";
+function go(v){const prev=VIEW;VIEW=v;if(v!=="join"&&EDIT_ID){EDIT_ID="";clearJoin();}["home","join","login","ob","cat","crm","meus","newpass","role","mod","forn","legal","chat"].forEach(x=>$(x).classList.toggle("hide",x!==v));if(v==="join"){joinMode();jTipo(S.jtipo);}scrollTo(0,0);navSync(v,prev);}
 function goProv(){if(EDIT_ID){EDIT_ID="";clearJoin();}if(DEMO||SESSION||S.user)go("join");else openLogin("signup","fornecedor");}
 function setLR(r){LR=r;drawLogin();}
 function openLogin(m,r){LM=m||"login";if(r)LR=r;$("lerr").textContent="";drawLogin();go("login");}
@@ -673,7 +712,7 @@ let LEGAL_BACK="home";
 const LEGAL_TXT={
 priv:{t:"Política de privacidade",h:()=>`<p class="meta">Versão de ${esc(LEGAL.data)}.</p>
 <h3>1. Quem é o responsável</h3><p>${esc(LEGAL.resp)}, contacto: ${esc(LEGAL.email)}.</p>
-<h3>2. Que dados tratamos</h3><ul><li>Conta: e-mail, nome, zona, telemóvel (opcional) e se é cliente ou fornecedor.</li><li>Fornecedores: nome do negócio, categoria, zonas, preços, descrição, telemóvel, fotografias, entregas, fidelidade e localização aproximada (arredondada a cerca de 1 km, nunca a morada exata), nome da localidade e raio de atendimento. A posição que um cliente usa para pesquisar fica só guardada no seu aparelho; para a converter em localidade enviamos coordenadas arredondadas a cerca de 1 km ao serviço OpenStreetMap Nominatim.</li><li>Pedidos: produtos, valores, nota, nome e telemóvel do cliente e, nas entregas, a morada indicada.</li><li>Pedidos de orçamento: descrição, localidade, data pretendida, nome, telemóvel e até 3 fotografias, guardadas em armazenamento privado.</li><li>Notas privadas e datas de seguimento que o fornecedor regista sobre clientes, e moedas de fidelidade.</li><li>Dados técnicos do aparelho para os avisos de novos pedidos, se os ativar.</li></ul>
+<h3>2. Que dados tratamos</h3><ul><li>Conta: e-mail, nome, zona, telemóvel (opcional) e se é cliente ou fornecedor.</li><li>Fornecedores: nome do negócio, categoria, zonas, preços, descrição, telemóvel, fotografias, entregas, fidelidade e localização aproximada (arredondada a cerca de 1 km, nunca a morada exata), nome da localidade e raio de atendimento. A posição que um cliente usa para pesquisar fica só guardada no seu aparelho; para a converter em localidade enviamos coordenadas arredondadas a cerca de 1 km ao serviço OpenStreetMap Nominatim.</li><li>Pedidos: produtos, valores, nota, nome e telemóvel do cliente e, nas entregas, a morada indicada.</li><li>Pedidos de orçamento: descrição, localidade, data pretendida, nome, telemóvel e até 3 fotografias, guardadas em armazenamento privado.</li><li>Mensagens trocadas entre cliente e fornecedor dentro da app, visíveis apenas aos dois participantes.</li><li>Notas privadas e datas de seguimento que o fornecedor regista sobre clientes, e moedas de fidelidade.</li><li>Dados técnicos do aparelho para os avisos de novos pedidos, se os ativar.</li></ul>
 <h3>3. Localização</h3><p>A localização do GPS é usada no seu aparelho para ordenar por distância e não é guardada. Para obter o nome da localidade podem ser enviadas coordenadas arredondadas (cerca de 1 km) ao serviço OpenStreetMap (Nominatim).</p>
 <h3>4. Para que usamos e porquê</h3><p>Criar e gerir a conta e os pedidos (execução do serviço); mostrar fornecedores perto de si e enviar avisos (o seu consentimento); manter a app segura (interesse legítimo). Não vendemos dados nem fazemos publicidade.</p>
 <h3>5. Quem vê os dados</h3><p>O fornecedor vê o nome, o telemóvel e a morada de entrega dos clientes que lhe fazem pedidos, e, nos pedidos de orçamento, a descrição, a localidade e as fotografias enviadas. Os clientes veem os dados públicos do fornecedor, incluindo o telemóvel. As avaliações (estrelas, comentário e primeiro nome do cliente) são públicas. As denúncias de avaliações ficam registadas e só a equipa da app as vê. Usamos como prestadores: Supabase (base de dados, contas e fotografias), GitHub Pages (alojamento), Google (se entrar com Google) e OpenStreetMap.</p>
@@ -696,7 +735,7 @@ function showLegal(k){
   if(VIEW!=="legal")LEGAL_BACK=VIEW;
   $("legaltitle").textContent=LEGAL_TXT[k].t;$("legalbody").innerHTML=LEGAL_TXT[k].h();go("legal");
 }
-const AQ_KEYS=["aq_mine","aq_moedas","aq_notas","aq_ped","aq_seg","aq_user","aq_role","aq_avs","aq_orc","aq_favs"];
+const AQ_KEYS=["aq_cache","aq_mine","aq_moedas","aq_notas","aq_ped","aq_seg","aq_user","aq_role","aq_avs","aq_orc","aq_favs"];
 async function apagarConta(){
   if(!confirm("Vai apagar a sua conta e todos os dados associados (perfis, produtos, fotografias, pedidos). Isto não pode ser desfeito. Continuar?"))return;
   const t=prompt("Para confirmar, escreva APAGAR:");
@@ -798,11 +837,35 @@ async function openProd(id){
   $("dProd").showModal();
 }
 function openCat(id){if(id)CAT_ID=id;if(!S.list.some(p=>p.mine)){goProv();return;}go("cat");drawCat();}
+// ---- guia de arranque do fornecedor (checklist: produto, localização, logótipo, partilha)
+const shKey=id=>"aq_shared_"+id;
+const wasShared=id=>{try{return localStorage.getItem(shKey(id))==="1";}catch(e){return false;}};
+function markShared(id){try{localStorage.setItem(shKey(id),"1");}catch(e){}}
+function ckSteps(p){
+  const st=[];
+  if(p.tipo==="produto")st.push({k:"prod",ok:(p.prods||[]).length>0,t:"Adicionar o primeiro produto",d:"Com preço e, se puder, uma foto."});
+  st.push({k:"loc",ok:p.lat!=null,t:"Guardar a localização do negócio",d:"Para os clientes verem a distância."});
+  st.push({k:"logo",ok:!!p.logo||(p.galeria||[]).length>0,t:"Adicionar logótipo ou fotos",d:"Perfis com imagens recebem mais contactos."});
+  st.push({k:"share",ok:wasShared(p.id),t:"Partilhar o perfil",d:"Envie o link ou o QR code a clientes que já conhece."});
+  return st;
+}
+function ckHtml(p){
+  const st=ckSteps(p),n=st.filter(x=>x.ok).length;
+  if(n===st.length)return"";
+  return `<div class="panel" style="margin:0 0 16px;padding:14px;max-width:none"><strong>Comece em ${st.length} passos${S.list.filter(x=>x.mine).length>1?" · "+esc(p.nome):""}</strong><div class="meta">${n} de ${st.length} feitos</div><div style="height:6px;background:var(--chip);border-radius:999px;margin:8px 0 4px;overflow:hidden"><div style="height:100%;width:${Math.round(n/st.length*100)}%;background:var(--brand)"></div></div>`+st.map(x=>`<div class="prow"><div style="flex:1;min-width:min(180px,100%)"><span class="${x.ok?"ok":""}">${x.ok?"✓":"○"} ${esc(x.t)}</span>${x.ok?"":`<div class="meta">${esc(x.d)}</div>`}</div>${x.ok?"":`<button class="btn" data-ck="${x.k}" data-cid="${esc(p.id)}">${x.k==="share"?"Partilhar":x.k==="prod"?"Adicionar":"Fazer"}</button>`}</div>`).join("")+"</div>";
+}
+function ckAct(k,id){
+  if(k==="prod"){if(VIEW!=="cat")openCat(id);else CAT_ID=id;drawCat();setTimeout(()=>{const e=$("pnome");e.scrollIntoView({behavior:"smooth",block:"center"});e.focus();},50);}
+  else if(k==="loc"||k==="logo")openEdit(id);
+  else if(k==="share")openForn(id);
+}
+document.addEventListener("click",e=>{const b=e.target.closest("button[data-ck]");if(b)ckAct(b.dataset.ck,b.dataset.cid);});
 function drawCat(){
   const mine=S.list.filter(p=>p.mine);if(!mine.length)return;
   if(!mine.find(x=>x.id===CAT_ID))CAT_ID=mine[0].id;
   $("catsel").innerHTML=mine.map(p=>`<option value="${esc(p.id)}">${esc(p.nome)}</option>`).join("");$("catsel").value=CAT_ID;
   $("catsel-wrap").classList.toggle("hide",mine.length<2);
+  $("catck").innerHTML=ckHtml(mine.find(x=>x.id===CAT_ID));
   const f=mine.find(x=>x.id===CAT_ID),pr=f.prods.slice().sort(byNome);
   $("catsum").textContent=pr.length+(pr.length===1?" item":" itens")+" · "+pr.filter(x=>x.stock===0).length+" esgotados · "+pr.filter(x=>!x.ativo).length+" ocultos";
   $("catlist").innerHTML=pr.length?pr.map(x=>`<div class="prow" data-p="${esc(x.id)}"><button class="thumb" data-a="foto" aria-label="Foto de ${esc(x.nome)}">${thumb(x)}</button><div style="min-width:min(120px,100%);flex:1"><strong>${esc(x.nome)}</strong><div class="meta">${esc(fmtP(x))}</div></div>
@@ -995,16 +1058,17 @@ function moedasCli(c){
 function drawCrm(){drawCrm1();if(CT==="painel")pushUI();}
 function drawCrm1(){
   const L=myPed(),nv=L.filter(o=>o.estado==="novo").length,B=$("crmbody");
-  ["painel","pedidos","orcamentos","marcacoes","clientes","perfil","relatorios"].forEach(t=>$("ct-"+t).setAttribute("aria-selected",t===CT));
+  ["painel","pedidos","orcamentos","marcacoes","mensagens","clientes","perfil","relatorios"].forEach(t=>$("ct-"+t).setAttribute("aria-selected",t===CT));
   {const n=orcNovos();$("ct-orcamentos").textContent="Orçamentos"+(n?" ("+n+")":"");}
   {const n=marcNovas();$("ct-marcacoes").textContent="Marcações"+(n?" ("+n+")":"");}
+  {const n=msgsNovas();$("ct-mensagens").textContent="Mensagens"+(n?" ("+n+")":"");}
   {const t=$("ct-"+CT),q=t&&t.parentElement;if(q)q.scrollLeft=Math.max(0,t.offsetLeft-(q.clientWidth-t.offsetWidth)/2);}
   $("ct-pedidos").textContent="Pedidos"+(nv?" ("+nv+")":"");
   if(CT==="painel"){
     const done=L.filter(o=>o.estado==="concluido"),low=[],fu=[],seen={},hoje=new Date().toISOString().slice(0,10);
     L.forEach(o=>{const k=o.cliente_id||o.tel;if(!seen[k]){seen[k]=1;if(SEG[k]&&SEG[k]<=hoje)fu.push(o.nome+" · "+o.tel+" · "+(SEG[k]<hoje?"atrasado desde "+SEG[k]:"hoje"));}});
     S.list.filter(p=>p.mine).forEach(p=>p.prods.forEach(x=>{if(x.ativo&&x.stock!=null&&x.stock<=5)low.push(p.nome+" — "+x.nome+": "+(x.stock===0?"esgotado":x.stock+" "+x.un));}));
-    B.innerHTML=`<div class="kpis"><div class="kpi"><b>${nv}</b>Novos pedidos</div><div class="kpi"><b>${L.filter(o=>o.estado==="confirmado").length}</b>Em curso</div><div class="kpi"><b>${done.length}</b>Concluídos</div><div class="kpi"><b>${eur(done.reduce((a,o)=>a+o.total,0))}</b>Faturado</div></div><h3 style="margin:18px 0 4px">A contactar</h3>${fu.length?fu.map(t=>`<div class="prow">${esc(t)}</div>`).join(""):'<p class="meta">Nenhum contacto agendado para hoje.</p>'}<h3 style="margin:18px 0 4px">Stock a repor</h3>`+(low.length?low.map(t=>`<div class="prow">${esc(t)}</div>`).join(""):'<p class="meta">Nada em falta.</p>');
+    B.innerHTML=S.list.filter(p=>p.mine).map(ckHtml).join("")+`<div class="kpis"><div class="kpi"><b>${nv}</b>Novos pedidos</div><div class="kpi"><b>${L.filter(o=>o.estado==="confirmado").length}</b>Em curso</div><div class="kpi"><b>${done.length}</b>Concluídos</div><div class="kpi"><b>${eur(done.reduce((a,o)=>a+o.total,0))}</b>Faturado</div></div><h3 style="margin:18px 0 4px">A contactar</h3>${fu.length?fu.map(t=>`<div class="prow">${esc(t)}</div>`).join(""):'<p class="meta">Nenhum contacto agendado para hoje.</p>'}<h3 style="margin:18px 0 4px">Stock a repor</h3>`+(low.length?low.map(t=>`<div class="prow">${esc(t)}</div>`).join(""):'<p class="meta">Nada em falta.</p>');
   }else if(CT==="pedidos"){
     const fl=L.filter(o=>PF==="todos"||o.estado===PF);
     B.innerHTML=`<div class="chips">${["novo","confirmado","concluido","cancelado","todos"].map(f=>`<button class="chip" data-f="${f}" aria-pressed="${PF===f}">${f==="todos"?"Todos":EST[f]}</button>`).join("")}</div>`+(fl.length?fl.map(ordRow).join(""):'<p class="meta">Sem pedidos nesta lista.</p>');
@@ -1012,7 +1076,7 @@ function drawCrm1(){
     B.innerHTML=S.list.filter(p=>p.mine).map(p=>`<div class="prow"><div style="flex:1;min-width:min(200px,100%)"><strong>${esc(p.nome)}</strong><div class="meta">${esc(p.cat)} · ${esc(p.zonas.join(", "))}<br>${esc(p.tel)} · ${p.lat!=null?"📍 "+esc(p.localidade||"com localização"):"sem localização (os clientes não veem a distância)"}${p.entrega?" · 🚚 entrega até "+p.raio+" km ("+(p.taxa?eur(p.taxa):"grátis")+(p.gratis>0?", grátis acima de "+eur(p.gratis):"")+(p.min>0?", mínimo "+eur(p.min):"")+")":""}${p.fi&&p.fi.ativo?" · 🪙 programa de moedas ativo":""}</div></div><div class="stk" style="flex-wrap:wrap"><button class="btn" data-forn="${esc(p.id)}">Partilhar / QR</button><button class="btn primary" data-edit="${esc(p.id)}">Editar</button></div></div>`).join("")+'<p style="margin-top:14px"><button class="btn" data-newprof="1">Novo perfil</button></p>';
   }else if(CT==="relatorios"){
     B.innerHTML=relatorio(L);
-  }else if(CT==="marcacoes"){B.innerHTML=marcSup();}else if(CT==="orcamentos"){
+  }else if(CT==="mensagens"){B.innerHTML=msgSup();}else if(CT==="marcacoes"){B.innerHTML=marcSup();}else if(CT==="orcamentos"){
     B.innerHTML=orcSup();orcSign(B);
   }else{
     const m={};
@@ -1029,7 +1093,7 @@ function drawMeusMoedas(){
   $("meusmoedas").innerHTML=rows.length?'<h3 style="margin:0 0 4px">As minhas moedas</h3>'+rows.map(x=>`<div class="prow"><strong>${esc(x.p.nome)}</strong><span class="meta">🪙 ${x.s} moeda${x.s===1?"":"s"}</span></div>`).join(""):"";
 }
 function drawMeus(){
-  drawMeusMoedas();drawMeusOrc();pushUI();
+  drawMeusMoedas();drawMeusMsg();drawMeusOrc();pushUI();
   const uid=SESSION&&SESSION.user.id,L=PED.filter(o=>DEMO||o.cliente_id===uid);
   $("meuslist").innerHTML=L.length?L.map(o=>{
     const f=S.list.find(x=>x.id===o.fid);
@@ -1376,7 +1440,33 @@ function jPickLoc(i){
   JPOS={lat:x.lat,lng:x.lng};JLOC=x.cidade;$("jlocq").value=x.cidade;$("jlocres").innerHTML="";
   $("jmsg").textContent="Localização guardada: "+x.cidade+" ("+x.zona+").";
 }
-const exV=p=>({localidade:p.localidade||null,raio_servico:p.raioS||null});
+// ---- horário de atendimento (serviços): {"1":["09:00","18:00"],...} com 0=domingo
+const DIAS=[[1,"Seg"],[2,"Ter"],[3,"Qua"],[4,"Qui"],[5,"Sex"],[6,"Sáb"],[0,"Dom"]];
+const horOpts=()=>{const o=[];for(let h=6;h<=23;h++){o.push(String(h).padStart(2,"0")+":00");o.push(String(h).padStart(2,"0")+":30");}return o.map(x=>`<option>${x}</option>`).join("");};
+function drawHor(h){
+  const op=horOpts();
+  $("jhor").innerHTML=DIAS.map(([n,t])=>{const v=h&&h[n];return `<div class="prow" style="padding:6px 0"><label class="tg" style="margin:0;min-width:70px"><input type="checkbox" id="jh-d${n}" ${v?"checked":""}> ${t}</label><div class="stk"><select class="f" id="jh-a${n}" style="width:96px" aria-label="${t}: abre">${op}</select> – <select class="f" id="jh-b${n}" style="width:96px" aria-label="${t}: fecha">${op}</select></div></div>`;}).join("");
+  DIAS.forEach(([n])=>{const v=h&&h[n];$("jh-a"+n).value=v?v[0]:"09:00";$("jh-b"+n).value=v?v[1]:"18:00";});
+}
+function readHor(){
+  const o={};let bad="";
+  DIAS.forEach(([n,t])=>{if($("jh-d"+n)&&$("jh-d"+n).checked){const a=$("jh-a"+n).value,b=$("jh-b"+n).value;if(a>=b)bad=t;o[n]=[a,b];}});
+  if(bad)return {erro:"Horário inválido em "+bad+": a hora de fecho tem de ser depois da de abertura."};
+  return Object.keys(o).length?o:null;
+}
+function horResumo(h){
+  if(!h)return"";
+  const out=[];let i=0;
+  while(i<DIAS.length){
+    const [n,t]=DIAS[i],v=h[n];
+    if(!v){i++;continue;}
+    let j=i;while(j+1<DIAS.length&&h[DIAS[j+1][0]]&&h[DIAS[j+1][0]][0]===v[0]&&h[DIAS[j+1][0]][1]===v[1])j++;
+    out.push((j>i?t+"–"+DIAS[j][1]:t)+" "+v[0]+"–"+v[1]);i=j+1;
+  }
+  return out.join(" · ");
+}
+function horBadge(p){const r=horResumo(p.horario);return r?`<div><span class="badge">🕘 ${esc(r)}</span></div>`:"";}
+const exV=p=>({localidade:p.localidade||null,raio_servico:p.raioS||null,horario:p.horario||null});
 const colErr=e=>/localidade|raio_servico|column|schema cache/i.test((e&&e.message)||"");
 function servBadge(p){
   if(p.tipo!=="servico"||!p.raioS)return"";
@@ -1391,6 +1481,7 @@ function joinMode(){
   $("jtipoL").classList.toggle("hide",e);$("jtipoS").classList.toggle("hide",e);
 }
 function clearJoin(){
+  if($("jhor"))$("jhor").innerHTML="";
   ["jnome","jpreco","jdesc","jtel"].forEach(i=>$(i).value="");
   S.jz=[];JPOS=null;JLOC="";$("jlocq").value="";$("jlocres").innerHTML="";$("jraios").value="";$("jmsg").textContent="";$("jerr").textContent="";drawJZ();$("jmedia").classList.add("hide");
   $("jent").checked=false;$("jraio").value="";$("jtaxa").value="";$("jmin").value="";$("jgratis").value="";drawEnt();$("jfid").checked=false;$("jppe").value=1;["jfecusto","jfpnome","jfpvalor","jfpcusto"].forEach(i=>$(i).value="");drawFidForm();
@@ -1402,7 +1493,7 @@ function openEdit(id){
   $("jpreco").value=p.preco||"";$("jdesc").value=p.desc==="Sem descrição."?"":p.desc;$("jtel").value=p.tel;
   $("jent").checked=!!p.entrega;$("jraio").value=p.entrega?p.raio:"";$("jtaxa").value=p.entrega&&p.taxa?p.taxa:"";$("jmin").value=p.entrega&&p.min?p.min:"";$("jgratis").value=p.entrega&&p.gratis?p.gratis:"";drawEnt();
   {const fi=p.fi;$("jfid").checked=!!(fi&&fi.ativo);$("jppe").value=fi?fi.ppe:1;$("jfecusto").value=fi&&fi.ent?fi.ent.custo:"";$("jfpnome").value=fi&&fi.prod?fi.prod.nome:"";$("jfpvalor").value=fi&&fi.prod?fi.prod.valor:"";$("jfpcusto").value=fi&&fi.prod?fi.prod.custo:"";drawFidForm();}
-  JPOS=p.lat!=null?{lat:p.lat,lng:p.lng}:null;JLOC=p.localidade||"";$("jlocq").value=JLOC;$("jlocres").innerHTML="";$("jraios").value=p.raioS||"";
+  JPOS=p.lat!=null?{lat:p.lat,lng:p.lng}:null;JLOC=p.localidade||"";$("jlocq").value=JLOC;$("jlocres").innerHTML="";$("jraios").value=p.raioS||"";drawHor(p.horario||null);
   $("jmsg").textContent=JPOS?(JLOC?"Localização guardada: "+JLOC+".":"Localização aproximada guardada."):"Sem localização guardada.";$("jerr").textContent="";
   mediaMsg("");drawMedia();
 }
@@ -1421,7 +1512,16 @@ async function saveOb(){
 function setTipo(t){S.tipo=t;S.cat="";render();}
 function setCat(c){S.cat=S.cat===c?"":c;render();}
 
+function sortFn(a,b){
+  const byR=(b.rating-a.rating)||(b.n-a.n),byD=(a.dist==null)-(b.dist==null)||(a.dist-b.dist);
+  if(ORD_S==="rating")return byR;
+  if(ORD_S==="dist")return MYPOS?(byD||byR):byR;
+  if(ORD_S==="novo")return String(b.criado||"").localeCompare(String(a.criado||""))||byR;
+  if(ORD_S==="nome")return a.nome.localeCompare(b.nome,"pt");
+  return MYPOS?(byD||byR):byR;
+}
 function render(){
+  {const o=$("ordsel").querySelector("option[value=dist]");o.disabled=!MYPOS;o.textContent=MYPOS?"Mais perto":"Mais perto (ative a localização)";if(!MYPOS&&ORD_S==="dist")ORD_S="auto";$("ordsel").value=ORD_S;}
   $("fent").setAttribute("aria-pressed",ENT_F);$("ffav").setAttribute("aria-pressed",FAV_F);$("ffav").textContent="♥ Favoritos"+(FAV.size?" ("+FAV.size+")":"");
   ["servico","produto"].forEach(t=>$("tab-"+t).setAttribute("aria-selected",t===S.tipo));
   $("chips").innerHTML=CATS[S.tipo].map(c=>`<button class="chip" aria-pressed="${S.cat===c}" data-c="${esc(c)}">${esc(c)}</button>`).join("");
@@ -1430,8 +1530,9 @@ function render(){
   S.list.forEach(p=>{p.dist=(MYPOS&&p.lat!=null)?km(MYPOS.lat,MYPOS.lng,p.lat,p.lng):null;});
   // "Quem atende a minha zona": serviços com raio próprio só aparecem se o cliente estiver dentro dele; os restantes, até 25 km (produtos com entrega: o maior dos dois)
   const cobre=p=>{if(!MYPOS)return true;if(p.dist==null)return !!(MYPOS.zona&&p.zonas.includes(MYPOS.zona));if(p.tipo==="servico"&&p.raioS>0)return p.dist<=p.raioS;return p.dist<=Math.max(25,p.entrega?p.raio:0);};
-  const r=S.list.filter(p=>p.tipo===S.tipo&&(!ENT_F||p.entrega)&&(!FAV_F||FAV.has(String(p.id)))&&(!S.cat||p.cat===S.cat)&&(FAV_F||!z||p.zonas.includes(z))&&(!q||norm(p.nome+" "+p.cat+" "+p.desc+" "+(p.prods||[]).map(x=>x.nome).join(" ")).includes(q))&&(FAV_F||!R||(p.dist!=null?p.dist<=R:!!(MYPOS&&MYPOS.zona&&p.zonas.includes(MYPOS.zona))))&&(FAV_F||!COB||cobre(p))).sort((a,b)=>MYPOS?((a.dist==null)-(b.dist==null)||(a.dist-b.dist)||(b.rating-a.rating)):(b.rating-a.rating));
+  const r=S.list.filter(p=>p.tipo===S.tipo&&(!ENT_F||p.entrega)&&(!FAV_F||FAV.has(String(p.id)))&&(!S.cat||p.cat===S.cat)&&(FAV_F||!z||p.zonas.includes(z))&&(!q||norm(p.nome+" "+p.cat+" "+p.desc+" "+(p.prods||[]).map(x=>x.nome).join(" ")).includes(q))&&(FAV_F||!R||(p.dist!=null?p.dist<=R:!!(MYPOS&&MYPOS.zona&&p.zonas.includes(MYPOS.zona))))&&(FAV_F||!COB||cobre(p))).sort(sortFn);
   $("count").textContent=r.length+(r.length===1?" resultado":" resultados")+(MYPOS?" perto de si"+(MYPOS.cidade?" ("+MYPOS.cidade+")":"")+(R?" (até "+R+" km)":"")+(COB?" (quem atende a sua zona)":"")+((MYPOS&&(R||COB)&&r.some(p=>p.dist==null))?" · "+r.filter(p=>p.dist==null).length+" sem localização exata":""):(z?" em "+z:" em todo o país"));
+  if(CACHED)$("count").textContent+=" · lista guardada (sem ligação)";
   if(FAV_F)$("count").textContent=r.length+(r.length===1?" favorito":" favoritos");
   $("grid").innerHTML=r.length?r.map(card).join(""):`<div class="empty"><strong>Ainda ninguém${z?" em "+esc(z):""} com esta pesquisa.</strong>${FAV_F?`<p class="meta">Ainda não guardou favoritos neste separador. Toque no ♡ de um fornecedor para o guardar.</p>`:COB?`<p class="meta">Ninguém atende a sua zona com esta pesquisa. Veja quem está mais longe.</p><button class="btn accent" onclick="setRaio(50)">Ver até 50 km</button> `:NX?`<p class="meta">Nada num raio de ${R} km. Alargue a distância ou tente outra categoria.</p><button class="btn accent" onclick="setRaio(${NX})">Alargar para ${NX} km</button> `:`<p class="meta">Tente outra zona ou categoria, ou convide um fornecedor que conheça.</p>`}<button class="btn primary" onclick="go('join')">Inscrever um fornecedor</button></div>`;
   mapSync(r);
@@ -1441,6 +1542,7 @@ function render(){
   document.querySelectorAll("[data-rev]").forEach(b=>b.onclick=()=>openRev(b.dataset.rev));
   document.querySelectorAll("[data-orc]").forEach(b=>b.onclick=()=>openOrc(b.dataset.orc));
   document.querySelectorAll("[data-marc]").forEach(b=>b.onclick=()=>openMarc(b.dataset.marc));
+  document.querySelectorAll("[data-msg]").forEach(b=>b.onclick=()=>openChatWith(b.dataset.msg));
   document.querySelectorAll("[data-forn]").forEach(b=>b.onclick=()=>openForn(b.dataset.forn));
   document.querySelectorAll("[data-share]").forEach(b=>b.onclick=()=>shareProv(b.dataset.share));
   document.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{if(!confirm("Apagar este perfil?"))return;const pd=S.list.find(x=>x.id===b.dataset.del);const {error}=await sb.from("fornecedores").delete().eq("id",b.dataset.del);if(error)toast("Não foi possível apagar.");else{if(pd){await dropPath(pd.logo);for(const x of pd.galeria||[])await dropPath(x);}await loadList();render();}});
@@ -1540,9 +1642,9 @@ function card(p){
   const col=COLORS[(p.nome.charCodeAt(0)+p.nome.length)%COLORS.length],fv=FAV.has(String(p.id));
   return `<article class="card"><div class="top"><div class="av" style="background:${col}" aria-hidden="true">${p.logo?`<img src="${esc(imgUrl({foto:p.logo}))}" alt="" loading="lazy">`:esc(p.nome[0])}</div>
   <div><h3><button type="button" class="linkb" data-forn="${esc(p.id)}" style="font-weight:inherit;color:inherit">${esc(p.nome)}</button>${p.mine?'<span class="mine">O meu</span>':""}</h3><div class="meta">${esc(p.cat)} · ${p.localidade?"📍 "+esc(p.localidade)+" · ":""}${esc(p.zonas.slice(0,3).join(", "))}${p.dist!=null?" · a "+(p.dist<10?p.dist.toFixed(1).replace(".",","):Math.round(p.dist))+" km":""}</div></div>${p.mine?"":`<button type="button" class="btn" style="margin-left:auto;padding:6px 10px;flex:none;color:${fv?"#c0392b":"inherit"}" data-fav="${esc(p.id)}" aria-pressed="${fv}" aria-label="${fv?"Remover dos favoritos":"Guardar nos favoritos"}: ${esc(p.nome)}">${fv?"♥":"♡"}</button>`}<button type="button" class="btn" style="margin-left:${p.mine?"auto":"0"};padding:6px 10px;flex:none" data-share="${esc(p.id)}" aria-label="Partilhar ${esc(p.nome)}">🔗</button></div>
-  <p>${esc(p.desc)}</p>${prodBtn(p)}${entBadge(p)}${servBadge(p)}${fiBadge(p)}
+  <p>${esc(p.desc)}</p>${prodBtn(p)}${entBadge(p)}${servBadge(p)}${horBadge(p)}${fiBadge(p)}
   <div class="foot"><div><span class="price">${esc(p.preco||"Sob consulta")}</span><br>${p.n?`<button type="button" class="star linkb" data-rev="${esc(p.id)}" aria-label="Ver avaliações de ${esc(p.nome)}">★ ${p.rating.toFixed(1).replace(".",",")} <span class="meta">(${p.n})</span></button>`:"<span class='meta'>Novo na app</span>"}</div>
-  <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">${p.tipo==="servico"&&!p.mine?`<button class="btn accent" data-orc="${esc(p.id)}">Pedir orçamento</button><button class="btn" data-marc="${esc(p.id)}">Marcar</button>`:""}${p.mine&&!DEMO?`<button class="btn" data-del="${p.id}">Apagar</button>`:""}<button class="btn primary" data-id="${p.id}">Contactar</button></div></div></article>`;
+  <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">${p.tipo==="servico"&&!p.mine?`<button class="btn accent" data-orc="${esc(p.id)}">Pedir orçamento</button><button class="btn" data-marc="${esc(p.id)}">Marcar</button>`:""}${p.mine&&!DEMO?`<button class="btn" data-del="${p.id}">Apagar</button>`:""}${p.mine?"":`<button class="btn" data-msg="${esc(p.id)}">💬 Mensagem</button>`}<button class="btn primary" data-id="${p.id}">Contactar</button></div></div></article>`;
 }
 async function loadMyTels(){
   if(DEMO||!SESSION)return;
@@ -1554,13 +1656,14 @@ async function openCont(id){
   if(!isLogged()){toast("Inicie sessão para ver o contacto.");openLogin("login");return;}
   $("ctNome").textContent=p.nome;$("ctMeta").textContent=p.cat+" · "+(p.localidade?p.localidade+" · ":"")+p.zonas.join(", ");
   const btns=[$("ctCall"),$("ctWa")],show=v=>btns.forEach(b=>b.classList.toggle("hide",!v));
-  $("ctTel").textContent="A obter contacto…";show(false);$("dCont").showModal();
+  $("ctTel").textContent="A obter contacto…";show(false);$("ctMsg").classList.add("hide");$("dCont").showModal();
   let tel=p.tel||"";
   if(!tel&&!DEMO){
     try{const {data,error}=await sb.rpc("obter_contacto",{p_id:String(p.id)});if(error)throw error;tel=data||"";if(tel)p.tel=tel;}
     catch(e){$("ctTel").textContent=/limite/.test((e&&e.message)||"")?"Viu muitos contactos numa hora. Tente mais tarde.":"Não foi possível obter o contacto.";return;}
   }
-  if(!tel){$("ctTel").textContent="Contacto indisponível.";return;}
+  if(!p.mine){$("ctMsg").classList.remove("hide");$("ctMsg").onclick=()=>{$("dCont").close();openChatWith(p.id);};}else $("ctMsg").classList.add("hide");
+  if(!tel){$("ctTel").textContent="Este fornecedor prefere ser contactado por mensagem.";return;}
   const d=tel.replace(/\D/g,"");
   $("ctTel").textContent=tel.replace(/(\d{3})(\d{3})(\d{3})/,"$1 $2 $3");
   $("ctCall").href="tel:+351"+d;$("ctWa").href="https://wa.me/351"+d;show(true);
@@ -1575,7 +1678,7 @@ function applyUser(){
   $("btnIn").classList.toggle("hide",on);$("btnOut").classList.toggle("hide",!on);
 }
 function drawFidForm(){$("jfidbox").classList.toggle("hide",!$("jfid").checked);}
-function drawEnt(){$("jraioswrap").classList.toggle("hide",S.jtipo!=="servico");$("jentbox").classList.toggle("hide",!$("jent").checked);$("jfident").classList.toggle("hide",!($("jent").checked&&S.jtipo==="produto"));}
+function drawEnt(){$("jraioswrap").classList.toggle("hide",S.jtipo!=="servico");$("jhorwrap").classList.toggle("hide",S.jtipo!=="servico");if(S.jtipo==="servico"&&!$("jhor").innerHTML)drawHor(null);$("jentbox").classList.toggle("hide",!$("jent").checked);$("jfident").classList.toggle("hide",!($("jent").checked&&S.jtipo==="produto"));}
 function jTipo(t){
   $("jentwrap").classList.toggle("hide",t!=="produto");
   S.jtipo=t;drawEnt();["servico","produto"].forEach(x=>$("j-"+x).setAttribute("aria-pressed",x===t));
@@ -1589,10 +1692,11 @@ async function saveProv(){
   const nome=$("jnome").value.trim(),tel=$("jtel").value.replace(/\D/g,"").replace(/^351/,"");
   const ent=S.jtipo==="produto"&&$("jent").checked,raio=Math.round(Number($("jraio").value)),taxa=Math.max(0,Math.round(Number($("jtaxa").value||0)*100)/100),mn=Math.max(0,Math.round(Number($("jmin").value||0)*100)/100),gr=Math.max(0,Math.round(Number($("jgratis").value||0)*100)/100),fon=$("jfid").checked,ppe=Math.round(Number($("jppe").value||0)*10)/10,fec=ent?Math.round(Number($("jfecusto").value||0)):0,fpn=$("jfpnome").value.trim(),fpv=Math.round(Number($("jfpvalor").value||0)*100)/100,fpc=Math.round(Number($("jfpcusto").value||0));
   let e="";SQL_MISS=false;
+  let horR=null;if(S.jtipo==="servico"){horR=readHor();if(horR&&horR.erro){$("jerr").textContent=horR.erro;return;}}
   const raioS=S.jtipo==="servico"&&$("jraios").value!==""?Math.round(Number($("jraios").value)):0;
   if(!nome)e="Indique o nome ou a marca.";
   else if(!S.jz.length)e="Escolha pelo menos uma zona.";
-  else if(tel.length!==9)e="O telemóvel deve ter 9 dígitos.";
+  else if(tel&&tel.length!==9)e="O telemóvel, se indicado, deve ter 9 dígitos.";
   else if(ent&&!(raio>=1&&raio<=200))e="Indique o raio de entrega em km (entre 1 e 200).";
   else if(ent&&gr>0&&taxa===0)e="Com taxa a 0 € a entrega já é grátis. Deixe «grátis a partir de» em branco ou defina uma taxa.";
   else if(ent&&gr>0&&mn>0&&gr<=mn)e="O valor para entrega grátis tem de ser superior ao pedido mínimo.";
@@ -1604,12 +1708,12 @@ async function saveProv(){
   else if(fon&&!(fec>0||(fpn&&fpv>0&&fpc>0)))e="Defina pelo menos uma recompensa: entrega grátis ou um produto grátis.";
   $("jerr").textContent=e;if(e)return;
   const FI=fon?{ativo:true,ppe,ent:fec>0?{custo:fec}:null,prod:(fpn&&fpv>0&&fpc>0)?{nome:fpn,valor:fpv,custo:fpc}:null}:null;
-  const p={nome,tipo:S.jtipo,cat:$("jcat").value,zonas:S.jz.slice(),preco:$("jpreco").value.trim(),desc:$("jdesc").value.trim()||"Sem descrição.",tel,entrega:ent,raio:ent?raio:0,taxa:ent?taxa:0,min:ent?mn:0,gratis:ent?gr:0,fi:FI,localidade:JLOC,raioS};
+  const p={nome,tipo:S.jtipo,cat:$("jcat").value,zonas:S.jz.slice(),preco:$("jpreco").value.trim(),desc:$("jdesc").value.trim()||"Sem descrição.",tel,entrega:ent,raio:ent?raio:0,taxa:ent?taxa:0,min:ent?mn:0,gratis:ent?gr:0,fi:FI,localidade:JLOC,raioS,horario:horR};
   if(EDIT_ID){
     const loc=JPOS?{lat:JPOS.lat,lng:JPOS.lng}:{};
-    if(DEMO){const f=S.list.find(x=>x.id===EDIT_ID);if(f){Object.assign(f,{nome:p.nome,cat:p.cat,zonas:p.zonas,preco:p.preco,desc:p.desc,tel:p.tel,entrega:p.entrega,raio:p.raio,taxa:p.taxa,min:p.min,gratis:p.gratis,fi:p.fi,localidade:p.localidade,raioS:p.raioS},loc);saveMine();}}
+    if(DEMO){const f=S.list.find(x=>x.id===EDIT_ID);if(f){Object.assign(f,{nome:p.nome,cat:p.cat,zonas:p.zonas,preco:p.preco,desc:p.desc,tel:p.tel,entrega:p.entrega,raio:p.raio,taxa:p.taxa,min:p.min,gratis:p.gratis,fi:p.fi,localidade:p.localidade,raioS:p.raioS,horario:p.horario},loc);saveMine();}}
     else{
-      const upd={nome:p.nome,cat:p.cat,zonas:p.zonas,preco:p.preco,descr:p.desc,tel:p.tel,entrega:p.entrega,entrega_raio:p.entrega?p.raio:null,entrega_taxa:p.entrega?p.taxa:null,entrega_min:p.entrega&&p.min?p.min:null,entrega_gratis:p.entrega&&p.gratis?p.gratis:null,fidelidade:p.fi,...loc};
+      const upd={nome:p.nome,cat:p.cat,zonas:p.zonas,preco:p.preco,descr:p.desc,tel:p.tel||null,entrega:p.entrega,entrega_raio:p.entrega?p.raio:null,entrega_taxa:p.entrega?p.taxa:null,entrega_min:p.entrega&&p.min?p.min:null,entrega_gratis:p.entrega&&p.gratis?p.gratis:null,fidelidade:p.fi,...loc};
       let {error}=await sb.from("fornecedores").update({...upd,...exV(p)}).eq("id",EDIT_ID);
       if(error&&colErr(error)){({error}=await sb.from("fornecedores").update(upd).eq("id",EDIT_ID));if(!error)SQL_MISS=true;}
       if(error){$("jerr").textContent="Não foi possível guardar as alterações. Tente outra vez.";return;}
@@ -1620,7 +1724,7 @@ async function saveProv(){
   if(DEMO){NEWID="m"+Date.now();S.list.push({...p,id:NEWID,rating:0,n:0,mine:true,prods:[],lat:JPOS?JPOS.lat:null,lng:JPOS?JPOS.lng:null});saveMine();}
   else{
     if(!SESSION){openLogin("signup","fornecedor");return;}
-    const row={nome:p.nome,tipo:p.tipo,cat:p.cat,zonas:p.zonas,preco:p.preco,descr:p.desc,tel:p.tel,entrega:p.entrega,entrega_raio:p.entrega?p.raio:null,entrega_taxa:p.entrega?p.taxa:null,entrega_min:p.entrega&&p.min?p.min:null,entrega_gratis:p.entrega&&p.gratis?p.gratis:null,fidelidade:p.fi,...(JPOS?{lat:JPOS.lat,lng:JPOS.lng}:{})};
+    const row={nome:p.nome,tipo:p.tipo,cat:p.cat,zonas:p.zonas,preco:p.preco,descr:p.desc,tel:p.tel||null,entrega:p.entrega,entrega_raio:p.entrega?p.raio:null,entrega_taxa:p.entrega?p.taxa:null,entrega_min:p.entrega&&p.min?p.min:null,entrega_gratis:p.entrega&&p.gratis?p.gratis:null,fidelidade:p.fi,...(JPOS?{lat:JPOS.lat,lng:JPOS.lng}:{})};
     let {data:ins,error}=await sb.from("fornecedores").insert({...row,...exV(p)}).select("id").single();
     if(error&&colErr(error)){({data:ins,error}=await sb.from("fornecedores").insert(row).select("id").single());if(!error)SQL_MISS=true;}
     if(error){$("jerr").textContent="Não foi possível publicar. Tente outra vez.";return;}
@@ -1757,7 +1861,8 @@ $("crmbody").addEventListener("change",async e=>{
 // ---- atualização em tempo real (Supabase Realtime) + rede de segurança lenta
 let RT=null,RT_T=0,RT_UID="";
 async function rtRefresh(){
-  if(DEMO||!SESSION||(VIEW!=="crm"&&VIEW!=="meus"))return;
+  if(DEMO||!SESSION||(VIEW!=="crm"&&VIEW!=="meus"&&VIEW!=="chat"))return;
+  if(VIEW==="chat"){await loadConv();drawChat(false);return;}
   const a=document.activeElement;
   if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)){RT_T=setTimeout(rtRefresh,5000);return;}
   await loadPed();await loadOrc();if(VIEW==="crm")drawCrm();else drawMeus();
@@ -1774,6 +1879,7 @@ function rtSync(){
     .on("postgres_changes",{event:"*",schema:"public",table:"pedidos"},rtKick)
     .on("postgres_changes",{event:"*",schema:"public",table:"orcamentos"},rtKick)
     .on("postgres_changes",{event:"*",schema:"public",table:"marcacoes"},rtKick)
+    .on("postgres_changes",{event:"*",schema:"public",table:"mensagens"},rtKick)
     .subscribe();
 }
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)rtKick();});
@@ -1963,6 +2069,7 @@ async function popTo(v){
     else if(v==="crm"){if(mine)await openCrm();else home();}
     else if(v==="meus"){if(authed)await openMeus();else home();}
     else if(v==="mod"){if(IS_ADMIN)await openMod();else home();}
+    else if(v==="chat"){if(CONV.some(c=>c.id===CHAT_ID)){go("chat");drawChat(true);}else home();}
     else if(v==="forn"){if(S.list.some(x=>x.id===FORN_ID)){go("forn");drawForn();}else home();}
     else{go("home");render();}
   }finally{POP=false;}
@@ -1978,7 +2085,7 @@ const saveOrcLS=()=>{try{localStorage.setItem("aq_orc",JSON.stringify(ORC));}cat
 const hojeISO=()=>new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
 const dtP=d=>new Date(d).toLocaleDateString("pt-PT");
 const fmtD=d=>new Date(d+"T12:00:00").toLocaleDateString("pt-PT");
-async function loadOrc(){await loadOrc0();await loadMarc();}
+async function loadOrc(){await loadOrc0();await loadMarc();await loadConv();}
 async function loadOrc0(){
   if(DEMO){ORC=lsOrc();return;}
   if(!SESSION){ORC=[];return;}
@@ -2117,12 +2224,27 @@ async function loadMarc(){
 }
 const myMarc=()=>{const ids=new Set(S.list.filter(p=>p.mine).map(p=>String(p.id)));return MARC.filter(m=>ids.has(String(m.fid)));};
 const marcNovas=()=>myMarc().filter(m=>m.estado==="pendente").length;
+function marcHoras(){
+  const p=fProv(MARC_ID),d=$("marcData").value,sel=$("marcHora"),er=$("marcErr");
+  let L=HORAS.slice();
+  if(p&&p.horario&&d){
+    const h=p.horario[new Date(d+"T12:00:00").getDay()];
+    L=h?HORAS.filter(x=>x>=h[0]&&x<h[1]):[];
+  }
+  if(d===hojeISO()){const n=new Date(),hm=String(n.getHours()).padStart(2,"0")+":"+String(n.getMinutes()).padStart(2,"0");L=L.filter(x=>x>hm);}
+  const cur=sel.value;
+  sel.innerHTML=L.map(x=>`<option>${x}</option>`).join("");
+  sel.disabled=!L.length;
+  if(L.includes(cur))sel.value=cur;
+  er.textContent=L.length?"":(d?"Sem horas disponíveis nesse dia"+(p&&p.horario?" (veja o horário no perfil)":"")+".":"");
+}
+$("marcData").addEventListener("change",marcHoras);
 function openMarc(id){
   const p=fProv(id);if(!p)return;
   if(DEMO){toast("As marcações precisam da base de dados ligada.");return;}
   if(!SESSION){openLogin("signup","cliente");return;}
   MARC_ID=id;$("marcTitulo").textContent="Marcar com "+p.nome;
-  $("marcData").min=hojeISO();$("marcData").value="";$("marcHora").value="09:00";$("marcNota").value="";$("marcErr").textContent="";
+  $("marcData").min=hojeISO();$("marcData").value="";marcHoras();$("marcHora").value="09:00";$("marcNota").value="";$("marcErr").textContent="";
   $("marcCli").value=S.user?S.user.nome:"";$("marcTel").value=(S.user&&S.user.tel)||"";$("marcBtn").disabled=false;
   $("dMarc").showModal();
 }
@@ -2140,6 +2262,7 @@ async function sendMarc(){
   const p=fProv(MARC_ID);if(!p)return;
   const data=$("marcData").value,hora=$("marcHora").value,nota=$("marcNota").value.trim(),nome=$("marcCli").value.trim(),tel=$("marcTel").value.replace(/\D/g,"").replace(/^351/,"");
   if(!data){e.textContent="Escolha o dia.";return;}
+  if(!hora||$("marcHora").disabled){e.textContent="Escolha uma hora disponível.";return;}
   if(data<hojeISO()){e.textContent="Esse dia já passou.";return;}
   if(nome.length<2){e.textContent="Indique o seu nome.";return;}
   if(tel.length!==9){e.textContent="O telemóvel deve ter 9 dígitos.";return;}
@@ -2205,6 +2328,77 @@ $("meusmarc").addEventListener("click",async e=>{
   if(error){toast(/ocupado/i.test(error.message||"")?"Essa hora já foi ocupada. Fale com o fornecedor.":"Não foi possível guardar. Atualize e tente outra vez.");}
   await loadMarc();drawMeus();
 });
+// ---- chat cliente <-> fornecedor (tabelas conversas/mensagens; escrita por RPC)
+let CONV=[],MSGS={},CHAT_ID="",CHAT_BACK="home";
+const uidNow=()=>SESSION?SESSION.user.id:"";
+async function loadConv(){
+  if(DEMO||!SESSION){CONV=[];MSGS={};return;}
+  const c=await sb.from("conversas").select("*").order("ultima_em",{ascending:false});
+  if(c.error){CONV=[];MSGS={};return;} // tabelas ainda não criadas
+  const m=await sb.from("mensagens").select("id,conversa_id,autor_id,texto,lida,created_at").order("created_at",{ascending:false}).limit(1000);
+  MSGS={};((m.data)||[]).slice().reverse().forEach(x=>{(MSGS[x.conversa_id]||(MSGS[x.conversa_id]=[])).push(x);});
+  CONV=(c.data||[]).map(r=>({id:r.id,fid:r.fornecedor_id,cid:r.cliente_id,nome:r.cliente_nome||"Cliente",ult:r.ultima_em}));
+}
+const convUnread=c=>(MSGS[c.id]||[]).filter(x=>x.autor_id!==uidNow()&&!x.lida).length;
+const myConvs=()=>{const ids=new Set(S.list.filter(p=>p.mine).map(p=>String(p.id)));return CONV.filter(c=>ids.has(String(c.fid)));};
+const cliConvs=()=>CONV.filter(c=>c.cid===uidNow()&&!(fProv(c.fid)&&fProv(c.fid).mine));
+const msgsNovas=()=>myConvs().reduce((a,c)=>a+convUnread(c),0);
+function convRow(c,quem){
+  const L=MSGS[c.id]||[],l=L[L.length-1],n=convUnread(c);
+  return `<div class="prow" style="align-items:flex-start"><div style="flex:1;min-width:min(200px,100%)"><strong>${esc(quem)}</strong>${n?` <span class="mine">${n} nova${n>1?"s":""}</span>`:""}<div class="meta">${l?esc((l.autor_id===uidNow()?"Você: ":"")+l.texto.slice(0,80)):"Sem mensagens"}</div></div><button class="btn primary" data-chat="${esc(c.id)}">Abrir</button></div>`;
+}
+function msgSup(){
+  const L=myConvs(),multi=S.list.filter(p=>p.mine).length>1;
+  if(!L.length)return'<p class="meta">Ainda não recebeu mensagens. Os clientes podem escrever-lhe a partir do seu perfil.</p>';
+  return L.map(c=>{const f=fProv(c.fid);return convRow(c,c.nome+(multi&&f?" → "+f.nome:""));}).join("");
+}
+function drawMeusMsg(){
+  const b=$("meusmsg");if(!b)return;
+  const L=cliConvs();
+  b.innerHTML=L.length?'<h3 style="margin:0 0 4px">As minhas mensagens</h3>'+L.map(c=>convRow(c,(fProv(c.fid)||{}).nome||"Fornecedor")).join(""):"";
+}
+async function openChatWith(fid){
+  const p=fProv(fid);if(!p)return;
+  if(DEMO){toast("As mensagens precisam da base de dados ligada.");return;}
+  if(!SESSION){openLogin("signup","cliente");return;}
+  if(p.mine){toast("Este é o seu próprio perfil.");return;}
+  const {data,error}=await sb.rpc("iniciar_conversa",{p_fornecedor:String(p.id),p_nome:(S.user&&S.user.nome)||null});
+  if(error){toast(/proprio/i.test(error.message||"")?"Não pode enviar mensagens ao seu próprio perfil.":"Não foi possível abrir a conversa. Tente outra vez.");return;}
+  await loadConv();openChat(data,"home");
+}
+function openChat(id,back){
+  CHAT_ID=id;CHAT_BACK=back||(VIEW==="crm"?"crm":VIEW==="meus"?"meus":"home");
+  $("chatTxt").value="";$("chatErr").textContent="";go("chat");drawChat(true);
+}
+async function chatBack(){
+  if(CHAT_BACK==="crm"){CT="mensagens";await openCrm();}
+  else if(CHAT_BACK==="meus")await openMeus();
+  else{go("home");render();}
+}
+function drawChat(scroll){
+  const c=CONV.find(x=>x.id===CHAT_ID);if(!c){go("home");render();return;}
+  const p=fProv(c.fid),uid=uidNow(),eu=!!(p&&p.mine);
+  $("chatNome").textContent=eu?c.nome:(p?p.nome:"Fornecedor");
+  $("chatSub").textContent=eu?"Cliente"+(p?" · "+p.nome:""):(p?p.cat:"");
+  const box=$("chatMsgs"),L=MSGS[c.id]||[],fim=scroll||box.scrollHeight-box.scrollTop-box.clientHeight<60;
+  box.innerHTML=L.length?L.map(x=>{
+    const m=x.autor_id===uid;
+    return `<div style="align-self:${m?"flex-end":"flex-start"};max-width:85%;background:${m?"var(--brand)":"var(--chip)"};color:${m?"var(--brand-ink)":"var(--ink)"};border-radius:14px;padding:8px 12px;white-space:pre-wrap;overflow-wrap:anywhere">${esc(x.texto)}<div style="font-size:11px;opacity:.7;margin-top:2px;text-align:right">${esc(new Date(x.created_at).toLocaleString("pt-PT",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}))}</div></div>`;
+  }).join(""):'<p class="meta">Ainda sem mensagens. Escreva a primeira.</p>';
+  if(fim)box.scrollTop=box.scrollHeight;
+  const un=L.filter(x=>x.autor_id!==uid&&!x.lida);
+  if(un.length){un.forEach(x=>{x.lida=true;});sb.rpc("marcar_lidas",{p_conversa:c.id}).then(()=>{},()=>{});}
+}
+async function sendMsg(){
+  const e=$("chatErr");e.textContent="";
+  const t=$("chatTxt").value.trim();if(!t||!CHAT_ID)return;
+  const b=$("chatSend");b.disabled=true;
+  const {error}=await sb.rpc("enviar_mensagem",{p_conversa:CHAT_ID,p_texto:t});
+  b.disabled=false;
+  if(error){e.textContent=/limite/i.test(error.message||"")?"Enviou muitas mensagens. Aguarde um minuto.":"Não foi possível enviar. Tente outra vez.";return;}
+  $("chatTxt").value="";await loadConv();drawChat(true);
+}
+document.addEventListener("click",e=>{const b=e.target.closest("button[data-chat]");if(b)openChat(b.dataset.chat);});
 // ---- perfil do fornecedor, link direto, partilha e QR code
 const fornUrl=id=>location.origin+location.pathname+"?f="+encodeURIComponent(id);
 function bindCards(root){
@@ -2213,10 +2407,11 @@ function bindCards(root){
   root.querySelectorAll("[data-rev]").forEach(b=>b.onclick=()=>openRev(b.dataset.rev));
   root.querySelectorAll("[data-orc]").forEach(b=>b.onclick=()=>openOrc(b.dataset.orc));
   root.querySelectorAll("[data-marc]").forEach(b=>b.onclick=()=>openMarc(b.dataset.marc));
+  root.querySelectorAll("[data-msg]").forEach(b=>b.onclick=()=>openChatWith(b.dataset.msg));
   root.querySelectorAll("[data-forn]").forEach(b=>b.onclick=()=>openForn(b.dataset.forn));
   root.querySelectorAll("[data-share]").forEach(b=>b.onclick=()=>shareProv(b.dataset.share));
 }
-function openForn(id){FORN_ID=id;go("forn");drawForn();}
+function openForn(id){{const q=S.list.find(x=>x.id===id);if(q&&q.mine)markShared(id);}FORN_ID=id;go("forn");drawForn();}
 function drawForn(){
   const p=S.list.find(x=>x.id===FORN_ID);
   if(!p){go("home");render();return;}
@@ -2229,7 +2424,7 @@ function drawForn(){
   drawQR(url,p);
 }
 function drawQR(url,p){
-  const box=$("fornQR"),dl=$("fornQRdl");box.innerHTML="";QR_SVG="";dl.classList.add("hide");
+  const box=$("fornQR"),dl=$("fornQRdl");box.innerHTML="";QR_SVG="";dl.classList.add("hide");$("fornPrint").classList.add("hide");
   if(typeof qrcode!=="function"){box.innerHTML='<p class="meta">Não foi possível gerar o QR code. Verifique a ligação à internet.</p>';return;}
   try{
     const q=qrcode(0,"M");q.addData(url);q.make();
@@ -2237,8 +2432,16 @@ function drawQR(url,p){
     for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(q.isDark(r,c))d+="M"+(c+m)+","+(r+m)+"h1v1h-1z";
     QR_SVG='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+(n+2*m)+" "+(n+2*m)+'" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="#fff"/><path d="'+d+'" fill="#000"/></svg>';
     box.innerHTML='<div role="img" aria-label="QR code do perfil de '+esc(p.nome)+'">'+QR_SVG+'</div>';
-    dl.classList.remove("hide");
+    dl.classList.remove("hide");$("fornPrint").classList.remove("hide");
   }catch(e){box.innerHTML='<p class="meta">Não foi possível gerar o QR code.</p>';}
+}
+function printPoster(){
+  const p=S.list.find(x=>x.id===FORN_ID);if(!p||!QR_SVG)return;
+  $("poster").innerHTML='<div class="pk">Aqui Perto</div><h1>'+esc(p.nome)+'</h1><div class="pc">'+esc(p.cat)+(p.localidade?" · "+esc(p.localidade):"")+'</div><div class="pq">'+QR_SVG+'</div><div class="pt">Aponte a câmara do telemóvel</div><div class="pu">'+esc(fornUrl(p.id))+'</div><div class="pf">Contacte-me, peça orçamento ou faça o seu pedido.</div>';
+  document.body.classList.add("pp");
+  const done=()=>{document.body.classList.remove("pp");$("poster").innerHTML="";removeEventListener("afterprint",done);};
+  addEventListener("afterprint",done);
+  setTimeout(()=>window.print(),100);
 }
 function dlQR(){
   const p=S.list.find(x=>x.id===FORN_ID);if(!p||!QR_SVG)return;
@@ -2256,7 +2459,7 @@ async function shareLink(title,text,url){
   if(navigator.share){try{await navigator.share({title,text,url});return;}catch(e){if(e&&e.name==="AbortError")return;}}
   copyLink(url);
 }
-function shareProv(id){const p=S.list.find(x=>x.id===id);if(p)shareLink(p.nome,"Veja "+p.nome+" na Aqui Perto",fornUrl(id));}
+function shareProv(id){const p=S.list.find(x=>x.id===id);if(p&&p.mine)markShared(id);if(p)shareLink(p.nome,"Veja "+p.nome+" na Aqui Perto",fornUrl(id));}
 function shareApp(){shareLink("Aqui Perto","Serviços e produtores locais perto de si",location.origin+location.pathname);}
 $("crmbody").addEventListener("click",e=>{const b=e.target.closest("button[data-forn]");if(b)openForn(b.dataset.forn);});
 $("pdList").addEventListener("input",calcOrd);
@@ -2306,6 +2509,8 @@ restorePos();
   if(SESSION&&/[?&]crm=1/.test(location.search)){try{history.replaceState(null,"",location.pathname);}catch(x){}openCrm();}
   if(SESSION&&/[?&]meus=1/.test(location.search)){try{history.replaceState(null,"",location.pathname);}catch(x){}openMeus();}
 })();
+addEventListener("offline",()=>toast("Sem ligação à internet. Pode continuar a ver a última lista."));
+addEventListener("online",async()=>{if(!DEMO&&(CACHED||LOAD_ERR)){await loadList();if(VIEW==="home")render();}});
 if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
 </script>
 </body>
