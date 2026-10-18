@@ -364,6 +364,8 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
 // Preencha com os dados do seu projeto Supabase (Project Settings > API)
 const SUPABASE_URL="https://nwkfndenohfndbyhzlpc.supabase.co";   // ex.: https://abcd1234.supabase.co
 const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53a2ZuZGVub2hmbmRieWh6bHBjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwNjA5MzIsImV4cCI6MjEwNzYzNjkzMn0.Yz49qK22BWco5JC6ShzXTsXgNKZ2hEd-RaUORbBSmAo";   // chave "anon" / "publishable"
+// Chave PÚBLICA VAPID (gerada com gerar-vapid.html). Pode ficar visível; a privada nunca vai para aqui.
+const VAPID_PUBLIC="BP27mzJHw4e8pQxz3qCnKkSj_OP6IOqAmZ-rUsSxUj3VsZUyPgHPQx0ylpz7RIsEnr_kFinJwYHxmkYek26NqDI";
 const Z=["Aveiro","Beja","Braga","Bragança","Castelo Branco","Coimbra","Évora","Faro","Guarda","Leiria","Lisboa","Portalegre","Porto","Santarém","Setúbal","Viana do Castelo","Vila Real","Viseu","Açores","Madeira"];
 const CATS={servico:["Canalizador","Eletricista","Pedreiro","Pintor","Explicador","Babysitter","Jardineiro","Limpezas","Mudanças"],
 produto:["Hortícolas","Fruta","Carne e pecuária","Queijos e enchidos","Mel e doces","Móveis de madeira","Vinho e azeite","Ovos e lacticínios"]};
@@ -463,6 +465,7 @@ async function saveNewPass(){
   toast("Palavra-passe atualizada.");await afterAuth();
 }
 async function logout(){
+  if(PUSH_OK())await pushOff(true);
   S.user=null;try{localStorage.removeItem("aq_user");}catch(x){}
   if(!DEMO){await sb.auth.signOut();return;}
   applyUser();go("login");
@@ -734,7 +737,8 @@ function moedasCli(c){
   const ms=S.list.filter(p=>p.mine&&myFid(p));if(!ms.length)return"";
   const t=ms.reduce((a,p)=>a+saldo(p.id,c.cid),0);return " · 🪙 "+t+" moeda"+(t===1?"":"s");
 }
-function drawCrm(){
+function drawCrm(){drawCrm1();if(CT==="painel")pushUI();}
+function drawCrm1(){
   const L=myPed(),nv=L.filter(o=>o.estado==="novo").length,B=$("crmbody");
   ["painel","pedidos","clientes","perfil","relatorios"].forEach(t=>$("ct-"+t).setAttribute("aria-selected",t===CT));
   {const t=$("ct-"+CT),q=t&&t.parentElement;if(q)q.scrollLeft=Math.max(0,t.offsetLeft-(q.clientWidth-t.offsetWidth)/2);}
@@ -1212,6 +1216,57 @@ setInterval(async()=>{
   const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName))return;
   await loadPed();if(VIEW==="crm")drawCrm();else drawMeus();
 },45000);
+// ---- avisos push ao fornecedor (pedidos novos)
+const urlB64=s=>{const p="=".repeat((4-s.length%4)%4),r=atob((s+p).replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from(r,c=>c.charCodeAt(0));};
+const PUSH_OK=()=>!DEMO&&!!VAPID_PUBLIC&&"serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;
+let PUSH_SYNC=false;
+async function pushReg(){try{return await navigator.serviceWorker.getRegistration();}catch(e){return null;}}
+async function pushSub(){try{const r=await pushReg();return r?await r.pushManager.getSubscription():null;}catch(e){return null;}}
+async function pushSend(sub){
+  const j=sub.toJSON();
+  const {error}=await sb.rpc("registar_push",{p_endpoint:j.endpoint,p_p256dh:j.keys.p256dh,p_auth:j.keys.auth});
+  if(error)throw error;
+}
+async function pushOn(){
+  try{
+    const perm=await Notification.requestPermission();
+    if(perm!=="granted"){toast("Permissão recusada. Ative as notificações nas definições do navegador.");pushUI();return;}
+    const reg=await pushReg();if(!reg)throw new Error("sem service worker");
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlB64(VAPID_PUBLIC)});
+    await pushSend(sub);PUSH_SYNC=true;
+    toast("Avisos ativados neste aparelho.");
+  }catch(e){toast("Não foi possível ativar os avisos.");}
+  pushUI();
+}
+async function pushOff(quiet){
+  try{
+    const sub=await pushSub();
+    if(sub){const ep=sub.endpoint;await sub.unsubscribe();if(SESSION)await sb.from("push_subs").delete().eq("endpoint",ep);}
+  }catch(e){}
+  PUSH_SYNC=false;
+  if(!quiet){toast("Avisos desativados.");pushUI();}
+}
+async function pushUI(){
+  if(!PUSH_OK()){
+    const ios=/iphone|ipad/i.test(navigator.userAgent)&&!navigator.standalone;
+    if(!DEMO&&VAPID_PUBLIC&&ios&&VIEW==="crm"&&CT==="painel"&&!$("pushbox")){
+      const b=document.createElement("div");b.id="pushbox";b.className="prow";
+      b.innerHTML='<div class="meta">🔔 Para receber avisos de pedidos no iPhone, adicione primeiro a app ao ecrã principal (Partilhar → Adicionar ao ecrã principal) e abra-a a partir daí.</div>';
+      $("crmbody").appendChild(b);
+    }
+    return;
+  }
+  const sub=await pushSub(),on=!!sub,den=Notification.permission==="denied";
+  if(VIEW!=="crm"||CT!=="painel")return;
+  if(on&&!PUSH_SYNC){PUSH_SYNC=true;try{await pushSend(sub);}catch(e){}}
+  let box=$("pushbox");
+  if(!box){box=document.createElement("div");box.id="pushbox";box.className="prow";$("crmbody").appendChild(box);}
+  const txt=den?"Bloqueados nas definições do navegador. Ative-os lá para receber avisos.":on?"Ativos neste aparelho. Receberá uma notificação a cada pedido novo.":"Receba uma notificação no telemóvel assim que chegar um pedido.";
+  box.innerHTML='<div style="flex:1;min-width:min(200px,100%)"><strong>🔔 Avisos de pedidos novos</strong><div class="meta">'+txt+'</div></div>'+
+    (den?"":'<button class="btn'+(on?"":" primary")+'" onclick="'+(on?"pushOff()":"pushOn()")+'">'+(on?"Desativar":"Ativar avisos")+'</button>');
+}
+if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{if(e.data&&e.data.t==="crm"&&SESSION)openCrm();});
 $("pdList").addEventListener("input",calcOrd);
 $("fidopts").addEventListener("click",e=>{const b=e.target.closest("button[data-rw]");if(!b||b.disabled)return;RW=RW===b.dataset.rw?"":b.dataset.rw;drawFid();calcOrd();});
 $("pfoto").addEventListener("change",async e=>{
@@ -1250,6 +1305,7 @@ $("pfoto").addEventListener("change",async e=>{
   }
   if(SESSION)await afterAuth();
   else{await loadList();render();if(S.user)go("home");else openLogin("login");}
+  if(SESSION&&/[?&]crm=1/.test(location.search)){try{history.replaceState(null,"",location.pathname);}catch(x){}openCrm();}
 })();
 if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
 </script>
