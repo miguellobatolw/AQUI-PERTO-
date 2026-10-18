@@ -1,5 +1,9 @@
-const V="aqui-perto-v18",SHELL=["./","index.html","manifest.webmanifest","icon-180.png","icon-192.png","icon-512.png"];
-self.addEventListener("install",e=>{e.waitUntil(caches.open(V).then(c=>c.addAll(SHELL)));self.skipWaiting();});
+const V="aqui-perto-v19",SHELL=["./","index.html","manifest.webmanifest","icon-180.png","icon-192.png","icon-512.png"];
+// Instala ficheiro a ficheiro: se um faltar (ex.: manifest ou ícone), o SW instala na mesma
+self.addEventListener("install",e=>{
+  e.waitUntil(caches.open(V).then(c=>Promise.allSettled(SHELL.map(u=>c.add(u)))));
+  self.skipWaiting();
+});
 self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==V).map(x=>caches.delete(x)))));self.clients.claim();});
 self.addEventListener("fetch",e=>{
   const r=e.request,u=new URL(r.url);
@@ -10,7 +14,7 @@ self.addEventListener("fetch",e=>{
     // só guarda respostas completas e sem query string (evita guardar links de login/recuperação)
     if(res.status===200&&!u.search){const c=res.clone();caches.open(V).then(x=>x.put(r,c));}
     return res;
-  }).catch(()=>caches.match(r).then(m=>m||(r.mode==="navigate"?caches.match("index.html"):Response.error()))));
+  }).catch(()=>caches.match(r).then(m=>m||(r.mode==="navigate"?caches.match("index.html").then(i=>i||caches.match("./")):Response.error()))));
 });
 // Avisos push (pedidos novos, estado dos pedidos, orçamentos)
 self.addEventListener("push",e=>{
