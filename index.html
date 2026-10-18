@@ -593,23 +593,30 @@ function load(){try{S.user=JSON.parse(localStorage.getItem("aq_user")||"null");}
 async function loadList(){
   if(DEMO){let l=[];try{l=JSON.parse(localStorage.getItem("aq_mine")||"[]");}catch(e){}S.list=SEED.concat(l);S.list.forEach(p=>{if(!p.prods)p.prods=(PR[p.nome]||[]).map((a,i)=>({id:p.id+"-"+i,nome:a[0],preco:a[1],un:a[2],stock:a[3],ativo:true}));if(p.lat===undefined){const g=GEO.find(x=>x[0]===p.zonas[0]);p.lat=g?g[1]:null;p.lng=g?g[2]:null;}if(p.entrega===undefined){const e=ENT[p.nome];p.entrega=!!e;p.raio=e?e[0]:0;p.taxa=e?e[1]:0;p.min=e?e[2]:0;p.gratis=e?e[3]:0;}if(p.fi===undefined)p.fi=FID[p.nome]||null;});demoAvs();applyUser();return;}
   // O telemóvel (coluna tel) NÃO é pedido aqui: só chega a quem tem sessão, via sb.rpc("obter_contacto")
-  const FC="id,user_id,created_at,nome,tipo,cat,zonas,preco,descr,lat,lng,entrega,entrega_raio,entrega_taxa,entrega_min,entrega_gratis,fidelidade,logo,galeria";
-  let q0=await sb.from("fornecedores").select(FC+",localidade,raio_servico,produtos(*)").order("created_at",{ascending:false});
-  if(q0.error&&colErr(q0.error))q0=await sb.from("fornecedores").select(FC+",produtos(*)").order("created_at",{ascending:false});
+  // Leitura com recuo progressivo: se faltar alguma coluna recente na base de dados, tenta com menos colunas em vez de falhar
+  const BASE="id,user_id,created_at,nome,tipo,cat,zonas,preco,descr,lat,lng,entrega,entrega_raio,entrega_taxa,entrega_min,entrega_gratis";
+  const NIVEIS=[BASE+",fidelidade,logo,galeria,localidade,raio_servico",BASE+",fidelidade,logo,galeria",BASE+",fidelidade",BASE];
+  let q0=null;
+  for(const cols of NIVEIS){
+    q0=await sb.from("fornecedores").select(cols+",produtos(*)").order("created_at",{ascending:false});
+    if(!q0.error)break;
+  }
+  if(q0.error){const q1=await sb.from("fornecedores").select(BASE).order("created_at",{ascending:false});if(!q1.error)q0={data:q1.data.map(r=>({...r,produtos:[]})),error:null};}
   const {data,error}=q0;
-  if(error){toast("Não foi possível carregar os fornecedores.");return;}
+  if(error){LOAD_ERR=(error.message||String(error));console.error("loadList:",error);toast("Erro ao carregar fornecedores: "+LOAD_ERR);return false;}
+  LOAD_ERR="";
   const uid=SESSION&&SESSION.user.id;
   S.list=data.map(r=>({id:r.id,nome:r.nome,tipo:r.tipo,cat:r.cat,zonas:r.zonas,preco:r.preco||"",desc:r.descr||"",tel:"",rating:0,n:0,lat:r.lat==null?null:Number(r.lat),lng:r.lng==null?null:Number(r.lng),entrega:!!r.entrega,raio:Number(r.entrega_raio)||0,taxa:Number(r.entrega_taxa)||0,min:Number(r.entrega_min)||0,gratis:Number(r.entrega_gratis)||0,fi:r.fidelidade&&r.fidelidade.ativo?r.fidelidade:null,logo:r.logo||"",galeria:r.galeria||[],localidade:r.localidade||"",raioS:Number(r.raio_servico)||0,prods:(r.produtos||[]).map(x=>({id:x.id,nome:x.nome,preco:Number(x.preco),un:x.un,stock:x.stock==null?null:Number(x.stock),ativo:x.ativo,foto:x.foto||""})),mine:r.user_id===uid}));
   await loadMyTels();
   try{const rt=await sb.from("fornecedor_rating").select("fornecedor_id,media,n");(rt.data||[]).forEach(x=>{const p=S.list.find(y=>y.id===x.fornecedor_id);if(p){p.rating=Number(x.media)||0;p.n=Number(x.n)||0;}});}catch(e){}
-  applyUser();
+  applyUser();return true;
 }
 function authUI(){$("demoNote").classList.toggle("hide",!DEMO);applyUser();}
 function saveMine(){try{localStorage.setItem("aq_mine",JSON.stringify(S.list.filter(p=>p.mine)));}catch(e){}}
 function toast(t){const e=$("toast");e.textContent=t;e.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display="none",2600);}
 
 function fillZones(sel,first){sel.innerHTML=(first?`<option value="">${first}</option>`:"")+Z.map(z=>`<option>${z}</option>`).join("");}
-let VIEW="boot",LM="login",LR="cliente",OBP="servico",NEWID="",CAT_ID="",PHOTO_PID="",NEWBLOB=null,ORD_F="",CT="painel",PF="novo",RP="tudo",PED=[],NOTAS={},SEG={},MYPOS=null,JPOS=null,JLOC="",LOCRES=[],JLOCRES=[],SQL_MISS=false,EDIT_ID="",ENT_F=false,OM=false,ENT_D=null,RW="",MOEDAS={},MOV={},IS_ADMIN=false,MOD=[],DEN_ID="",POP=false,FORN_ID="",QR_SVG="";
+let LOAD_ERR="",VIEW="boot",LM="login",LR="cliente",OBP="servico",NEWID="",CAT_ID="",PHOTO_PID="",NEWBLOB=null,ORD_F="",CT="painel",PF="novo",RP="tudo",PED=[],NOTAS={},SEG={},MYPOS=null,JPOS=null,JLOC="",LOCRES=[],JLOCRES=[],SQL_MISS=false,EDIT_ID="",ENT_F=false,OM=false,ENT_D=null,RW="",MOEDAS={},MOV={},IS_ADMIN=false,MOD=[],DEN_ID="",POP=false,FORN_ID="",QR_SVG="";
 function go(v){const prev=VIEW;VIEW=v;if(v!=="join"&&EDIT_ID){EDIT_ID="";clearJoin();}["home","join","login","ob","cat","crm","meus","newpass","role","mod","forn","legal"].forEach(x=>$(x).classList.toggle("hide",x!==v));if(v==="join"){joinMode();jTipo(S.jtipo);}scrollTo(0,0);navSync(v,prev);}
 function goProv(){if(EDIT_ID){EDIT_ID="";clearJoin();}if(DEMO||SESSION||S.user)go("join");else openLogin("signup","fornecedor");}
 function setLR(r){LR=r;drawLogin();}
@@ -1614,7 +1621,13 @@ async function saveProv(){
     let {data:ins,error}=await sb.from("fornecedores").insert({...row,...exV(p)}).select("id").single();
     if(error&&colErr(error)){({data:ins,error}=await sb.from("fornecedores").insert(row).select("id").single());if(!error)SQL_MISS=true;}
     if(error){$("jerr").textContent="Não foi possível publicar. Tente outra vez.";return;}
-    NEWID=ins.id;await loadList();
+    NEWID=ins.id;const okL=await loadList();
+    if(!S.list.some(x=>x.id===NEWID)){
+      // a leitura falhou, mas o perfil foi gravado: mantém-no localmente para poder abrir o catálogo
+      S.list.push({...p,id:NEWID,rating:0,n:0,mine:true,prods:[],logo:"",galeria:[],lat:JPOS?JPOS.lat:null,lng:JPOS?JPOS.lng:null});
+      applyUser();
+      if(!okL)setTimeout(()=>alert("O perfil foi guardado, mas não foi possível relê-lo da base de dados:\n"+LOAD_ERR+"\n\nEnvie-me esta mensagem para corrigir."),300);
+    }
   }
   S.user={nome:p.nome,zona:p.zonas[0]};try{localStorage.setItem("aq_user",JSON.stringify(S.user));}catch(x){}applyUser();
   if(!DEMO)await sb.from("perfis").upsert({user_id:SESSION.user.id,papel:"fornecedor",nome:p.nome,zona:p.zonas[0]});
