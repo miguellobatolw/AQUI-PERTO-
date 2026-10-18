@@ -716,10 +716,13 @@ async function apagarConta(){
   S.user=null;SESSION=null;applyUser();go("login");toast("Conta apagada.");
 }
 async function logout(){
-  if(PUSH_OK())await pushOff(true);
+  // vai logo para o login; a limpeza da sessão corre depois e nunca bloqueia a saída
+  const uid=SESSION&&SESSION.user.id;
+  try{if(PUSH_OK())await Promise.race([pushOff(true),new Promise(r=>setTimeout(r,3000))]);}catch(x){}
   S.user=null;try{localStorage.removeItem("aq_user");}catch(x){}
-  if(!DEMO){await sb.auth.signOut();return;}
-  applyUser();go("login");
+  S.list.forEach(p=>{p.mine=false;});IS_ADMIN=false;MOD=[];PED=[];ORC=[];MARC=[];EDIT_ID="";
+  if(!DEMO){try{await Promise.race([sb.auth.signOut(),new Promise(r=>setTimeout(r,4000))]);}catch(x){}SESSION=null;}
+  applyUser();openLogin("login");
 }
 async function afterAuth(){
   await loadList();await checkAdmin();pushRestore();
@@ -2276,7 +2279,7 @@ restorePos();
       SESSION=sess;rtSync();favSync();
       if(ev==="PASSWORD_RECOVERY"){go("newpass");return;}
       if(VIEW==="newpass")return;
-      if(ev==="SIGNED_OUT"){FAV=new Set();favSave();FAV_UID="";FAV_F=false;S.user=null;IS_ADMIN=false;MOD=[];applyUser();await loadList();render();go("login");return;}
+      if(ev==="SIGNED_OUT"){FAV=new Set();favSave();FAV_UID="";FAV_F=false;S.user=null;IS_ADMIN=false;MOD=[];applyUser();openLogin("login");await loadList();render();return;}
       if(sess&&(VIEW==="login"||VIEW==="boot"))await afterAuth();else{await loadList();render();}
     });
   }
