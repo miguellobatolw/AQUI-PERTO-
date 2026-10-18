@@ -113,17 +113,27 @@ footer a{color:inherit;text-decoration:underline}
 .hide{display:none!important}
 #poster{display:none}
 @media print{
+  @page{size:A4;margin:0}
   body.pp .wrap,body.pp dialog,body.pp .toast{display:none!important}
-  body.pp{background:#fff!important;color:#000!important}
-  body.pp #poster{display:flex!important;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:95vh;padding:24px;font-family:"Bricolage Grotesque",system-ui,sans-serif;color:#14262b}
-  #poster .pk{font-size:22px;letter-spacing:.08em;text-transform:uppercase;color:#0f5c4d;font-weight:800}
-  #poster h1{font-size:54px;max-width:none;margin:14px 0 4px;color:#14262b}
-  #poster .pc{font-size:24px;color:#444;margin-bottom:26px}
-  #poster .pq{width:380px;max-width:80%;margin:0 auto 18px}
+  body.pp{background:#fff!important;color:#14262b!important;margin:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body.pp #poster{display:flex!important;flex-direction:column;height:100vh;overflow:hidden;font-family:"Bricolage Grotesque",system-ui,sans-serif;color:#14262b;background:#f2f6f4;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #poster *{box-sizing:border-box}
+  #poster .ph{background:#0f5c4d;color:#fff;padding:7vh 8vw 6vh;display:flex;align-items:center;gap:18px}
+  #poster .pin2{width:46px;height:46px;background:#f2b33d;border-radius:50% 50% 50% 0;transform:rotate(-45deg);position:relative;flex:none}
+  #poster .pin2::after{content:"";position:absolute;inset:14px;background:#0f5c4d;border-radius:50%}
+  #poster .pb{font-size:34px;font-weight:800;letter-spacing:-.02em;line-height:1}
+  #poster .ps{font-size:16px;opacity:.85;margin-top:4px}
+  #poster .pm{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:3vh 8vw}
+  #poster .pcat{display:inline-block;background:#f2b33d;color:#2a1d00;font-weight:800;font-size:20px;border-radius:999px;padding:6px 20px}
+  #poster h1{font-size:68px;line-height:1.02;letter-spacing:-.03em;margin:18px 0 8px;max-width:none;color:#14262b}
+  #poster .ploc{font-size:22px;color:#4a5f62}
+  #poster .pcta{font-size:26px;font-weight:800;margin:3.5vh 0 14px;color:#0f5c4d}
+  #poster .pq{background:#fff;border:10px solid #f2b33d;border-radius:30px;padding:20px;width:400px;max-width:85%}
   #poster .pq svg{width:100%;height:auto;display:block}
-  #poster .pt{font-size:26px;font-weight:700}
-  #poster .pu{font-size:16px;color:#444;margin-top:10px;word-break:break-all}
-  #poster .pf{margin-top:30px;font-size:14px;color:#666}
+  #poster .pw{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:3.5vh}
+  #poster .pw span{background:#fff;border:2px solid #d6e0dc;border-radius:999px;padding:8px 18px;font-size:18px;font-weight:600}
+  #poster .pf{background:#0f5c4d;color:#fff;text-align:center;padding:3.5vh 8vw;font-size:18px}
+  #poster .pf b{font-size:22px;letter-spacing:-.01em}
 }
 .chip:disabled{opacity:.45;cursor:not-allowed}
 .badge{display:inline-block;background:var(--chip);border-radius:6px;padding:2px 8px;font-size:13px;font-weight:600}
@@ -2437,7 +2447,9 @@ function drawQR(url,p){
 }
 function printPoster(){
   const p=S.list.find(x=>x.id===FORN_ID);if(!p||!QR_SVG)return;
-  $("poster").innerHTML='<div class="pk">Aqui Perto</div><h1>'+esc(p.nome)+'</h1><div class="pc">'+esc(p.cat)+(p.localidade?" · "+esc(p.localidade):"")+'</div><div class="pq">'+QR_SVG+'</div><div class="pt">Aponte a câmara do telemóvel</div><div class="pu">'+esc(fornUrl(p.id))+'</div><div class="pf">Contacte-me, peça orçamento ou faça o seu pedido.</div>';
+  const srv=p.tipo==="servico",chips=srv?["💬 Fale comigo","📝 Peça orçamento","📅 Marque online"]:["💬 Fale comigo","🛒 Encomende online"].concat(p.entrega?["🚚 Entrego ao domicílio"]:[]);
+  const site=(location.host+location.pathname).replace(/\/$/,"");
+  $("poster").innerHTML='<div class="ph"><span class="pin2"></span><div><div class="pb">Aqui Perto</div><div class="ps">Serviços e produtores locais</div></div></div><div class="pm"><div><span class="pcat">'+esc(p.cat)+'</span></div><h1>'+esc(p.nome)+'</h1>'+(p.localidade?'<div class="ploc">📍 '+esc(p.localidade)+'</div>':"")+'<div class="pcta">Aponte a câmara do telemóvel</div><div class="pq">'+QR_SVG+'</div><div class="pw">'+chips.map(c=>"<span>"+esc(c)+"</span>").join("")+'</div></div><div class="pf"><b>Quem precisa, mesmo ao lado.</b><br>'+esc(site)+'</div>';
   document.body.classList.add("pp");
   const done=()=>{document.body.classList.remove("pp");$("poster").innerHTML="";removeEventListener("afterprint",done);};
   addEventListener("afterprint",done);
