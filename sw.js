@@ -1,4 +1,4 @@
-const V="aqui-perto-v20",SHELL=["./","index.html","manifest.webmanifest","icon-180.png","icon-192.png","icon-512.png"];
+const V="aqui-perto-v21",SHELL=["./","index.html","manifest.webmanifest","icon-180.png","icon-192.png","icon-512.png"];
 // Bibliotecas externas (CDN). Guardadas em cache para a app arrancar mesmo que a CDN falhe ou sem rede.
 const LIBS=["cdn.jsdelivr.net","unpkg.com"];
 // Instala ficheiro a ficheiro: se um faltar (ex.: manifest ou ícone), o SW instala na mesma

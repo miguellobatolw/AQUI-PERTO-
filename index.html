@@ -665,7 +665,7 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"
 const norm=s=>String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 let S={tipo:"servico",cat:"",jtipo:"servico",jz:[],user:null,list:SEED.slice()};
 
-const APP_VERSION="v19";
+const APP_VERSION="v21";
 const DEMO=!SUPABASE_URL||!SUPABASE_KEY;
 const REC_LINK=/type=recovery/.test(location.hash+location.search),REC_ERR=/otp_expired/.test(location.hash+location.search),OAUTH_ERR=!/otp_expired/.test(location.hash+location.search)&&/[#&?]error=/.test(location.hash+location.search);
 const sb=DEMO?null:supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -2578,16 +2578,37 @@ $("pfoto").addEventListener("change",async e=>{
   im.src=URL.createObjectURL(NEWBLOB);im.classList.remove("hide");
 });
 restorePos();
+// Rede de segurança: se o arranque ficar preso (ex.: bloqueio da sessão), nunca deixa o ecrã em branco
+setTimeout(()=>{
+  if(VIEW!=="boot")return;
+  try{render();}catch(e){}
+  if(S.user)go("home");else openLogin("login");
+  toast("A ligação está lenta. Se persistir, feche e volte a abrir a app.");
+},8000);
 (async()=>{
   if(!DEMO){
-    const {data}=await sb.auth.getSession();SESSION=data.session;rtSync();favSync();
-    sb.auth.onAuthStateChange(async(ev,sess)=>{
+    try{
+      const r=await Promise.race([sb.auth.getSession(),new Promise(res=>setTimeout(()=>res(null),6000))]);
+      SESSION=r&&r.data?r.data.session:null;
+    }catch(e){SESSION=null;}
+    rtSync();favSync();
+    // IMPORTANTE: este callback NÃO pode esperar (await) por chamadas ao Supabase, senão bloqueia a própria
+    // sessão (deadlock) e a app fica parada/em branco. Por isso o trabalho é adiado com setTimeout.
+    sb.auth.onAuthStateChange((ev,sess)=>{
       if(ev==="INITIAL_SESSION")return;
-      SESSION=sess;rtSync();favSync();
-      if(ev==="PASSWORD_RECOVERY"){go("newpass");return;}
-      if(VIEW==="newpass")return;
-      if(ev==="SIGNED_OUT"){FAV=new Set();favSave();FAV_UID="";FAV_F=false;S.user=null;IS_ADMIN=false;MOD=[];applyUser();openLogin("login");await loadList();render();return;}
-      if(sess&&(VIEW==="login"||VIEW==="boot"))await afterAuth();else{await loadList();render();}
+      const prevUid=SESSION&&SESSION.user?SESSION.user.id:"";
+      SESSION=sess;
+      setTimeout(async()=>{
+        try{
+          rtSync();favSync();
+          if(ev==="PASSWORD_RECOVERY"){go("newpass");return;}
+          if(VIEW==="newpass")return;
+          if(ev==="TOKEN_REFRESHED"||ev==="USER_UPDATED")return;
+          if(ev==="SIGNED_IN"&&prevUid&&sess&&sess.user&&sess.user.id===prevUid&&VIEW!=="login"&&VIEW!=="boot")return; // voltar à app não recarrega tudo
+          if(ev==="SIGNED_OUT"){FAV=new Set();favSave();FAV_UID="";FAV_F=false;S.user=null;IS_ADMIN=false;MOD=[];applyUser();openLogin("login");await loadList();render();return;}
+          if(sess&&(VIEW==="login"||VIEW==="boot"))await afterAuth();else{await loadList();render();}
+        }catch(e){console.error("auth event:",e);}
+      },0);
     });
   }
   authUI();
