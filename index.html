@@ -212,6 +212,11 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
 </header>
 
 <main id="home" class="hide">
+  <div id="instbar" class="hide panel" role="region" aria-label="Instalar a app" style="max-width:none;margin:0 0 14px;padding:12px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <div style="flex:1;min-width:min(180px,100%)"><strong>📲 Instale a Aqui Perto</strong><div class="meta" id="instmsg">Abra mais depressa e receba avisos no telemóvel.</div></div>
+    <div style="display:flex;gap:8px;flex:none"><button class="btn primary" id="instgo" type="button" onclick="instalarApp()">Instalar</button>
+    <button class="btn" type="button" onclick="instFechar()" aria-label="Fechar">✕</button></div>
+  </div>
   <section class="hero">
     <h1>Quem precisa, mesmo ao lado.</h1>
     <p class="sub">Canalizadores, explicadores, hortas, queijarias e marceneiros da sua zona. Fale diretamente com quem trabalha perto de si.</p>
@@ -496,7 +501,7 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
 </main>
 
 <footer class="note" style="text-align:center;padding:4px 0 28px">
-  <a href="#" onclick="shareApp();return false">Partilhar a app</a> · <a href="#" onclick="showLegal('termos');return false">Termos de uso</a> · <a href="#" onclick="showLegal('priv');return false">Política de privacidade</a><span id="fdel" class="hide"> · <a href="#" onclick="apagarConta();return false">Apagar a minha conta</a></span>
+  <a href="#" id="instlink" class="hide" onclick="instalarApp();return false">Instalar a app</a><span id="instsep" class="hide"> · </span><a href="#" onclick="shareApp();return false">Partilhar a app</a> · <a href="#" onclick="showLegal('termos');return false">Termos de uso</a> · <a href="#" onclick="showLegal('priv');return false">Política de privacidade</a><span id="fdel" class="hide"> · <a href="#" onclick="apagarConta();return false">Apagar a minha conta</a></span>
 </footer>
 </div>
 
@@ -694,7 +699,7 @@ function toast(t){const e=$("toast");e.textContent=t;e.style.display="block";cle
 
 function fillZones(sel,first){sel.innerHTML=(first?`<option value="">${first}</option>`:"")+Z.map(z=>`<option>${z}</option>`).join("");}
 let CACHED=0,ORD_S="auto",LOAD_ERR="",VIEW="boot",LM="login",LR="cliente",OBP="servico",NEWID="",CAT_ID="",PHOTO_PID="",NEWBLOB=null,ORD_F="",CT="painel",PF="novo",RP="tudo",PED=[],NOTAS={},SEG={},MYPOS=null,JPOS=null,JLOC="",LOCRES=[],JLOCRES=[],SQL_MISS=false,EDIT_ID="",ENT_F=false,OM=false,ENT_D=null,RW="",MOEDAS={},MOV={},IS_ADMIN=false,MOD=[],DEN_ID="",POP=false,FORN_ID="",QR_SVG="";
-function go(v){const prev=VIEW;VIEW=v;if(v!=="join"&&EDIT_ID){EDIT_ID="";clearJoin();}["home","join","login","ob","cat","crm","meus","newpass","role","mod","forn","legal","chat"].forEach(x=>$(x).classList.toggle("hide",x!==v));if(v==="join"){joinMode();jTipo(S.jtipo);}scrollTo(0,0);navSync(v,prev);}
+function go(v){const prev=VIEW;VIEW=v;try{setTimeout(instUI,0);}catch(e){}if(v!=="join"&&EDIT_ID){EDIT_ID="";clearJoin();}["home","join","login","ob","cat","crm","meus","newpass","role","mod","forn","legal","chat"].forEach(x=>$(x).classList.toggle("hide",x!==v));if(v==="join"){joinMode();jTipo(S.jtipo);}scrollTo(0,0);navSync(v,prev);}
 function goProv(){if(EDIT_ID){EDIT_ID="";clearJoin();}if(DEMO||SESSION||S.user)go("join");else openLogin("signup","fornecedor");}
 function setLR(r){LR=r;drawLogin();}
 function openLogin(m,r){LM=m||"login";if(r)LR=r;$("lerr").textContent="";drawLogin();go("login");}
@@ -2523,6 +2528,31 @@ async function shareLink(title,text,url){
   copyLink(url);
 }
 function shareProv(id){const p=S.list.find(x=>x.id===id);if(p&&p.mine)markShared(id);if(p)shareLink(p.nome,"Veja "+p.nome+" na Aqui Perto",fornUrl(id));}
+// ---- instalar a app (PWA): Android/Chrome usa o pedido nativo; iPhone mostra as instruções
+let INST_EV=null;
+const INST_KEY="aq_inst_ate";
+const emApp=()=>{try{return matchMedia("(display-mode: standalone)").matches||matchMedia("(display-mode: window-controls-overlay)").matches||navigator.standalone===true;}catch(e){return false;}};
+const eIOS=()=>/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+function instAdiado(){try{return Date.now()<Number(localStorage.getItem(INST_KEY)||0);}catch(e){return false;}}
+function instUI(){
+  const pode=!emApp()&&(!!INST_EV||eIOS());
+  const bar=$("instbar"),lk=$("instlink"),sp=$("instsep");if(!bar)return;
+  bar.classList.toggle("hide",!pode||instAdiado()||VIEW!=="home");
+  lk.classList.toggle("hide",!pode);sp.classList.toggle("hide",!pode);
+  if(pode&&!INST_EV&&eIOS()){$("instmsg").textContent="Toque em Partilhar e depois em «Adicionar ao ecrã principal».";$("instgo").classList.add("hide");}
+  else $("instgo").classList.remove("hide");
+}
+function instFechar(){try{localStorage.setItem(INST_KEY,String(Date.now()+14*864e5));}catch(e){}instUI();}
+async function instalarApp(){
+  if(INST_EV){
+    try{INST_EV.prompt();const r=await INST_EV.userChoice;if(r&&r.outcome==="accepted")toast("App instalada.");else instFechar();}catch(e){}
+    INST_EV=null;instUI();return;
+  }
+  if(eIOS()){alert("Para instalar no iPhone: toque no botão Partilhar do Safari e escolha «Adicionar ao ecrã principal».");return;}
+  alert("Para instalar: abra o menu do navegador (⋮) e escolha «Instalar app» ou «Adicionar ao ecrã inicial».");
+}
+addEventListener("beforeinstallprompt",e=>{e.preventDefault();INST_EV=e;instUI();});
+addEventListener("appinstalled",()=>{INST_EV=null;instUI();});
 function shareApp(){shareLink("Aqui Perto","Serviços e produtores locais perto de si",location.origin+location.pathname);}
 $("crmbody").addEventListener("click",e=>{const b=e.target.closest("button[data-forn]");if(b)openForn(b.dataset.forn);});
 $("pdList").addEventListener("input",calcOrd);
