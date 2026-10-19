@@ -665,7 +665,7 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"
 const norm=s=>String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 let S={tipo:"servico",cat:"",jtipo:"servico",jz:[],user:null,list:SEED.slice()};
 
-const APP_VERSION="v22";
+const APP_VERSION="v23";
 const DEMO=!SUPABASE_URL||!SUPABASE_KEY;
 const REC_LINK=/type=recovery/.test(location.hash+location.search),REC_ERR=/otp_expired/.test(location.hash+location.search),OAUTH_ERR=!/otp_expired/.test(location.hash+location.search)&&/[#&?]error=/.test(location.hash+location.search);
 // Bloqueio da sessão que nunca espera para sempre: se outra janela/separador antigo estiver a segurar o
@@ -714,7 +714,7 @@ async function loadList(){
 }
 function authUI(){$("demoNote").classList.toggle("hide",!DEMO);applyUser();}
 function saveMine(){try{localStorage.setItem("aq_mine",JSON.stringify(S.list.filter(p=>p.mine)));}catch(e){}}
-function toast(t){const e=$("toast");e.textContent=t;e.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display="none",2600);}
+function toast(t,ms){const e=$("toast");e.textContent=t;e.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display="none",ms||2600);}
 
 function fillZones(sel,first){sel.innerHTML=(first?`<option value="">${first}</option>`:"")+Z.map(z=>`<option>${z}</option>`).join("");}
 let CACHED=0,ORD_S="auto",LOAD_ERR="",VIEW="boot",LM="login",LR="cliente",OBP="servico",NEWID="",CAT_ID="",PHOTO_PID="",NEWBLOB=null,ORD_F="",CT="painel",PF="novo",RP="tudo",PED=[],NOTAS={},SEG={},MYPOS=null,JPOS=null,JLOC="",LOCRES=[],JLOCRES=[],SQL_MISS=false,EDIT_ID="",ENT_F=false,OM=false,ENT_D=null,RW="",MOEDAS={},MOV={},IS_ADMIN=false,MOD=[],DEN_ID="",POP=false,FORN_ID="",QR_SVG="";
@@ -1981,15 +1981,27 @@ async function pushRestore(){
   }catch(e){}
 }
 async function pushOn(){
+  let step="permissão",sub=null,fresh=false;
   try{
+    if(!("Notification" in window)||!("PushManager" in window))throw new Error("este navegador não suporta avisos");
     const perm=await Notification.requestPermission();
     if(perm!=="granted"){toast("Permissão recusada. Ative as notificações nas definições do navegador.");pushUI();return;}
-    const reg=await pushReg();if(!reg)throw new Error("sem service worker");
-    let sub=await reg.pushManager.getSubscription();
-    if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlB64(VAPID_PUBLIC)});
+    step="service worker";
+    const reg=await Promise.race([navigator.serviceWorker.ready,new Promise(r=>setTimeout(()=>r(null),6000))]);
+    if(!reg)throw new Error("service worker não está ativo (feche e volte a abrir a app)");
+    step="subscrição push";
+    sub=await reg.pushManager.getSubscription();
+    if(!sub){sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlB64(VAPID_PUBLIC)});fresh=true;}
+    step="registo na base de dados";
     await pushSend(sub);PUSH_SYNC=true;pushFlag(true);
     toast("Avisos ativados neste aparelho.");
-  }catch(e){toast("Não foi possível ativar os avisos.");}
+  }catch(e){
+    console.error("pushOn ("+step+"):",e);
+    // se a subscrição foi criada mas não ficou registada, desfaz para o estado não ficar inconsistente
+    if(fresh&&sub){try{await sub.unsubscribe();}catch(x){}}
+    const det=(e&&(e.message||e.details||e.hint||e.name))||String(e);
+    toast("Não foi possível ativar os avisos ["+step+"]: "+det,9000);
+  }
   pushUI();
 }
 async function pushOff(quiet){
