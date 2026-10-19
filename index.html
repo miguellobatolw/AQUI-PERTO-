@@ -657,7 +657,7 @@ async function loadList(){
   const uid=SESSION&&SESSION.user.id;
   S.list=data.map(r=>({id:r.id,nome:r.nome,tipo:r.tipo,cat:r.cat,zonas:r.zonas,preco:r.preco||"",desc:r.descr||"",tel:"",rating:0,n:0,lat:r.lat==null?null:Number(r.lat),lng:r.lng==null?null:Number(r.lng),entrega:!!r.entrega,raio:Number(r.entrega_raio)||0,taxa:Number(r.entrega_taxa)||0,min:Number(r.entrega_min)||0,gratis:Number(r.entrega_gratis)||0,fi:r.fidelidade&&r.fidelidade.ativo?r.fidelidade:null,logo:r.logo||"",galeria:r.galeria||[],localidade:r.localidade||"",raioS:Number(r.raio_servico)||0,horario:r.horario&&typeof r.horario==="object"?r.horario:null,prods:(r.produtos||[]).map(x=>({id:x.id,nome:x.nome,preco:Number(x.preco),un:x.un,stock:x.stock==null?null:Number(x.stock),ativo:x.ativo,foto:x.foto||""})),mine:r.user_id===uid,criado:r.created_at||""}));
   await loadMyTels();
-  try{const rt=await sb.from("fornecedor_rating").select("fornecedor_id,media,n");(rt.data||[]).forEach(x=>{const p=S.list.find(y=>y.id===x.fornecedor_id);if(p){p.rating=Number(x.media)||0;p.n=Number(x.n)||0;}});}catch(e){}
+  try{let rt=await sb.rpc("fornecedor_ratings");if(rt.error)rt=await sb.from("fornecedor_rating").select("fornecedor_id,media,n");(rt.data||[]).forEach(x=>{const p=S.list.find(y=>y.id===x.fornecedor_id);if(p){p.rating=Number(x.media)||0;p.n=Number(x.n)||0;}});}catch(e){}
   applyUser();return true;
 }
 function authUI(){$("demoNote").classList.toggle("hide",!DEMO);applyUser();}
@@ -769,12 +769,13 @@ async function logout(){
   const uid=SESSION&&SESSION.user.id;
   try{if(PUSH_OK())await Promise.race([pushOff(true),new Promise(r=>setTimeout(r,3000))]);}catch(x){}
   S.user=null;try{localStorage.removeItem("aq_user");}catch(x){}
-  S.list.forEach(p=>{p.mine=false;});IS_ADMIN=false;MOD=[];PED=[];ORC=[];MARC=[];EDIT_ID="";
+  S.list.forEach(p=>{p.mine=false;});IS_ADMIN=false;MOD=[];PED=[];ORC=[];MARC=[];CONV=[];MSGS={};MSG_SEEN=0;EDIT_ID="";
   if(!DEMO){try{await Promise.race([sb.auth.signOut(),new Promise(r=>setTimeout(r,4000))]);}catch(x){}SESSION=null;}
   applyUser();openLogin("login");
 }
 async function afterAuth(){
   await loadList();await checkAdmin();pushRestore();
+  loadConv().then(()=>applyUser());
   const {data}=await sb.from("perfis").select("*").eq("user_id",SESSION.user.id).maybeSingle();
   if(!data){
     const md=SESSION.user.user_metadata||{};let papel=md.papel||"";
@@ -1686,6 +1687,7 @@ function applyUser(){
   $("btnMod").classList.toggle("hide",!IS_ADMIN);$("btnMod").textContent="Moderação"+(modPend()?" ("+modPend()+")":"");
   $("fdel").classList.toggle("hide",!on);
   $("btnIn").classList.toggle("hide",on);$("btnOut").classList.toggle("hide",!on);
+  try{msgBadge();}catch(e){} // o código do chat é definido mais abaixo; no primeiro arranque ainda não existe
 }
 function drawFidForm(){$("jfidbox").classList.toggle("hide",!$("jfid").checked);}
 function drawEnt(){$("jraioswrap").classList.toggle("hide",S.jtipo!=="servico");$("jhorwrap").classList.toggle("hide",S.jtipo!=="servico");if(S.jtipo==="servico"&&!$("jhor").innerHTML)drawHor(null);$("jentbox").classList.toggle("hide",!$("jent").checked);$("jfident").classList.toggle("hide",!($("jent").checked&&S.jtipo==="produto"));}
@@ -1889,7 +1891,7 @@ function rtSync(){
     .on("postgres_changes",{event:"*",schema:"public",table:"pedidos"},rtKick)
     .on("postgres_changes",{event:"*",schema:"public",table:"orcamentos"},rtKick)
     .on("postgres_changes",{event:"*",schema:"public",table:"marcacoes"},rtKick)
-    .on("postgres_changes",{event:"*",schema:"public",table:"mensagens"},rtKick)
+    .on("postgres_changes",{event:"*",schema:"public",table:"mensagens"},rtMsg)
     .subscribe();
 }
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)rtKick();});
@@ -2339,7 +2341,27 @@ $("meusmarc").addEventListener("click",async e=>{
   await loadMarc();drawMeus();
 });
 // ---- chat cliente <-> fornecedor (tabelas conversas/mensagens; escrita por RPC)
-let CONV=[],MSGS={},CHAT_ID="",CHAT_BACK="home";
+let CONV=[],MSGS={},CHAT_ID="",CHAT_BACK="home",MSG_SEEN=0;
+const BASE_TITLE=document.title;
+const msgTotal=()=>CONV.reduce((a,c)=>a+convUnread(c),0);
+// selo de mensagens por ler: botões do cabeçalho e título do separador
+function msgBadge(){
+  const n=msgTotal(),f=msgsNovas(),c=n-f;
+  document.title=(n?"("+n+") ":"")+BASE_TITLE;
+  if($("btnMeus"))$("btnMeus").textContent="Os meus pedidos"+(c>0?" ("+c+")":"");
+  if($("btnCat"))$("btnCat").textContent="Área do fornecedor"+(f>0?" ("+f+")":"");
+}
+// mensagem nova em tempo real, em qualquer ecrã
+let MSG_T=null;
+function rtMsg(){
+  if(VIEW==="crm"||VIEW==="meus"||VIEW==="chat"){rtKick();return;}
+  clearTimeout(MSG_T);
+  MSG_T=setTimeout(async()=>{
+    if(DEMO||!SESSION)return;
+    const up=await loadConv();
+    if(up)toast("💬 Nova mensagem. Veja em Os meus pedidos ou na Área do fornecedor.");
+  },600);
+}
 const uidNow=()=>SESSION?SESSION.user.id:"";
 async function loadConv(){
   if(DEMO||!SESSION){CONV=[];MSGS={};return;}
@@ -2348,6 +2370,7 @@ async function loadConv(){
   const m=await sb.from("mensagens").select("id,conversa_id,autor_id,texto,lida,created_at").order("created_at",{ascending:false}).limit(1000);
   MSGS={};((m.data)||[]).slice().reverse().forEach(x=>{(MSGS[x.conversa_id]||(MSGS[x.conversa_id]=[])).push(x);});
   CONV=(c.data||[]).map(r=>({id:r.id,fid:r.fornecedor_id,cid:r.cliente_id,nome:r.cliente_nome||"Cliente",ult:r.ultima_em}));
+  const t=msgTotal(),up=t>MSG_SEEN;MSG_SEEN=t;msgBadge();return up;
 }
 const convUnread=c=>(MSGS[c.id]||[]).filter(x=>x.autor_id!==uidNow()&&!x.lida).length;
 const myConvs=()=>{const ids=new Set(S.list.filter(p=>p.mine).map(p=>String(p.id)));return CONV.filter(c=>ids.has(String(c.fid)));};
@@ -2518,7 +2541,7 @@ restorePos();
     try{history.replaceState(history.state,"",location.pathname+location.hash);}catch(x){}
     if(VIEW==="home"){if(S.list.some(x=>x.id===DL))openForn(DL);else toast("Este perfil já não está disponível.");}
   }
-  if(SESSION&&/[?&]crm=1/.test(location.search)){try{history.replaceState(null,"",location.pathname);}catch(x){}openCrm();}
+  if(SESSION&&/[?&]crm=1/.test(location.search)){if(/[?&]aba=mensagens/.test(location.search))CT="mensagens";try{history.replaceState(null,"",location.pathname);}catch(x){}openCrm();}
   if(SESSION&&/[?&]meus=1/.test(location.search)){try{history.replaceState(null,"",location.pathname);}catch(x){}openMeus();}
 })();
 addEventListener("offline",()=>toast("Sem ligação à internet. Pode continuar a ver a última lista."));
