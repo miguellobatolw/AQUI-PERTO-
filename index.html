@@ -299,6 +299,11 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
     </div>
     <label for="jpreco">Preço indicativo</label>
     <input class="f" id="jpreco" maxlength="40" placeholder="Ex.: 25 €/hora ou 3 €/kg">
+    <label for="jpromo">Promoção (opcional)</label>
+    <input class="f" id="jpromo" maxlength="60" placeholder="Ex.: -10% em mel · 2 por 5 €">
+    <label for="jpromoate">Promoção válida até</label>
+    <input class="f" id="jpromoate" type="date">
+    <p class="note">Aparece como etiqueta no seu cartão até à data indicada (no máximo 90 dias) e desaparece sozinha depois.</p>
     <label for="jdesc">Descrição</label>
     <textarea class="f" id="jdesc" rows="3" maxlength="240" placeholder="O que faz, há quanto tempo, horários…"></textarea>
     <label for="jtel">Telemóvel (opcional)</label>
@@ -671,7 +676,7 @@ async function loadList(){
   // O telemóvel (coluna tel) NÃO é pedido aqui: só chega a quem tem sessão, via sb.rpc("obter_contacto")
   // Leitura com recuo progressivo: se faltar alguma coluna recente na base de dados, tenta com menos colunas em vez de falhar
   const BASE="id,user_id,created_at,nome,tipo,cat,zonas,preco,descr,lat,lng,entrega,entrega_raio,entrega_taxa,entrega_min,entrega_gratis";
-  const NIVEIS=[BASE+",fidelidade,logo,galeria,localidade,raio_servico,horario",BASE+",fidelidade,logo,galeria,localidade,raio_servico",BASE+",fidelidade,logo,galeria",BASE+",fidelidade",BASE];
+  const NIVEIS=[BASE+",fidelidade,logo,galeria,localidade,raio_servico,horario,promo",BASE+",fidelidade,logo,galeria,localidade,raio_servico,horario",BASE+",fidelidade,logo,galeria,localidade,raio_servico",BASE+",fidelidade,logo,galeria",BASE+",fidelidade",BASE];
   let q0=null;
   for(const cols of NIVEIS){
     q0=await sb.from("fornecedores").select(cols+",produtos(*)").order("created_at",{ascending:false});
@@ -688,7 +693,7 @@ async function loadList(){
   if(error){LOAD_ERR=(error.message||String(error));console.error("loadList:",error);toast("Erro ao carregar fornecedores: "+LOAD_ERR);return false;}
   LOAD_ERR="";
   const uid=SESSION&&SESSION.user.id;
-  S.list=data.map(r=>({id:r.id,nome:r.nome,tipo:r.tipo,cat:r.cat,zonas:r.zonas,preco:r.preco||"",desc:r.descr||"",tel:"",rating:0,n:0,lat:r.lat==null?null:Number(r.lat),lng:r.lng==null?null:Number(r.lng),entrega:!!r.entrega,raio:Number(r.entrega_raio)||0,taxa:Number(r.entrega_taxa)||0,min:Number(r.entrega_min)||0,gratis:Number(r.entrega_gratis)||0,fi:r.fidelidade&&r.fidelidade.ativo?r.fidelidade:null,logo:r.logo||"",galeria:r.galeria||[],localidade:r.localidade||"",raioS:Number(r.raio_servico)||0,horario:r.horario&&typeof r.horario==="object"?r.horario:null,prods:(r.produtos||[]).map(x=>({id:x.id,nome:x.nome,preco:Number(x.preco),un:x.un,stock:x.stock==null?null:Number(x.stock),ativo:x.ativo,foto:x.foto||""})),mine:r.user_id===uid,criado:r.created_at||""}));
+  S.list=data.map(r=>({id:r.id,nome:r.nome,tipo:r.tipo,cat:r.cat,zonas:r.zonas,preco:r.preco||"",desc:r.descr||"",tel:"",rating:0,n:0,lat:r.lat==null?null:Number(r.lat),lng:r.lng==null?null:Number(r.lng),entrega:!!r.entrega,raio:Number(r.entrega_raio)||0,taxa:Number(r.entrega_taxa)||0,min:Number(r.entrega_min)||0,gratis:Number(r.entrega_gratis)||0,fi:r.fidelidade&&r.fidelidade.ativo?r.fidelidade:null,logo:r.logo||"",galeria:r.galeria||[],localidade:r.localidade||"",raioS:Number(r.raio_servico)||0,horario:r.horario&&typeof r.horario==="object"?r.horario:null,promo:r.promo&&typeof r.promo==="object"?r.promo:null,prods:(r.produtos||[]).map(x=>({id:x.id,nome:x.nome,preco:Number(x.preco),un:x.un,stock:x.stock==null?null:Number(x.stock),ativo:x.ativo,foto:x.foto||""})),mine:r.user_id===uid,criado:r.created_at||""}));
   await loadMyTels();
   try{let rt=await sb.rpc("fornecedor_ratings");if(rt.error)rt=await sb.from("fornecedor_rating").select("fornecedor_id,media,n");(rt.data||[]).forEach(x=>{const p=S.list.find(y=>y.id===x.fornecedor_id);if(p){p.rating=Number(x.media)||0;p.n=Number(x.n)||0;}});}catch(e){}
   applyUser();return true;
@@ -1509,8 +1514,10 @@ function horResumo(h){
   }
   return out.join(" · ");
 }
+const promoAtiva=p=>p.promo&&p.promo.texto&&p.promo.ate&&p.promo.ate>=hojeISO()?p.promo:null;
+function promoBadge(p){const x=promoAtiva(p);return x?`<div style="margin:6px 0"><span class="badge" style="background:var(--accent);color:var(--accent-ink)">🏷️ ${esc(x.texto)} · até ${esc(x.ate.split("-").reverse().slice(0,2).join("/"))}</span></div>`:"";}
 function horBadge(p){const r=horResumo(p.horario);return r?`<div><span class="badge">🕘 ${esc(r)}</span></div>`:"";}
-const exV=p=>({localidade:p.localidade||null,raio_servico:p.raioS||null,horario:p.horario||null});
+const exV=p=>({localidade:p.localidade||null,raio_servico:p.raioS||null,horario:p.horario||null,promo:p.promo||null});
 const colErr=e=>/localidade|raio_servico|column|schema cache/i.test((e&&e.message)||"");
 function servBadge(p){
   if(p.tipo!=="servico"||!p.raioS)return"";
@@ -1526,7 +1533,7 @@ function joinMode(){
 }
 function clearJoin(){
   if($("jhor"))$("jhor").innerHTML="";
-  ["jnome","jpreco","jdesc","jtel"].forEach(i=>$(i).value="");
+  ["jnome","jpreco","jdesc","jtel","jpromo","jpromoate"].forEach(i=>$(i).value="");$("jpromoate").min=hojeISO();
   S.jz=[];JPOS=null;JLOC="";$("jlocq").value="";$("jlocres").innerHTML="";$("jraios").value="";$("jmsg").textContent="";$("jerr").textContent="";drawJZ();$("jmedia").classList.add("hide");
   $("jent").checked=false;$("jraio").value="";$("jtaxa").value="";$("jmin").value="";$("jgratis").value="";drawEnt();$("jfid").checked=false;$("jppe").value=1;["jfecusto","jfpnome","jfpvalor","jfpcusto"].forEach(i=>$(i).value="");drawFidForm();
 }
@@ -1534,7 +1541,7 @@ function openEdit(id){
   const p=S.list.find(x=>x.id===id&&x.mine);if(!p)return;
   EDIT_ID=id;S.jtipo=p.tipo;go("join");
   $("jnome").value=p.nome;$("jcat").value=p.cat;S.jz=p.zonas.slice();drawJZ();
-  $("jpreco").value=p.preco||"";$("jdesc").value=p.desc==="Sem descrição."?"":p.desc;$("jtel").value=p.tel;
+  $("jpreco").value=p.preco||"";$("jpromo").value=(p.promo&&p.promo.texto)||"";$("jpromoate").value=(p.promo&&p.promo.ate)||"";$("jpromoate").min=hojeISO();$("jdesc").value=p.desc==="Sem descrição."?"":p.desc;$("jtel").value=p.tel;
   $("jent").checked=!!p.entrega;$("jraio").value=p.entrega?p.raio:"";$("jtaxa").value=p.entrega&&p.taxa?p.taxa:"";$("jmin").value=p.entrega&&p.min?p.min:"";$("jgratis").value=p.entrega&&p.gratis?p.gratis:"";drawEnt();
   {const fi=p.fi;$("jfid").checked=!!(fi&&fi.ativo);$("jppe").value=fi?fi.ppe:1;$("jfecusto").value=fi&&fi.ent?fi.ent.custo:"";$("jfpnome").value=fi&&fi.prod?fi.prod.nome:"";$("jfpvalor").value=fi&&fi.prod?fi.prod.valor:"";$("jfpcusto").value=fi&&fi.prod?fi.prod.custo:"";drawFidForm();}
   JPOS=p.lat!=null?{lat:p.lat,lng:p.lng}:null;JLOC=p.localidade||"";$("jlocq").value=JLOC;$("jlocres").innerHTML="";$("jraios").value=p.raioS||"";drawHor(p.horario||null);
@@ -1686,7 +1693,7 @@ function card(p){
   const col=COLORS[(p.nome.charCodeAt(0)+p.nome.length)%COLORS.length],fv=FAV.has(String(p.id));
   return `<article class="card"><div class="top"><div class="av" style="background:${col}" aria-hidden="true">${p.logo?`<img src="${esc(imgUrl({foto:p.logo}))}" alt="" loading="lazy">`:esc(p.nome[0])}</div>
   <div><h3><button type="button" class="linkb" data-forn="${esc(p.id)}" style="font-weight:inherit;color:inherit">${esc(p.nome)}</button>${p.mine?'<span class="mine">O meu</span>':""}</h3><div class="meta">${esc(p.cat)} · ${p.localidade?"📍 "+esc(p.localidade)+" · ":""}${esc(p.zonas.slice(0,3).join(", "))}${p.dist!=null?" · a "+(p.dist<10?p.dist.toFixed(1).replace(".",","):Math.round(p.dist))+" km":""}</div></div>${p.mine?"":`<button type="button" class="btn" style="margin-left:auto;padding:6px 10px;flex:none;color:${fv?"#c0392b":"inherit"}" data-fav="${esc(p.id)}" aria-pressed="${fv}" aria-label="${fv?"Remover dos favoritos":"Guardar nos favoritos"}: ${esc(p.nome)}">${fv?"♥":"♡"}</button>`}<button type="button" class="btn" style="margin-left:${p.mine?"auto":"0"};padding:6px 10px;flex:none" data-share="${esc(p.id)}" aria-label="Partilhar ${esc(p.nome)}">🔗</button></div>
-  <p>${esc(p.desc)}</p>${prodBtn(p)}${entBadge(p)}${servBadge(p)}${horBadge(p)}${fiBadge(p)}
+  <p>${esc(p.desc)}</p>${promoBadge(p)}${prodBtn(p)}${entBadge(p)}${servBadge(p)}${horBadge(p)}${fiBadge(p)}
   <div class="foot"><div><span class="price">${esc(p.preco||"Sob consulta")}</span><br>${p.n?`<button type="button" class="star linkb" data-rev="${esc(p.id)}" aria-label="Ver avaliações de ${esc(p.nome)}">★ ${p.rating.toFixed(1).replace(".",",")} <span class="meta">(${p.n})</span></button>`:"<span class='meta'>Novo na app</span>"}</div>
   <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">${p.tipo==="servico"&&!p.mine?`<button class="btn accent" data-orc="${esc(p.id)}">Pedir orçamento</button><button class="btn" data-marc="${esc(p.id)}">Marcar</button>`:""}${p.mine&&!DEMO?`<button class="btn" data-del="${p.id}">Apagar</button>`:""}${p.mine?"":`<button class="btn" data-msg="${esc(p.id)}">💬 Mensagem</button>`}<button class="btn primary" data-id="${p.id}">Contactar</button></div></div></article>`;
 }
@@ -1738,6 +1745,7 @@ async function saveProv(){
   const ent=S.jtipo==="produto"&&$("jent").checked,raio=Math.round(Number($("jraio").value)),taxa=Math.max(0,Math.round(Number($("jtaxa").value||0)*100)/100),mn=Math.max(0,Math.round(Number($("jmin").value||0)*100)/100),gr=Math.max(0,Math.round(Number($("jgratis").value||0)*100)/100),fon=$("jfid").checked,ppe=Math.round(Number($("jppe").value||0)*10)/10,fec=ent?Math.round(Number($("jfecusto").value||0)):0,fpn=$("jfpnome").value.trim(),fpv=Math.round(Number($("jfpvalor").value||0)*100)/100,fpc=Math.round(Number($("jfpcusto").value||0));
   let e="";SQL_MISS=false;
   let horR=null;if(S.jtipo==="servico"){horR=readHor();if(horR&&horR.erro){$("jerr").textContent=horR.erro;return;}}
+  const promoT=$("jpromo").value.trim(),promoD=$("jpromoate").value,maxD=new Date(Date.now()+90*864e5).toISOString().slice(0,10);
   const raioS=S.jtipo==="servico"&&$("jraios").value!==""?Math.round(Number($("jraios").value)):0;
   if(!nome)e="Indique o nome ou a marca.";
   else if(!S.jz.length)e="Escolha pelo menos uma zona.";
@@ -1751,12 +1759,15 @@ async function saveProv(){
   else if(fon&&!(ppe>0))e="Indique quantas moedas o cliente ganha por cada 1 €.";
   else if(fon&&(fpn||fpv||fpc)&&!(fpn&&fpv>0&&fpc>0))e="Complete o produto grátis: nome, valor em € e custo em moedas.";
   else if(fon&&!(fec>0||(fpn&&fpv>0&&fpc>0)))e="Defina pelo menos uma recompensa: entrega grátis ou um produto grátis.";
+  else if(promoT&&!promoD)e="Indique até que dia a promoção é válida.";
+  else if(promoT&&promoD<hojeISO())e="A data da promoção já passou.";
+  else if(promoT&&promoD>maxD)e="A promoção pode durar no máximo 90 dias.";
   $("jerr").textContent=e;if(e)return;
   const FI=fon?{ativo:true,ppe,ent:fec>0?{custo:fec}:null,prod:(fpn&&fpv>0&&fpc>0)?{nome:fpn,valor:fpv,custo:fpc}:null}:null;
-  const p={nome,tipo:S.jtipo,cat:$("jcat").value,zonas:S.jz.slice(),preco:$("jpreco").value.trim(),desc:$("jdesc").value.trim()||"Sem descrição.",tel,entrega:ent,raio:ent?raio:0,taxa:ent?taxa:0,min:ent?mn:0,gratis:ent?gr:0,fi:FI,localidade:JLOC,raioS,horario:horR};
+  const p={nome,tipo:S.jtipo,cat:$("jcat").value,zonas:S.jz.slice(),preco:$("jpreco").value.trim(),desc:$("jdesc").value.trim()||"Sem descrição.",tel,entrega:ent,raio:ent?raio:0,taxa:ent?taxa:0,min:ent?mn:0,gratis:ent?gr:0,fi:FI,localidade:JLOC,raioS,horario:horR,promo:promoT?{texto:promoT,ate:promoD}:null};
   if(EDIT_ID){
     const loc=JPOS?{lat:JPOS.lat,lng:JPOS.lng}:{};
-    if(DEMO){const f=S.list.find(x=>x.id===EDIT_ID);if(f){Object.assign(f,{nome:p.nome,cat:p.cat,zonas:p.zonas,preco:p.preco,desc:p.desc,tel:p.tel,entrega:p.entrega,raio:p.raio,taxa:p.taxa,min:p.min,gratis:p.gratis,fi:p.fi,localidade:p.localidade,raioS:p.raioS,horario:p.horario},loc);saveMine();}}
+    if(DEMO){const f=S.list.find(x=>x.id===EDIT_ID);if(f){Object.assign(f,{nome:p.nome,cat:p.cat,zonas:p.zonas,preco:p.preco,desc:p.desc,tel:p.tel,entrega:p.entrega,raio:p.raio,taxa:p.taxa,min:p.min,gratis:p.gratis,fi:p.fi,localidade:p.localidade,raioS:p.raioS,horario:p.horario,promo:p.promo},loc);saveMine();}}
     else{
       const upd={nome:p.nome,cat:p.cat,zonas:p.zonas,preco:p.preco,descr:p.desc,tel:p.tel||null,entrega:p.entrega,entrega_raio:p.entrega?p.raio:null,entrega_taxa:p.entrega?p.taxa:null,entrega_min:p.entrega&&p.min?p.min:null,entrega_gratis:p.entrega&&p.gratis?p.gratis:null,fidelidade:p.fi,...loc};
       let {error}=await sb.from("fornecedores").update({...upd,...exV(p)}).eq("id",EDIT_ID);
@@ -1764,7 +1775,7 @@ async function saveProv(){
       if(error){$("jerr").textContent="Não foi possível guardar as alterações. Tente outra vez.";return;}
       await loadList();
     }
-    toast(SQL_MISS?"Perfil atualizado, mas falta atualizar a base de dados (localidade e raio).":"Perfil atualizado.");await openCrm();return;
+    toast(SQL_MISS?"Perfil atualizado, mas falta atualizar a base de dados (colunas novas: corra o SQL indicado).":"Perfil atualizado.");await openCrm();return;
   }
   if(DEMO){NEWID="m"+Date.now();S.list.push({...p,id:NEWID,rating:0,n:0,mine:true,prods:[],lat:JPOS?JPOS.lat:null,lng:JPOS?JPOS.lng:null});saveMine();}
   else{
@@ -1785,7 +1796,7 @@ async function saveProv(){
   if(!DEMO)await sb.from("perfis").upsert({user_id:SESSION.user.id,papel:"fornecedor",nome:p.nome,zona:p.zonas[0]});
   clearJoin();
   S.tipo=p.tipo;S.cat="";$("zona").value="";$("q").value="";
-  render();openCat(NEWID);toast(SQL_MISS?"Perfil publicado, mas falta atualizar a base de dados (localidade e raio).":"Perfil publicado. Agora adicione os seus produtos.");
+  render();openCat(NEWID);toast(SQL_MISS?"Perfil publicado, mas falta atualizar a base de dados (colunas novas: corra o SQL indicado).":"Perfil publicado. Agora adicione os seus produtos.");
 }
 
 // ---- logótipo e galeria do perfil (guardam-se logo ao escolher; bucket "produtos")
