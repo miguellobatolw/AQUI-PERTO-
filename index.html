@@ -797,7 +797,15 @@ function showLegal(k){
   if(VIEW!=="legal")LEGAL_BACK=VIEW;
   $("legaltitle").textContent=LEGAL_TXT[k].t;$("legalbody").innerHTML=LEGAL_TXT[k].h();go("legal");
 }
-const AQ_KEYS=["aq_cache","aq_mine","aq_moedas","aq_notas","aq_ped","aq_seg","aq_user","aq_role","aq_avs","aq_orc","aq_favs"];
+const AQ_KEYS=["aq_cache","aq_mine","aq_moedas","aq_notas","aq_ped","aq_seg","aq_user","aq_role","aq_avs","aq_orc","aq_favs","aq_pos"];
+// Ao terminar a sessão (aparelhos partilhados): apaga do aparelho o que é da pessoa — nome/zona, papel, última localização e favoritos.
+// A lista pública em cache (aq_cache) mantém-se: só tem dados públicos e serve o modo sem ligação. Em modo demo não mexe em nada.
+function limparLocal(){
+  if(DEMO)return;
+  try{["aq_user","aq_role","aq_pos","aq_favs"].forEach(k=>localStorage.removeItem(k));}catch(x){}
+  FAV=new Set();FAV_UID="";FAV_F=false;
+  try{clearPos();}catch(x){}
+}
 async function apagarConta(){
   if(!confirm("Vai apagar a sua conta e todos os dados associados (perfis, produtos, fotografias, pedidos). Isto não pode ser desfeito. Continuar?"))return;
   const t=prompt("Para confirmar, escreva APAGAR:");
@@ -820,7 +828,7 @@ async function logout(){
   // vai logo para o login; a limpeza da sessão corre depois e nunca bloqueia a saída
   const uid=SESSION&&SESSION.user.id;
   try{if(PUSH_OK())await Promise.race([pushOff(true),new Promise(r=>setTimeout(r,3000))]);}catch(x){}
-  S.user=null;try{localStorage.removeItem("aq_user");}catch(x){}
+  S.user=null;try{localStorage.removeItem("aq_user");}catch(x){}limparLocal();
   S.list.forEach(p=>{p.mine=false;});IS_ADMIN=false;MOD=[];PED=[];ORC=[];MARC=[];CONV=[];MSGS={};MSG_SEEN=0;EDIT_ID="";
   if(!DEMO){try{await Promise.race([sb.auth.signOut(),new Promise(r=>setTimeout(r,4000))]);}catch(x){}SESSION=null;}
   applyUser();openLogin("login");
@@ -2631,7 +2639,7 @@ setTimeout(()=>{
           if(VIEW==="newpass")return;
           if(ev==="TOKEN_REFRESHED"||ev==="USER_UPDATED")return;
           if(ev==="SIGNED_IN"&&prevUid&&sess&&sess.user&&sess.user.id===prevUid&&VIEW!=="login"&&VIEW!=="boot")return; // voltar à app não recarrega tudo
-          if(ev==="SIGNED_OUT"){FAV=new Set();favSave();FAV_UID="";FAV_F=false;S.user=null;IS_ADMIN=false;MOD=[];applyUser();openLogin("login");await loadList();render();return;}
+          if(ev==="SIGNED_OUT"){limparLocal();FAV=new Set();favSave();FAV_UID="";FAV_F=false;S.user=null;IS_ADMIN=false;MOD=[];applyUser();openLogin("login");await loadList();render();return;}
           if(sess&&(VIEW==="login"||VIEW==="boot"))await afterAuth();else{await loadList();render();}
         }catch(e){console.error("auth event:",e);}
       },0);
