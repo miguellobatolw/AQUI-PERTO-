@@ -665,10 +665,24 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"
 const norm=s=>String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 let S={tipo:"servico",cat:"",jtipo:"servico",jz:[],user:null,list:SEED.slice()};
 
-const APP_VERSION="v21";
+const APP_VERSION="v22";
 const DEMO=!SUPABASE_URL||!SUPABASE_KEY;
 const REC_LINK=/type=recovery/.test(location.hash+location.search),REC_ERR=/otp_expired/.test(location.hash+location.search),OAUTH_ERR=!/otp_expired/.test(location.hash+location.search)&&/[#&?]error=/.test(location.hash+location.search);
-const sb=DEMO?null:supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+// Bloqueio da sessão que nunca espera para sempre: se outra janela/separador antigo estiver a segurar o
+// bloqueio (Web Lock), ao fim de 3 s a app continua sem ele em vez de ficar parada em branco.
+const AUTH_LOCK=async(name,acquireTimeout,fn)=>{
+  const L=navigator.locks;
+  if(!L||!L.request)return await fn();
+  const ac=new AbortController();let started=false;
+  const t=setTimeout(()=>ac.abort(),acquireTimeout>0?Math.min(acquireTimeout,3000):3000);
+  try{
+    return await L.request(name,{signal:ac.signal},async()=>{started=true;clearTimeout(t);return await fn();});
+  }catch(e){
+    if(!started&&e&&e.name==="AbortError")return await fn();
+    throw e;
+  }finally{clearTimeout(t);}
+};
+const sb=DEMO?null:supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{lock:AUTH_LOCK}});
 let SESSION=null;
 function load(){try{S.user=JSON.parse(localStorage.getItem("aq_user")||"null");}catch(e){}}
 async function loadList(){
