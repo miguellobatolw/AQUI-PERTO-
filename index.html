@@ -20,8 +20,36 @@
 <meta name="apple-mobile-web-app-title" content="Aqui Perto">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
+<script>
+// Mostra qualquer erro de arranque no ecrã (em vez de uma página em branco) para ser fácil de diagnosticar.
+(function(){
+  var shown=false;
+  function show(msg){
+    if(shown)return;shown=true;
+    function put(){
+      var d=document.createElement("div");
+      d.setAttribute("role","alert");
+      d.style.cssText="position:fixed;left:8px;right:8px;bottom:8px;z-index:99999;background:#7a1f1f;color:#fff;padding:12px 14px;border-radius:12px;font:14px/1.4 system-ui,sans-serif;box-shadow:0 4px 20px rgba(0,0,0,.5)";
+      var t=document.createElement("div");t.textContent="A app teve um problema: "+msg;
+      var b=document.createElement("button");b.textContent="Recarregar";b.style.cssText="margin-top:8px;padding:8px 16px;border:0;border-radius:999px;font-weight:700;background:#fff;color:#7a1f1f";
+      b.onclick=function(){try{navigator.serviceWorker.getRegistrations().then(function(r){return Promise.all(r.map(function(x){return x.unregister();}));}).then(function(){return window.caches?caches.keys().then(function(k){return Promise.all(k.map(function(x){return caches.delete(x);}));}):0;}).then(function(){location.reload();},function(){location.reload();});}catch(e){location.reload();}};
+      d.appendChild(t);d.appendChild(b);document.body.appendChild(d);
+    }
+    if(document.body)put();else addEventListener("DOMContentLoaded",put);
+  }
+  addEventListener("error",function(e){
+    if(e&&e.target&&e.target!==window&&e.target.tagName==="SCRIPT"){return;} // falha de CDN: tratada abaixo
+    show((e&&e.message)||"erro desconhecido");
+  });
+  addEventListener("unhandledrejection",function(e){var r=e&&e.reason;show((r&&r.message)||String(r));});
+  window.__aqErr=show;
+})();
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>window.supabase||document.write('<script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"><\/script>');</script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<script>window.qrcode||document.write('<script src="https://unpkg.com/qrcode-generator@1.4.4/qrcode.js"><\/script>');</script>
+<script>if(!window.supabase&&window.__aqErr)window.__aqErr("não foi possível carregar a biblioteca da base de dados. Verifique a ligação à internet ou desative bloqueadores de anúncios para este site.");</script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap">
 <style>
 :root{--bg:#f2f6f4;--surface:#fff;--ink:#14262b;--muted:#5a6d70;--line:#d6e0dc;--brand:#0f5c4d;--brand-ink:#fff;--accent:#f2b33d;--accent-ink:#2a1d00;--chip:#e3ece8;
@@ -1964,7 +1992,7 @@ async function pushUI(){
   box.innerHTML='<div style="flex:1;min-width:min(200px,100%)"><strong>'+tit+'</strong><div class="meta">'+txt+'</div></div>'+
     (den?"":'<button class="btn'+(on?"":" primary")+'" onclick="'+(on?"pushOff()":"pushOn()")+'">'+(on?"Desativar":"Ativar avisos")+'</button>');
 }
-if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{if(e.data&&SESSION){if(e.data.t==="crm")openCrm();else if(e.data.t==="meus")openMeus();}});
+if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{if(e.data&&SESSION){if(e.data.t==="crm"){if(e.data.aba==="mensagens")CT="mensagens";openCrm();}else if(e.data.t==="meus")openMeus();}});
 // ---- avaliações (só pedidos concluídos, 1 por pedido)
 let AVS={},AV_ID="",AV_E=0;
 const lsAvs=()=>{try{return JSON.parse(localStorage.getItem("aq_avs")||"{}")||{};}catch(e){return {};}};
