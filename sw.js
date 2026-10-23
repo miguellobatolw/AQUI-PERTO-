@@ -1,5 +1,5 @@
 // IMPORTANTE: mudar V sempre que a app (APP_VERSION no index.html) mudar, para os aparelhos receberem a versão nova.
-const V="aqui-perto-v23",SHELL=["./","index.html","manifest.webmanifest","icon-180.png","icon-192.png","icon-512.png","badge-96.png"];
+const V="aqui-perto-v25",SHELL=["./","index.html","manifest.webmanifest","icon-180.png","icon-192.png","icon-512.png","badge-96.png"];
 // Bibliotecas externas (CDN). Guardadas em cache para a app arrancar mesmo que a CDN falhe ou sem rede.
 const LIBS=["cdn.jsdelivr.net","unpkg.com"];
 // Só as bibliotecas com versão fixa no endereço (ex.: pacote@2.45.4) são imutáveis e podem ir "cache primeiro".

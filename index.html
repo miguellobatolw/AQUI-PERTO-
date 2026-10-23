@@ -116,6 +116,7 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
 .stk{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.stk .f{width:84px;text-align:center}.stk .btn{padding:6px 12px}
 .tg{display:flex;align-items:center;gap:6px;margin:0;font-weight:400;font-size:14px}
 .pgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.pqty{display:flex;align-items:center;gap:10px;margin-left:auto;flex:none}
 .ok{color:var(--brand);font-weight:600}.out{color:#c0392b;font-weight:600}
 @media(max-width:520px){.pgrid{grid-template-columns:1fr}}
 .thumb{width:52px;height:52px;border-radius:10px;border:1px dashed var(--line);background:var(--chip);padding:0;overflow:hidden;cursor:pointer;display:grid;place-items:center;font-size:22px;color:var(--muted);flex:none}
@@ -665,7 +666,7 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"
 const norm=s=>String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 let S={tipo:"servico",cat:"",jtipo:"servico",jz:[],user:null,list:SEED.slice()};
 
-const APP_VERSION="v23";
+const APP_VERSION="v25";
 const DEMO=!SUPABASE_URL||!SUPABASE_KEY;
 const REC_LINK=/type=recovery/.test(location.hash+location.search),REC_ERR=/otp_expired/.test(location.hash+location.search),OAUTH_ERR=!/otp_expired/.test(location.hash+location.search)&&/[#&?]error=/.test(location.hash+location.search);
 // Bloqueio da sessão que nunca espera para sempre: se outra janela/separador antigo estiver a segurar o
@@ -898,9 +899,9 @@ function prodBtn(p){const n=(p.prods||[]).filter(x=>x.ativo).length;return n?`<d
 async function openProd(id){
   const p=S.list.find(x=>x.id===id);if(!p)return;
   $("pdNome").textContent=p.nome;ORD_F=id;
-  $("pdList").innerHTML=p.prods.filter(x=>x.ativo).sort(byNome).map(x=>`<div class="prow">${imgUrl(x)?`<img class="pimg" src="${esc(imgUrl(x))}" alt="${esc(x.nome)}" loading="lazy">`:""}<div style="flex:1"><strong>${esc(x.nome)}</strong><div class="meta">${esc(fmtP(x))}</div></div><div class="${x.stock===0?"out":"ok"}">${esc(stkTxt(x))}</div>${x.stock===0?"":`<input class="f" type="number" min="0" step="any" inputmode="decimal" data-q="${esc(x.id)}" placeholder="0" aria-label="Quantidade de ${esc(x.nome)}" style="width:76px">`}</div>`).join("");
+  $("pdList").innerHTML=p.prods.filter(x=>x.ativo).sort(byNome).map(x=>`<div class="prow">${imgUrl(x)?`<img class="pimg" src="${esc(imgUrl(x))}" alt="${esc(x.nome)}" loading="lazy">`:""}<div style="flex:1 1 140px;min-width:min(140px,100%)"><strong>${esc(x.nome)}</strong><div class="meta">${esc(fmtP(x))}</div></div><div class="pqty"><div class="${x.stock===0?"out":"ok"}">${esc(stkTxt(x))}</div>${x.stock===0?"":`<input class="f" type="number" min="0" step="any" inputmode="decimal" data-q="${esc(x.id)}" placeholder="0" aria-label="Quantidade de ${esc(x.nome)}" style="width:76px">`}</div></div>`).join("");
   $("pdCont").onclick=()=>{$("dProd").close();openCont(id);};
-  $("ordbox").classList.toggle("hide",!p.prods.some(x=>x.ativo&&x.stock!==0));$("oerr").textContent="";
+  $("ordbox").classList.toggle("hide",!!p.mine||!p.prods.some(x=>x.ativo&&x.stock!==0));$("oerr").textContent="";
   RW="";setOM(false);$("entbox").classList.toggle("hide",!p.entrega);$("entmsg").textContent="";
   if(S.user&&!$("onome").value)$("onome").value=S.user.nome;
   if(p.fi&&p.fi.ativo&&(DEMO||SESSION))await loadMoedas();
@@ -1065,6 +1066,7 @@ function ordErr(m){
   if(/m[ií]nimo/i.test(m))return "O pedido não atinge o mínimo para entrega.";
   if(/n[ãa]o faz entregas/i.test(m))return "Este fornecedor já não faz entregas.";
   if(/indispon/i.test(m))return "Um produto ou recompensa já não está disponível. Feche e volte a abrir a lista.";
+  if(/pr[óo]prio perfil/i.test(m))return "Não pode fazer pedidos ao seu próprio perfil.";
   return "Não foi possível enviar o pedido. Tente outra vez.";
 }
 async function sendOrder(){
