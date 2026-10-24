@@ -45,10 +45,10 @@
   window.__aqErr=show;
 })();
 </script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script>window.supabase||document.write('<script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"><\/script>');</script>
-<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-<script>window.qrcode||document.write('<script src="https://unpkg.com/qrcode-generator@1.4.4/qrcode.js"><\/script>');</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
+<script>window.supabase||document.write('<script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"><\/script>');</script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js" integrity="sha384-8FWZA6BGMXhsfO+BLtrJK0We6gg5o1JyO8xQm6peWDEUs17ACA5ziE/NIAkl9z2k" crossorigin="anonymous"></script>
+<script>window.qrcode||document.write('<script src="https://unpkg.com/qrcode-generator@1.4.4/qrcode.js" integrity="sha384-8FWZA6BGMXhsfO+BLtrJK0We6gg5o1JyO8xQm6peWDEUs17ACA5ziE/NIAkl9z2k" crossorigin="anonymous"><\/script>');</script>
 <script>if(!window.supabase&&window.__aqErr)window.__aqErr("não foi possível carregar a biblioteca da base de dados. Verifique a ligação à internet ou desative bloqueadores de anúncios para este site.");</script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap">
 <style>
@@ -666,7 +666,7 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"
 const norm=s=>String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 let S={tipo:"servico",cat:"",jtipo:"servico",jz:[],user:null,list:SEED.slice()};
 
-const APP_VERSION="v25";
+const APP_VERSION="v27";
 const DEMO=!SUPABASE_URL||!SUPABASE_KEY;
 const REC_LINK=/type=recovery/.test(location.hash+location.search),REC_ERR=/otp_expired/.test(location.hash+location.search),OAUTH_ERR=!/otp_expired/.test(location.hash+location.search)&&/[#&?]error=/.test(location.hash+location.search);
 // Bloqueio da sessão que nunca espera para sempre: se outra janela/separador antigo estiver a segurar o
@@ -694,7 +694,7 @@ async function loadList(){
   const NIVEIS=[BASE+",fidelidade,logo,galeria,localidade,raio_servico,horario,promo",BASE+",fidelidade,logo,galeria,localidade,raio_servico,horario",BASE+",fidelidade,logo,galeria,localidade,raio_servico",BASE+",fidelidade,logo,galeria",BASE+",fidelidade",BASE];
   let q0=null;
   for(const cols of NIVEIS){
-    q0=await sb.from("fornecedores").select(cols+",produtos(*)").order("created_at",{ascending:false});
+    q0=await sb.from("fornecedores").select(cols+",produtos(id,nome,preco,un,stock,ativo,foto)").order("created_at",{ascending:false});
     if(!q0.error)break;
   }
   if(q0.error){const q1=await sb.from("fornecedores").select(BASE).order("created_at",{ascending:false});if(!q1.error)q0={data:q1.data.map(r=>({...r,produtos:[]})),error:null};}
@@ -1652,8 +1652,8 @@ function loadLeaflet(){
   if(window.L)return Promise.resolve(window.L);
   if(LF)return LF;
   LF=new Promise((ok,ko)=>{
-    const l=document.createElement("link");l.rel="stylesheet";l.href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css";document.head.appendChild(l);
-    const sc=document.createElement("script");sc.src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js";
+    const l=document.createElement("link");l.rel="stylesheet";l.integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H";l.crossOrigin="anonymous";l.href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css";document.head.appendChild(l);
+    const sc=document.createElement("script");sc.integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH";sc.crossOrigin="anonymous";sc.src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js";
     sc.onload=()=>ok(window.L);sc.onerror=()=>{LF=null;ko(new Error("leaflet"));};document.head.appendChild(sc);
   });
   return LF;
@@ -2672,7 +2672,28 @@ setTimeout(()=>{
 })();
 addEventListener("offline",()=>toast("Sem ligação à internet. Pode continuar a ver a última lista."));
 addEventListener("online",async()=>{if(!DEMO&&(CACHED||LOAD_ERR)){await loadList();if(VIEW==="home")render();}});
-if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+// ---- registo do service worker + aviso de versão nova
+// O novo SW assume o controlo logo (skipWaiting/claim), mas a página aberta continua com o código antigo: avisa e deixa a pessoa escolher quando atualizar (não perde o que está a escrever).
+function novaVersao(){
+  if(document.getElementById("aqNova"))return;
+  const d=document.createElement("div");d.id="aqNova";d.setAttribute("role","status");
+  d.style.cssText="position:fixed;left:50%;transform:translateX(-50%);top:calc(10px + env(safe-area-inset-top,0px));z-index:99999;max-width:min(92vw,420px);display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px;border-radius:14px;background:var(--brand);color:var(--brand-ink);font:600 14px/1.35 system-ui,sans-serif;box-shadow:0 6px 24px rgba(0,0,0,.35)";
+  const t=document.createElement("span");t.textContent="Há uma versão nova da app.";t.style.flex="1 1 auto";
+  const a=document.createElement("button");a.textContent="Atualizar";a.style.cssText="padding:7px 14px;border:0;border-radius:999px;font-weight:800;background:var(--surface);color:var(--ink);cursor:pointer";
+  a.onclick=()=>location.reload();
+  const x=document.createElement("button");x.textContent="Depois";x.style.cssText="padding:7px 10px;border:0;background:transparent;color:inherit;font-weight:600;cursor:pointer;text-decoration:underline";
+  x.onclick=()=>d.remove();
+  d.append(t,a,x);document.body.appendChild(d);
+}
+if("serviceWorker" in navigator){
+  const tinhaSW=!!navigator.serviceWorker.controller; // false na 1.ª instalação: aí não há versão antiga a avisar
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{if(tinhaSW)novaVersao();});
+  addEventListener("load",()=>navigator.serviceWorker.register("sw.js").then(reg=>{
+    // a PWA fica muitas vezes aberta em segundo plano: procura versão nova ao voltar à app (no máximo de 30 em 30 min)
+    let ult=Date.now();
+    document.addEventListener("visibilitychange",()=>{if(!document.hidden&&Date.now()-ult>1800000){ult=Date.now();reg.update().catch(()=>{});}});
+  }).catch(()=>{}));
+}
 </script>
 </body>
 </html>
