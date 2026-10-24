@@ -666,7 +666,7 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"
 const norm=s=>String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 let S={tipo:"servico",cat:"",jtipo:"servico",jz:[],user:null,list:SEED.slice()};
 
-const APP_VERSION="v28";
+const APP_VERSION="v30";
 const DEMO=!SUPABASE_URL||!SUPABASE_KEY;
 const REC_LINK=/type=recovery/.test(location.hash+location.search),REC_ERR=/otp_expired/.test(location.hash+location.search),OAUTH_ERR=!/otp_expired/.test(location.hash+location.search)&&/[#&?]error=/.test(location.hash+location.search);
 // Bloqueio da sessão que nunca espera para sempre: se outra janela/separador antigo estiver a segurar o
@@ -1764,7 +1764,16 @@ function drawJZ(){
   $("jzonas").innerHTML=Z.map(z=>`<button type="button" class="chip" aria-pressed="${S.jz.includes(z)}" data-z="${z}">${z}</button>`).join("");
   document.querySelectorAll("#jzonas .chip").forEach(b=>b.onclick=()=>{const z=b.dataset.z;S.jz=S.jz.includes(z)?S.jz.filter(x=>x!==z):S.jz.concat(z);drawJZ();});
 }
+// Trava de duplo toque: sem isto, tocar duas vezes em «Publicar» (ou voltar a tocar numa rede lenta) criava perfis repetidos.
+let SAVING_PROV=false;
 async function saveProv(){
+  if(SAVING_PROV)return;
+  SAVING_PROV=true;
+  const b=$("jbtn");if(b){b.disabled=true;b.setAttribute("aria-busy","true");}
+  try{await saveProvInner();}
+  finally{SAVING_PROV=false;if(b){b.disabled=false;b.removeAttribute("aria-busy");}}
+}
+async function saveProvInner(){
   const nome=$("jnome").value.trim(),tel=$("jtel").value.replace(/\D/g,"").replace(/^351/,"");
   const ent=S.jtipo==="produto"&&$("jent").checked,raio=Math.round(Number($("jraio").value)),taxa=Math.max(0,Math.round(Number($("jtaxa").value||0)*100)/100),mn=Math.max(0,Math.round(Number($("jmin").value||0)*100)/100),gr=Math.max(0,Math.round(Number($("jgratis").value||0)*100)/100),fon=$("jfid").checked,ppe=Math.round(Number($("jppe").value||0)*10)/10,fec=ent?Math.round(Number($("jfecusto").value||0)):0,fpn=$("jfpnome").value.trim(),fpv=Math.round(Number($("jfpvalor").value||0)*100)/100,fpc=Math.round(Number($("jfpcusto").value||0));
   let e="";SQL_MISS=false;
@@ -2044,7 +2053,7 @@ async function pushUI(){
   box.innerHTML='<div style="flex:1;min-width:min(200px,100%)"><strong>'+tit+'</strong><div class="meta">'+txt+'</div></div>'+
     (den?"":'<button class="btn'+(on?"":" primary")+'" onclick="'+(on?"pushOff()":"pushOn()")+'">'+(on?"Desativar":"Ativar avisos")+'</button>');
 }
-if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{if(e.data&&SESSION){if(e.data.t==="crm"){if(e.data.aba==="mensagens")CT="mensagens";openCrm();}else if(e.data.t==="meus")openMeus();}});
+if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{if(e.data&&SESSION){if(e.data.t==="crm"){if(e.data.aba==="mensagens"||e.data.aba==="orcamentos")CT=e.data.aba;openCrm();}else if(e.data.t==="meus")openMeus();}});
 // ---- avaliações (só pedidos concluídos, 1 por pedido)
 let AVS={},AV_ID="",AV_E=0;
 const lsAvs=()=>{try{return JSON.parse(localStorage.getItem("aq_avs")||"{}")||{};}catch(e){return {};}};
@@ -2667,7 +2676,7 @@ setTimeout(()=>{
     try{history.replaceState(history.state,"",location.pathname+location.hash);}catch(x){}
     if(VIEW==="home"){if(S.list.some(x=>x.id===DL))openForn(DL);else toast("Este perfil já não está disponível.");}
   }
-  if(SESSION&&/[?&]crm=1/.test(location.search)){if(/[?&]aba=mensagens/.test(location.search))CT="mensagens";try{history.replaceState(null,"",location.pathname);}catch(x){}openCrm();}
+  if(SESSION&&/[?&]crm=1/.test(location.search)){{const ab=location.search.match(/[?&]aba=(mensagens|orcamentos)/);if(ab)CT=ab[1];}try{history.replaceState(null,"",location.pathname);}catch(x){}openCrm();}
   if(SESSION&&/[?&]meus=1/.test(location.search)){try{history.replaceState(null,"",location.pathname);}catch(x){}openMeus();}
 })();
 addEventListener("offline",()=>toast("Sem ligação à internet. Pode continuar a ver a última lista."));

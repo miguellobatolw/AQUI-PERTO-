@@ -1,5 +1,5 @@
 // IMPORTANTE: mudar V sempre que a app (APP_VERSION no index.html) mudar, para os aparelhos receberem a versão nova.
-const V="aqui-perto-v28",SHELL=["./","index.html","manifest.webmanifest","icon-180.png","icon-192.png","icon-512.png","badge-96.png"];
+const V="aqui-perto-v30",SHELL=["./","index.html","manifest.webmanifest","icon-180.png","icon-192.png","icon-512.png","badge-96.png"];
 // Bibliotecas externas (CDN). Guardadas em cache para a app arrancar mesmo que a CDN falhe ou sem rede.
 const LIBS=["cdn.jsdelivr.net","unpkg.com"];
 // Só as bibliotecas com versão fixa no endereço (ex.: pacote@2.45.4) são imutáveis e podem ir "cache primeiro".
@@ -67,8 +67,8 @@ self.addEventListener("notificationclick",e=>{
   e.notification.close();
   const url=(e.notification.data&&e.notification.data.url)||"./?crm=1";
   const t=(e.notification.data&&e.notification.data.t)||"crm";
-  // se a notificação for de mensagens, a app abre diretamente o separador Mensagens
-  const aba=/[?&]aba=mensagens/.test(url)?"mensagens":"";
+  // se a notificação for de mensagens ou orçamentos, a app abre diretamente esse separador
+  const aba=/[?&]aba=mensagens/.test(url)?"mensagens":/[?&]aba=orcamentos/.test(url)?"orcamentos":"";
   e.waitUntil(clients.matchAll({type:"window",includeUncontrolled:true}).then(l=>{
     // só janelas desta app (o GitHub Pages partilha a origem com os outros projetos da mesma conta) e, de preferência, a que está visível
     const minhas=l.filter(c=>"focus" in c&&c.url.startsWith(self.registration.scope));
