@@ -1,5 +1,5 @@
 // IMPORTANTE: mudar V sempre que a app (APP_VERSION no index.html) mudar, para os aparelhos receberem a versão nova.
-const V="aqui-perto-v27",SHELL=["./","index.html","manifest.webmanifest","icon-180.png","icon-192.png","icon-512.png","badge-96.png"];
+const V="aqui-perto-v28",SHELL=["./","index.html","manifest.webmanifest","icon-180.png","icon-192.png","icon-512.png","badge-96.png"];
 // Bibliotecas externas (CDN). Guardadas em cache para a app arrancar mesmo que a CDN falhe ou sem rede.
 const LIBS=["cdn.jsdelivr.net","unpkg.com"];
 // Só as bibliotecas com versão fixa no endereço (ex.: pacote@2.45.4) são imutáveis e podem ir "cache primeiro".
@@ -70,7 +70,10 @@ self.addEventListener("notificationclick",e=>{
   // se a notificação for de mensagens, a app abre diretamente o separador Mensagens
   const aba=/[?&]aba=mensagens/.test(url)?"mensagens":"";
   e.waitUntil(clients.matchAll({type:"window",includeUncontrolled:true}).then(l=>{
-    for(const c of l){if("focus" in c){c.postMessage({t,aba});return c.focus();}}
+    // só janelas desta app (o GitHub Pages partilha a origem com os outros projetos da mesma conta) e, de preferência, a que está visível
+    const minhas=l.filter(c=>"focus" in c&&c.url.startsWith(self.registration.scope));
+    const c=minhas.find(x=>x.visibilityState==="visible")||minhas[0];
+    if(c){c.postMessage({t,aba});return c.focus();}
     return clients.openWindow(url);
   }));
 });
