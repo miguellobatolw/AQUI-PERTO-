@@ -666,7 +666,7 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"
 const norm=s=>String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 let S={tipo:"servico",cat:"",jtipo:"servico",jz:[],user:null,list:SEED.slice()};
 
-const APP_VERSION="v30";
+const APP_VERSION="v29";
 const DEMO=!SUPABASE_URL||!SUPABASE_KEY;
 const REC_LINK=/type=recovery/.test(location.hash+location.search),REC_ERR=/otp_expired/.test(location.hash+location.search),OAUTH_ERR=!/otp_expired/.test(location.hash+location.search)&&/[#&?]error=/.test(location.hash+location.search);
 // Bloqueio da sessão que nunca espera para sempre: se outra janela/separador antigo estiver a segurar o
@@ -2053,7 +2053,7 @@ async function pushUI(){
   box.innerHTML='<div style="flex:1;min-width:min(200px,100%)"><strong>'+tit+'</strong><div class="meta">'+txt+'</div></div>'+
     (den?"":'<button class="btn'+(on?"":" primary")+'" onclick="'+(on?"pushOff()":"pushOn()")+'">'+(on?"Desativar":"Ativar avisos")+'</button>');
 }
-if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{if(e.data&&SESSION){if(e.data.t==="crm"){if(e.data.aba==="mensagens"||e.data.aba==="orcamentos")CT=e.data.aba;openCrm();}else if(e.data.t==="meus")openMeus();}});
+if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{if(e.data&&SESSION){if(e.data.t==="crm"){if(e.data.aba==="mensagens")CT="mensagens";openCrm();}else if(e.data.t==="meus")openMeus();}});
 // ---- avaliações (só pedidos concluídos, 1 por pedido)
 let AVS={},AV_ID="",AV_E=0;
 const lsAvs=()=>{try{return JSON.parse(localStorage.getItem("aq_avs")||"{}")||{};}catch(e){return {};}};
@@ -2676,7 +2676,7 @@ setTimeout(()=>{
     try{history.replaceState(history.state,"",location.pathname+location.hash);}catch(x){}
     if(VIEW==="home"){if(S.list.some(x=>x.id===DL))openForn(DL);else toast("Este perfil já não está disponível.");}
   }
-  if(SESSION&&/[?&]crm=1/.test(location.search)){{const ab=location.search.match(/[?&]aba=(mensagens|orcamentos)/);if(ab)CT=ab[1];}try{history.replaceState(null,"",location.pathname);}catch(x){}openCrm();}
+  if(SESSION&&/[?&]crm=1/.test(location.search)){if(/[?&]aba=mensagens/.test(location.search))CT="mensagens";try{history.replaceState(null,"",location.pathname);}catch(x){}openCrm();}
   if(SESSION&&/[?&]meus=1/.test(location.search)){try{history.replaceState(null,"",location.pathname);}catch(x){}openMeus();}
 })();
 addEventListener("offline",()=>toast("Sem ligação à internet. Pode continuar a ver a última lista."));
