@@ -121,6 +121,7 @@ h1{font-size:clamp(34px,8vw,60px);line-height:1.02;letter-spacing:-.03em;margin:
 .foot{display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:6px;gap:8px}
 .price{font-weight:600}
 .star{color:#c98a00;font-weight:600}
+.verif{background:var(--brand);color:var(--brand-ink);font-size:12px;border-radius:6px;padding:1px 7px;font-weight:600;margin-left:6px;white-space:nowrap}
 .mine{background:var(--accent);color:var(--accent-ink);font-size:12px;border-radius:6px;padding:1px 7px;font-weight:600;margin-left:6px}
 .empty{background:var(--surface);border:1px dashed var(--line);border-radius:14px;padding:28px;text-align:center;grid-column:1/-1}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;margin:20px 0 40px;max-width:640px}
@@ -562,6 +563,10 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
     <h2>Moderação</h2>
     <div class="meta">Avaliações em análise (comentário com link, e-mail ou telefone), denunciadas ou ocultas.</div>
     <div id="modlist" style="margin-top:12px"></div>
+    <h3 style="margin:22px 0 4px">Verificação de fornecedores</h3>
+    <div class="meta">O selo "Verificado" só pode ser dado ou retirado aqui. Procure pelo nome.</div>
+    <input class="f" id="modq" type="search" placeholder="Nome do fornecedor" aria-label="Procurar fornecedor" style="margin-top:8px">
+    <div id="modforn" style="margin-top:8px"></div>
     <p style="margin-top:16px"><button class="btn" onclick="go('home');render()">Voltar à pesquisa</button></p>
   </div>
 </main>
@@ -742,7 +747,7 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"
 const norm=s=>String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 let S={tipo:"servico",cat:"",jtipo:"servico",jz:[],user:null,list:SEED.slice()};
 
-const APP_VERSION="v52";
+const APP_VERSION="v54";
 const DEMO=!SUPABASE_URL||!SUPABASE_KEY;
 const REC_LINK=/type=recovery/.test(location.hash+location.search),REC_ERR=/otp_expired/.test(location.hash+location.search),OAUTH_ERR=!/otp_expired/.test(location.hash+location.search)&&/[#&?]error=/.test(location.hash+location.search);
 // Bloqueio da sessão que nunca espera para sempre: se outra janela/separador antigo estiver a segurar o
@@ -767,7 +772,7 @@ async function loadList(only){
   // O telemóvel (coluna tel) NÃO é pedido aqui: só chega a quem tem sessão, via sb.rpc("obter_contacto")
   // Leitura com recuo progressivo: se faltar alguma coluna recente na base de dados, tenta com menos colunas em vez de falhar
   const BASE="id,user_id,created_at,nome,tipo,cat,zonas,preco,descr,lat,lng,entrega,entrega_raio,entrega_taxa,entrega_min,entrega_gratis";
-  const NIVEIS=[BASE+",fidelidade,localidade,raio_servico,logo,galeria,horario,promo",BASE+",fidelidade,localidade,raio_servico,logo,galeria,horario",BASE+",fidelidade,localidade,raio_servico,logo,galeria",BASE+",fidelidade,localidade,raio_servico",BASE+",fidelidade",BASE];
+  const NIVEIS=[BASE+",fidelidade,localidade,raio_servico,logo,galeria,horario,promo,verificado",BASE+",fidelidade,localidade,raio_servico,logo,galeria,horario,promo",BASE+",fidelidade,localidade,raio_servico,logo,galeria,horario",BASE+",fidelidade,localidade,raio_servico,logo,galeria",BASE+",fidelidade,localidade,raio_servico",BASE+",fidelidade",BASE];
   // O Supabase devolve no máximo 1000 linhas por pedido (e sem avisar): lê por páginas para nunca cortar a lista.
   // A ordem tem desempate por id, senão o mesmo fornecedor podia repetir-se ou faltar entre páginas.
   const PAGE=500;
@@ -804,7 +809,7 @@ async function loadList(only){
   if(error){LOAD_ERR=(error.message||String(error));console.error("loadList:",error);if(window.aqLog)aqLog(error.message||String(error),"lista");toast("Não foi possível carregar a lista. Verifique a ligação.");return false;}
   LOAD_ERR="";
   const uid=SESSION&&SESSION.user.id;
-  const nova=data.map(r=>({id:r.id,nome:r.nome,tipo:r.tipo,cat:r.cat,zonas:r.zonas,preco:r.preco||"",desc:r.descr||"",tel:"",rating:0,n:0,lat:r.lat==null?null:Number(r.lat),lng:r.lng==null?null:Number(r.lng),entrega:!!r.entrega,raio:Number(r.entrega_raio)||0,taxa:Number(r.entrega_taxa)||0,min:Number(r.entrega_min)||0,gratis:Number(r.entrega_gratis)||0,fi:r.fidelidade&&r.fidelidade.ativo?r.fidelidade:null,logo:r.logo||"",galeria:r.galeria||[],localidade:r.localidade||"",raioS:Number(r.raio_servico)||0,horario:r.horario&&typeof r.horario==="object"?r.horario:null,promo:r.promo&&typeof r.promo==="object"?r.promo:null,prods:(r.produtos||[]).map(x=>({id:x.id,nome:x.nome,preco:Number(x.preco),un:x.un,stock:x.stock==null?null:Number(x.stock),ativo:x.ativo,foto:x.foto||""})),mine:r.user_id===uid,criado:r.created_at||""}));
+  const nova=data.map(r=>({id:r.id,nome:r.nome,tipo:r.tipo,cat:r.cat,zonas:r.zonas,preco:r.preco||"",desc:r.descr||"",tel:"",rating:0,n:0,lat:r.lat==null?null:Number(r.lat),lng:r.lng==null?null:Number(r.lng),entrega:!!r.entrega,raio:Number(r.entrega_raio)||0,taxa:Number(r.entrega_taxa)||0,min:Number(r.entrega_min)||0,gratis:Number(r.entrega_gratis)||0,fi:r.fidelidade&&r.fidelidade.ativo?r.fidelidade:null,logo:r.logo||"",galeria:r.galeria||[],localidade:r.localidade||"",raioS:Number(r.raio_servico)||0,horario:r.horario&&typeof r.horario==="object"?r.horario:null,promo:r.promo&&typeof r.promo==="object"?r.promo:null,verif:!!r.verificado,prods:(r.produtos||[]).map(x=>({id:x.id,nome:x.nome,preco:Number(x.preco),un:x.un,stock:x.stock==null?null:Number(x.stock),ativo:x.ativo,foto:x.foto||""})),mine:r.user_id===uid,criado:r.created_at||""}));
   // com "only" (um fornecedor): atualiza só essa entrada e mantém o resto da lista; sem "only": lista completa
   if(only){nova.forEach(n=>{const i=S.list.findIndex(x=>x.id===n.id);if(i<0)S.list.push(n);else{n.tel=S.list[i].tel;n.mbway=S.list[i].mbway;S.list[i]=n;}});}else S.list=nova;
   await loadMyTels();
@@ -1934,7 +1939,7 @@ function entBadge(p){
 function card(p){
   const col=COLORS[(p.nome.charCodeAt(0)+p.nome.length)%COLORS.length],fv=FAV.has(String(p.id));
   return `<article class="card"><div class="top"><div class="av" style="background:${col}" aria-hidden="true">${p.logo?`<img src="${esc(imgUrl({foto:p.logo}))}" alt="" loading="lazy">`:esc(p.nome[0])}</div>
-  <div><h3><button type="button" class="linkb" data-forn="${esc(p.id)}" style="font-weight:inherit;color:inherit">${esc(p.nome)}</button>${p.mine?'<span class="mine">O meu</span>':""}</h3><div class="meta">${esc(p.cat)} · ${p.localidade?"📍 "+esc(p.localidade)+" · ":""}${esc(p.zonas.slice(0,3).join(", "))}${p.dist!=null?" · a "+(p.dist<10?p.dist.toFixed(1).replace(".",","):Math.round(p.dist))+" km":""}</div></div>${p.mine?"":`<button type="button" class="btn" style="margin-left:auto;padding:6px 10px;flex:none;color:${fv?"#c0392b":"inherit"}" data-fav="${esc(p.id)}" aria-pressed="${fv}" aria-label="${fv?"Remover dos favoritos":"Guardar nos favoritos"}: ${esc(p.nome)}">${fv?"♥":"♡"}</button>`}<button type="button" class="btn" style="margin-left:${p.mine?"auto":"0"};padding:6px 10px;flex:none" data-share="${esc(p.id)}" aria-label="Partilhar ${esc(p.nome)}">🔗</button></div>
+  <div><h3><button type="button" class="linkb" data-forn="${esc(p.id)}" style="font-weight:inherit;color:inherit">${esc(p.nome)}</button>${p.mine?'<span class="mine">O meu</span>':""}${p.verif?'<span class="verif" title="Perfil verificado pela Aqui Perto">✔ Verificado</span>':""}</h3><div class="meta">${esc(p.cat)} · ${p.localidade?"📍 "+esc(p.localidade)+" · ":""}${esc(p.zonas.slice(0,3).join(", "))}${p.dist!=null?" · a "+(p.dist<10?p.dist.toFixed(1).replace(".",","):Math.round(p.dist))+" km":""}</div></div>${p.mine?"":`<button type="button" class="btn" style="margin-left:auto;padding:6px 10px;flex:none;color:${fv?"#c0392b":"inherit"}" data-fav="${esc(p.id)}" aria-pressed="${fv}" aria-label="${fv?"Remover dos favoritos":"Guardar nos favoritos"}: ${esc(p.nome)}">${fv?"♥":"♡"}</button>`}<button type="button" class="btn" style="margin-left:${p.mine?"auto":"0"};padding:6px 10px;flex:none" data-share="${esc(p.id)}" aria-label="Partilhar ${esc(p.nome)}">🔗</button></div>
   <p>${esc(p.desc)}</p>${promoBadge(p)}${prodBtn(p)}${entBadge(p)}${servBadge(p)}${horBadge(p)}${fiBadge(p)}
   <div class="foot"><div><span class="price">${esc(p.preco||"Sob consulta")}</span><br>${p.n?`<button type="button" class="star linkb" data-rev="${esc(p.id)}" aria-label="Ver avaliações de ${esc(p.nome)}">★ ${p.rating.toFixed(1).replace(".",",")} <span class="meta">(${p.n})</span></button>`:"<span class='meta'>Novo na app</span>"}</div>
   <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">${p.tipo==="servico"&&!p.mine?`<button class="btn accent" data-orc="${esc(p.id)}">Pedir orçamento</button><button class="btn" data-marc="${esc(p.id)}">Marcar</button>`:""}${p.mine&&!DEMO?`<button class="btn" data-del="${p.id}">Apagar</button>`:""}${p.mine?"":`<button class="btn" data-msg="${esc(p.id)}">💬 Mensagem</button>`}<button class="btn primary" data-id="${p.id}">Contactar</button></div></div></article>`;
@@ -2275,11 +2280,11 @@ async function pushUI(){
   if(!box){box=document.createElement("div");box.id="pushbox";box.className="prow";$("crmbody").appendChild(box);}
   if(cli)box.className="prow";
   const tit=cli?"🔔 Avisos dos meus pedidos":"🔔 Avisos de pedidos novos";
-  const txt=den?"Bloqueados nas definições do navegador. Ative-os lá para receber avisos.":on?(cli?"Ativos neste aparelho. Receberá um aviso quando um pedido for confirmado, concluído ou cancelado, ou quando um orçamento tiver resposta.":"Ativos neste aparelho. Receberá uma notificação a cada pedido novo."):(cli?"Receba um aviso no telemóvel quando o fornecedor responder ao seu pedido ou orçamento.":"Receba uma notificação no telemóvel assim que chegar um pedido.");
+  const txt=den?"Bloqueados nas definições do navegador. Ative-os lá para receber avisos.":on?(cli?"Ativos neste aparelho. Receberá um aviso quando um pedido for confirmado, concluído ou cancelado, ou quando um orçamento tiver resposta. Também avisamos quando um fornecedor dos seus favoritos lança uma promoção (no máximo uma vez a cada 3 dias por fornecedor).":"Ativos neste aparelho. Receberá uma notificação a cada pedido novo."):(cli?"Receba um aviso no telemóvel quando o fornecedor responder ao seu pedido ou orçamento, ou quando um favorito lançar uma promoção.":"Receba uma notificação no telemóvel assim que chegar um pedido.");
   box.innerHTML='<div style="flex:1;min-width:min(200px,100%)"><strong>'+tit+'</strong><div class="meta">'+txt+'</div></div>'+
     (den?"":'<button class="btn'+(on?"":" primary")+'" onclick="'+(on?"pushOff()":"pushOn()")+'">'+(on?"Desativar":"Ativar avisos")+'</button>');
 }
-if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{if(e.data&&SESSION){if(e.data.t==="crm"){if(e.data.aba==="mensagens"||e.data.aba==="orcamentos")CT=e.data.aba;openCrm();}else if(e.data.t==="meus")openMeus();}});
+if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{if(e.data&&SESSION){if(e.data.t==="crm"){if(e.data.aba==="mensagens"||e.data.aba==="orcamentos")CT=e.data.aba;openCrm();}else if(e.data.t==="meus")openMeus();else if(e.data.t==="promo"&&e.data.f)openForn(e.data.f);}});
 // ---- avaliações (só pedidos concluídos, 1 por pedido)
 let AVS={},AV_ID="",AV_E=0;
 const lsAvs=()=>{try{return JSON.parse(localStorage.getItem("aq_avs")||"{}")||{};}catch(e){return {};}};
@@ -2360,6 +2365,8 @@ function drawMod(){
     const ac=x.estado==="oculta"?bt("repor","Repor"):bt("manter","Manter","primary")+bt("ocultar","Ocultar");
     return `<div class="prow" style="align-items:flex-start"><div style="flex:1;min-width:min(200px,100%)"><strong>${esc(x.fornecedor_nome)}</strong> <span class="star">${starsTxt(x.estrelas)}</span><div class="meta">${esc(x.autor)} · ${new Date(x.created_at).toLocaleDateString("pt-PT")}${flag?" · "+flag:""}</div>${x.comentario?`<div>${esc(x.comentario)}</div>`:""}${den?`<div class="meta">${esc(den)}</div>`:""}</div><div class="stk" style="flex-wrap:wrap">${ac}</div></div>`;
   }).join(""):'<p class="meta">Nada para rever.</p>';
+  {const q=norm($("modq").value.trim()),L=S.list.filter(p=>q?norm(p.nome).includes(q):p.verif).sort((a,b)=>(b.verif-a.verif)||a.nome.localeCompare(b.nome,"pt")).slice(0,20);
+  $("modforn").innerHTML=L.length?L.map(p=>`<div class="prow"><div style="flex:1;min-width:min(200px,100%)"><strong>${esc(p.nome)}</strong>${p.verif?'<span class="verif">✔ Verificado</span>':""}<div class="meta">${esc(p.cat)}${p.localidade?" · "+esc(p.localidade):""}</div></div><button class="btn ${p.verif?"":"primary"}" data-v="${esc(p.id)}" data-val="${p.verif?0:1}">${p.verif?"Retirar selo":"Verificar"}</button></div>`).join(""):`<p class="meta">${q?"Nenhum fornecedor encontrado.":"Ainda nenhum fornecedor verificado. Procure pelo nome para começar."}</p>`;}
 }
 async function modAct(id,a){
   if(a==="ocultar"&&!await confirmar("Ocultar esta avaliação? Deixa de aparecer e de contar para a média."))return;
@@ -2368,6 +2375,11 @@ async function modAct(id,a){
   await loadMod();await loadList();drawMod();toast(a==="ocultar"?"Avaliação ocultada.":"Feito.");
 }
 $("modlist").addEventListener("click",e=>{const b=e.target.closest("button[data-m]");if(b)modAct(b.dataset.m,b.dataset.a);});
+$("modq").addEventListener("input",drawMod);
+$("modforn").addEventListener("click",async e=>{const b=e.target.closest("button[data-v]");if(!b)return;b.disabled=true;
+  const {error}=await sb.rpc("definir_verificado",{p_id:b.dataset.v,p_valor:b.dataset.val==="1"});
+  if(error){toast("Não foi possível guardar.");b.disabled=false;return;}
+  await loadList(b.dataset.v);drawMod();toast(b.dataset.val==="1"?"Perfil verificado.":"Selo retirado.");});
 $("avPick").addEventListener("click",e=>{const b=e.target.closest("button[data-s]");if(!b)return;AV_E=Number(b.dataset.s);drawPick();});
 // ---- histórico: o botão "voltar" (Android) e o gesto de voltar (iOS) navegam entre ecrãs
 const TRANS=["login","newpass","role","ob"];

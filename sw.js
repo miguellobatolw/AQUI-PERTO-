@@ -69,12 +69,14 @@ self.addEventListener("notificationclick",e=>{
   const url=(e.notification.data&&e.notification.data.url)||"./?crm=1";
   const t=(e.notification.data&&e.notification.data.t)||"crm";
   // se a notificação for de mensagens ou orçamentos, a app abre diretamente esse separador
+  // promoções: o aviso traz ?f=<id do fornecedor>; a app abre esse perfil
+  const f=(()=>{try{return new URL(url,self.registration.scope).searchParams.get("f")||"";}catch(x){return "";}})();
   const aba=/[?&]aba=mensagens/.test(url)?"mensagens":/[?&]aba=orcamentos/.test(url)?"orcamentos":"";
   e.waitUntil(clients.matchAll({type:"window",includeUncontrolled:true}).then(l=>{
     // só janelas desta app (o GitHub Pages partilha a origem com os outros projetos da mesma conta) e, de preferência, a que está visível
     const minhas=l.filter(c=>"focus" in c&&c.url.startsWith(self.registration.scope));
     const c=minhas.find(x=>x.visibilityState==="visible")||minhas[0];
-    if(c){c.postMessage({t,aba});return c.focus();}
+    if(c){c.postMessage({t,aba,f});return c.focus();}
     return clients.openWindow(url);
   }));
 });
