@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Calcular hashes SRI</title>
+<style>
+:root{color-scheme:light dark;font-family:system-ui,sans-serif}
+body{margin:0;padding:16px;line-height:1.4}
+button{font:inherit;padding:10px 16px;border-radius:10px;border:1px solid #888;margin:6px 6px 6px 0}
+pre{white-space:pre-wrap;word-break:break-all;border:1px solid #8884;border-radius:10px;padding:10px;font-size:13px}
+</style>
+</head>
+<body>
+<h1 style="font-size:20px">Hashes SRI</h1>
+<p>Toque em «Calcular». O navegador descarrega cada ficheiro e calcula o hash. Depois toque em «Copiar» e cole o resultado na conversa.</p>
+<button id="go">Calcular</button><button id="cp" disabled>Copiar</button>
+<pre id="out">À espera…</pre>
+<script>
+const V=[
+ ["supabase.js (jsDelivr)","https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"],
+ ["supabase.js (unpkg)","https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"],
+ ["supabase.min.js (jsDelivr, gerado)","https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"],
+ ["qrcode.js (jsDelivr)","https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"],
+ ["qrcode.js (unpkg)","https://unpkg.com/qrcode-generator@1.4.4/qrcode.js"],
+ ["leaflet.js (jsDelivr)","https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"],
+ ["leaflet.css (jsDelivr)","https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"]
+];
+const out=document.getElementById("out"),cp=document.getElementById("cp");
+async function h(u){
+  const r=await fetch(u,{cache:"no-store"});
+  if(!r.ok)throw new Error("HTTP "+r.status);
+  const d=await crypto.subtle.digest("SHA-384",await r.arrayBuffer());
+  let s="";new Uint8Array(d).forEach(b=>s+=String.fromCharCode(b));
+  return "sha384-"+btoa(s);
+}
+document.getElementById("go").onclick=async()=>{
+  out.textContent="A calcular…";let t="";
+  for(const [n,u] of V){
+    try{t+=n+"\n"+await h(u)+"\n\n";}catch(e){t+=n+"\nERRO: "+e.message+"\n\n";}
+    out.textContent=t;
+  }
+  cp.disabled=false;
+};
+cp.onclick=async()=>{try{await navigator.clipboard.writeText(out.textContent);cp.textContent="Copiado";}catch(e){cp.textContent="Selecione o texto e copie";}};
+</script>
+</body>
+</html>
