@@ -747,7 +747,7 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"
 const norm=s=>String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 let S={tipo:"servico",cat:"",jtipo:"servico",jz:[],user:null,list:SEED.slice()};
 
-const APP_VERSION="v54";
+const APP_VERSION="v55";
 const DEMO=!SUPABASE_URL||!SUPABASE_KEY;
 const REC_LINK=/type=recovery/.test(location.hash+location.search),REC_ERR=/otp_expired/.test(location.hash+location.search),OAUTH_ERR=!/otp_expired/.test(location.hash+location.search)&&/[#&?]error=/.test(location.hash+location.search);
 // Bloqueio da sessão que nunca espera para sempre: se outra janela/separador antigo estiver a segurar o
@@ -1311,7 +1311,7 @@ function drawMeus(){
   $("meuslist").innerHTML=L.length?L.map(o=>{
     const f=S.list.find(x=>x.id===o.fid);
     return `<div class="prow" style="align-items:flex-start"><div style="flex:1;min-width:min(200px,100%)"><strong>${esc(f?f.nome:"Fornecedor")}</strong> <span class="meta">· ${new Date(o.data).toLocaleDateString("pt-PT")}</span><div>${o.itens.map(i=>esc(i.qtd+" "+i.un+" "+i.nome)).join(", ")}</div>${o.entrega?`<div class="meta">🚚 Entrega com taxa de ${eur(o.taxa)}</div>`:""}${o.rec?`<div class="meta">🪙 ${esc(recTxt(o))}</div>`:""}<strong>${eur(o.total)}</strong> <span class="${EST_K[o.estado]}">${EST_C[o.estado]}</span>${o.pago?` <span class="badge">💶 Pago</span>`:""}</div>
-    <div class="stk" style="flex-wrap:wrap">${o.estado==="novo"?`<button class="btn" data-cancel="${esc(o.id)}">Cancelar</button>`:""}${!o.pago&&(o.estado==="novo"||o.estado==="confirmado")?`<button class="btn primary" data-mbway="${esc(o.id)}">Pagar por MB Way</button>`:""}${avBtn(o)}${f?`<button class="btn" data-contact="${esc(f.id)}">Contactar</button>`:""}</div></div>`;
+    <div class="stk" style="flex-wrap:wrap">${o.estado==="novo"?`<button class="btn" data-cancel="${esc(o.id)}">Cancelar</button>`:""}${!o.pago&&(o.estado==="novo"||o.estado==="confirmado")?`<button class="btn primary" data-mbway="${esc(o.id)}">Pagar por MB Way</button>`:""}${f&&!f.mine&&(o.estado==="concluido"||o.estado==="cancelado")?`<button class="btn" data-rep="${esc(o.id)}">Repetir pedido</button>`:""}${avBtn(o)}${f?`<button class="btn" data-contact="${esc(f.id)}">Contactar</button>`:""}</div></div>`;
   }).join(""):'<p class="meta">Ainda não fez pedidos. Escolha um fornecedor e toque em "Ver produtos".</p>';
 }
 // ---- Pagamento por MB Way direto ao fornecedor (a app não toca no dinheiro)
@@ -1335,6 +1335,28 @@ async function marcarPago(id,v){
     o.pago=v;
   }
   drawCrm();toast(v?"Pedido marcado como pago.":"Pagamento desmarcado.");
+}
+// Repetir pedido: abre os produtos do fornecedor já com as quantidades do pedido anterior.
+// Usa SEMPRE os preços e o stock de agora; o que já não existe ou não chega é avisado. O envio é o normal (sendOrder).
+async function repetirPed(id){
+  const o=PED.find(x=>x.id===id);if(!o)return;
+  const f=S.list.find(x=>x.id===o.fid);
+  if(!f||f.mine){toast("Este fornecedor já não está disponível.");return;}
+  await openProd(f.id);
+  const falta=[],menos=[];let n=0;
+  (o.itens||[]).forEach(i=>{
+    const x=f.prods.find(y=>y.id===i.pid&&y.ativo),inp=x&&document.querySelector('#pdList [data-q="'+CSS.escape(String(x.id))+'"]');
+    let q=Number(i.qtd)||0;
+    if(!inp||q<=0||x.stock===0){falta.push(i.nome);return;}
+    if(x.stock!=null&&q>x.stock){q=Number(x.stock);menos.push(i.nome);}
+    inp.value=String(q);n++;
+  });
+  calcOrd();syncStep();
+  const m=[];
+  if(falta.length)m.push("Já não disponível: "+falta.join(", ")+".");
+  if(menos.length)m.push("Quantidade reduzida ao stock atual: "+menos.join(", ")+".");
+  if(!n)m.push("Nenhum produto deste pedido está disponível.");
+  $("oerr").textContent=m.join(" ");
 }
 async function cancelPed(id){
   if(!await confirmar("Cancelar este pedido?"))return;
@@ -2169,7 +2191,7 @@ $("pfile").addEventListener("change",async e=>{
   const old={foto:pr.foto};
   if(await updProd(pr.id,{foto:nf}))await dropPhoto(old);else await dropPhoto({foto:nf});
 });
-$("meuslist").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;if(b.dataset.cancel)cancelPed(b.dataset.cancel);else if(b.dataset.mbway)pagarMbway(b.dataset.mbway);else if(b.dataset.rate)openAv(b.dataset.rate);else if(b.dataset.contact)openCont(b.dataset.contact);});
+$("meuslist").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;if(b.dataset.cancel)cancelPed(b.dataset.cancel);else if(b.dataset.mbway)pagarMbway(b.dataset.mbway);else if(b.dataset.rate)openAv(b.dataset.rate);else if(b.dataset.rep)repetirPed(b.dataset.rep);else if(b.dataset.contact)openCont(b.dataset.contact);});
 $("crmbody").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;if(b.dataset.est)setEstado(b.dataset.id,b.dataset.est);else if(b.dataset.pago)marcarPago(b.dataset.pago,b.dataset.v==="1");else if(b.dataset.f){PF=b.dataset.f;drawCrm();}else if(b.dataset.hist)toggleHist(b.dataset.hist);else if(b.dataset.rp){RP=b.dataset.rp;drawCrm();}else if(b.dataset.pdf)exportPdf();else if(b.dataset.xlsx)exportXlsx();else if(b.dataset.csv)exportCsv();else if(b.dataset.edit)openEdit(b.dataset.edit);else if(b.dataset.newprof)goProv();});
 $("crmbody").addEventListener("change",async e=>{
   const nk=e.target.dataset.nota,sk=e.target.dataset.seg,k=nk||sk;if(!k)return;
