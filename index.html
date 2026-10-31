@@ -134,6 +134,7 @@ label{display:block;font-weight:600;margin:14px 0 6px}
 .err{color:#c0392b;font-size:14px;min-height:20px;margin-top:8px}
 dialog{border:0;border-radius:16px;padding:22px;max-width:380px;width:calc(100% - 32px);background:var(--surface);color:var(--ink)}
 dialog::backdrop{background:rgba(0,0,0,.5)}
+.resp{margin-top:6px;padding:8px 10px;border-left:3px solid var(--brand,#0f5c4d);background:var(--bg);border-radius:8px;font-size:14px}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-weight:600;display:none;z-index:9}
 .prow{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line);flex-wrap:wrap}
 .stk{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.stk .f{width:84px;text-align:center}.stk .btn{padding:6px 12px}
@@ -153,6 +154,7 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
 .kpi{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--bg);font-size:14px;color:var(--muted)}
 .kpi b{display:block;font-size:26px;line-height:1.15;color:var(--ink)}
+.spark{display:flex;align-items:flex-end;gap:3px;height:56px;margin-top:10px}.spark i{flex:1;background:var(--brand);border-radius:3px 3px 0 0;opacity:.85}
 .legal h3{margin:18px 0 4px;font-size:17px}.legal p,.legal li{font-size:15px;margin:4px 0}.legal ul{padding-left:20px;margin:4px 0}
 footer a{color:inherit;text-decoration:underline}
 #mapa{position:relative;z-index:0;isolation:isolate;height:62vh;min-height:320px;border:1px solid var(--line);border-radius:14px;margin-bottom:40px;background:var(--chip)}
@@ -309,6 +311,7 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
   <div class="chips" id="chips"></div>
   <div class="crow">
   <div class="count" id="count"></div>
+  <div id="orcAll" class="hide" style="margin:0 0 12px"></div>
   <div class="vt" role="group" aria-label="Modo de visualização"><button class="chip" id="vlist" type="button" aria-pressed="true" onclick="setMapa(false)">☰ Lista</button><button class="chip" id="vmap" type="button" aria-pressed="false" onclick="setMapa(true)">🗺️ Mapa</button></div>
   </div>
   <div class="grid" id="grid"></div>
@@ -530,9 +533,10 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
 
 <main id="chat" class="hide">
   <div class="panel" style="max-width:640px">
-    <div style="display:flex;align-items:center;gap:8px"><button class="btn" onclick="chatBack()" aria-label="Voltar">←</button><div style="flex:1;min-width:0"><h2 id="chatNome" style="font-size:20px;margin:0"></h2><div class="meta" id="chatSub"></div></div></div>
+    <div style="display:flex;align-items:center;gap:8px"><button class="btn" onclick="chatBack()" aria-label="Voltar">←</button><div style="flex:1;min-width:0"><h2 id="chatNome" style="font-size:20px;margin:0"></h2><div class="meta" id="chatSub"></div></div><button class="btn" onclick="chatMenu()" aria-label="Mais opções da conversa">⋯</button></div>
     <div id="chatMsgs" style="margin:12px 0;max-height:55vh;min-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:6px" role="log" aria-live="polite"></div>
     <div style="display:flex;gap:8px;align-items:flex-end"><textarea class="f" id="chatTxt" rows="2" maxlength="1000" placeholder="Escreva uma mensagem…" aria-label="Mensagem" style="flex:1"></textarea><button class="btn primary" id="chatSend" onclick="sendMsg()">Enviar</button></div>
+    <div class="meta" id="chatBloq" role="status" style="display:none;margin-top:8px;padding:8px 12px;border-radius:10px;background:var(--chip)"></div>
     <div class="err" id="chatErr" role="alert"></div>
     <p class="note">Só você e o outro participante veem esta conversa. Não partilhe dados de pagamento.</p>
   </div>
@@ -563,6 +567,9 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
     <h2>Moderação</h2>
     <div class="meta">Avaliações em análise (comentário com link, e-mail ou telefone), denunciadas ou ocultas.</div>
     <div id="modlist" style="margin-top:12px"></div>
+    <h3 style="margin:22px 0 4px">Conversas denunciadas</h3>
+    <div class="meta">Só aqui se veem as últimas mensagens de conversas que alguém denunciou.</div>
+    <div id="modconv" style="margin-top:8px"></div>
     <h3 style="margin:22px 0 4px">Verificação de fornecedores</h3>
     <div class="meta">O selo "Verificado" só pode ser dado ou retirado aqui. Procure pelo nome.</div>
     <input class="f" id="modq" type="search" placeholder="Nome do fornecedor" aria-label="Procurar fornecedor" style="margin-top:8px">
@@ -626,6 +633,7 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
 <dialog id="dOrc">
   <h2 id="orcTitulo" style="margin:0 0 4px"></h2>
   <div class="meta">Descreva o que precisa. O fornecedor responde com um valor.</div>
+  <div class="meta hide" id="orcDest" style="margin-top:6px"></div>
   <label for="orcDesc">O que precisa?</label>
   <textarea class="f" id="orcDesc" rows="4" maxlength="500" placeholder="Ex.: fuga de água na cozinha, por baixo do lava-loiça"></textarea>
   <label for="orcLocal">Onde? (localidade ou rua, opcional)</label>
@@ -679,6 +687,23 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
   <div class="err" id="respErr" role="alert"></div>
   <div style="display:flex;gap:8px;margin-top:14px"><button class="btn" onclick="dResp.close()">Cancelar</button><button class="btn primary" onclick="sendResp()">Enviar resposta</button></div>
 </dialog>
+<dialog id="dChatOpc">
+  <h2 style="margin:0 0 10px">Esta conversa</h2>
+  <div class="stk" style="flex-direction:column;align-items:stretch;gap:8px">
+    <button class="btn" id="chatBlkBtn" onclick="chatBloquear()">Bloquear conversa</button>
+    <button class="btn" onclick="chatDenunciar()">🚩 Denunciar conversa</button>
+    <button class="btn" onclick="dChatOpc.close()">Fechar</button>
+  </div>
+</dialog>
+<dialog id="dChatDen">
+  <h2 style="margin:0 0 4px">Denunciar conversa</h2>
+  <div class="meta">A equipa da app pode ler as últimas mensagens desta conversa para decidir. Só acontece quando há denúncia.</div>
+  <label for="cdMotivo">Motivo</label>
+  <select class="f" id="cdMotivo"><option value="assedio">Assédio ou ameaças</option><option value="fraude">Fraude ou burla</option><option value="spam">Spam ou publicidade</option><option value="ofensiva">Linguagem ofensiva</option><option value="outro">Outro</option></select>
+  <label class="tg" style="margin-top:10px"><input type="checkbox" id="cdBloq" checked> Bloquear também esta conversa</label>
+  <div class="err" id="cdErr" role="alert"></div>
+  <div style="display:flex;gap:8px;margin-top:14px"><button class="btn" onclick="dChatDen.close()">Cancelar</button><button class="btn primary" onclick="sendChatDen()">Enviar denúncia</button></div>
+</dialog>
 <dialog id="dAv">
   <h2 id="avNome" style="margin:0 0 4px"></h2>
   <div class="meta">Como correu este pedido?</div>
@@ -686,6 +711,15 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
   <textarea class="f" id="avTxt" rows="3" maxlength="200" placeholder="Comentário (opcional). Fica público com o seu primeiro nome." aria-label="Comentário"></textarea>
   <div class="err" id="avErr" role="alert"></div>
   <div style="display:flex;gap:8px;margin-top:14px"><button class="btn" onclick="dAv.close()">Cancelar</button><button class="btn primary" onclick="sendAv()">Enviar avaliação</button></div>
+</dialog>
+<dialog id="dRA" aria-labelledby="raTit">
+  <h2 id="raTit" style="margin:0 0 4px;font-size:20px">Responder à avaliação</h2>
+  <div class="meta" id="raAv"></div>
+  <label for="raTxt">A sua resposta (fica visível a todos)</label>
+  <textarea class="f" id="raTxt" rows="4" maxlength="300"></textarea>
+  <div class="meta" id="raCnt" style="text-align:right">0/300</div>
+  <div class="err" id="raErr" role="alert"></div>
+  <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn" type="button" onclick="document.getElementById('dRA').close()">Cancelar</button><button class="btn hide" type="button" id="raDel" onclick="sendRA(true)">Remover resposta</button><button class="btn primary" type="button" onclick="sendRA()">Publicar resposta</button></div>
 </dialog>
 <dialog id="dDen">
   <h2 style="margin:0 0 4px">Denunciar avaliação</h2>
@@ -717,8 +751,9 @@ const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSI
 // Chave PÚBLICA VAPID (gerada com gerar-vapid.html). Pode ficar visível; a privada nunca vai para aqui.
 const VAPID_PUBLIC="BP27mzJHw4e8pQxz3qCnKkSj_OP6IOqAmZ-rUsSxUj3VsZUyPgHPQx0ylpz7RIsEnr_kFinJwYHxmkYek26NqDI";
 const Z=["Aveiro","Beja","Braga","Bragança","Castelo Branco","Coimbra","Évora","Faro","Guarda","Leiria","Lisboa","Portalegre","Porto","Santarém","Setúbal","Viana do Castelo","Vila Real","Viseu","Açores","Madeira"];
-const CATS={servico:["Canalizador","Eletricista","Pedreiro","Pintor","Explicador","Babysitter","Jardineiro","Limpezas","Mudanças"],
-produto:["Hortícolas","Fruta","Carne e pecuária","Queijos e enchidos","Mel e doces","Móveis de madeira","Vinho e azeite","Ovos e lacticínios"]};
+// Única lista de categorias: alimenta os filtros da página inicial e o formulário do fornecedor. «Outra» fica sempre no fim.
+const CATS={servico:["Canalizador","Eletricista","Pedreiro","Pintor","Explicador","Babysitter","Jardineiro","Limpezas","Mudanças","Cabeleireiro e barbeiro","Estética e massagens","Reparação de eletrodomésticos","Informática e telemóveis","Mecânica auto","Costura e arranjos","Cuidado de idosos","Cuidado de animais","Carpinteiro","Fotografia e vídeo","Outra"],
+produto:["Hortícolas","Fruta","Carne e pecuária","Queijos e enchidos","Mel e doces","Móveis de madeira","Vinho e azeite","Ovos e lacticínios","Pão e pastelaria","Peixe e marisco","Conservas e compotas","Plantas e flores","Ervas e infusões","Artesanato","Outra"]};
 const COLORS=["#0f5c4d","#b5532a","#2f5d9e","#7a4a9c","#a3302f","#3d7a2e","#8a6a00"];
 const SEED=[
 ["Joaquim Ferreira","servico","Canalizador",["Lisboa","Setúbal"],"30 €/hora","Reparações, desentupimentos e instalação de esquentadores. Atendimento urgente.","912000001",4.8,64],
@@ -747,7 +782,7 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"
 const norm=s=>String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 let S={tipo:"servico",cat:"",jtipo:"servico",jz:[],user:null,list:SEED.slice()};
 
-const APP_VERSION="v55";
+const APP_VERSION="v65";
 const DEMO=!SUPABASE_URL||!SUPABASE_KEY;
 const REC_LINK=/type=recovery/.test(location.hash+location.search),REC_ERR=/otp_expired/.test(location.hash+location.search),OAUTH_ERR=!/otp_expired/.test(location.hash+location.search)&&/[#&?]error=/.test(location.hash+location.search);
 // Bloqueio da sessão que nunca espera para sempre: se outra janela/separador antigo estiver a segurar o
@@ -873,7 +908,7 @@ async function saveNewPass(){
   try{history.replaceState(null,"",location.pathname);}catch(x){}
   toast("Palavra-passe atualizada.");await afterAuth();
 }
-const LEGAL={resp:"Miguel Lobato",email:"aquiperto2026.app@gmail.com",versao:"2026-10-26",data:"26 de outubro de 2026"};
+const LEGAL={resp:"Miguel Lobato",email:"aquiperto2026.app@gmail.com",versao:"2026-10-31",data:"31 de outubro de 2026"};
 let LEGAL_BACK="home";
 const LEGAL_TXT={
 priv:{t:"Política de privacidade",h:()=>`<p class="meta">Versão de ${esc(LEGAL.data)}.</p>
@@ -881,7 +916,7 @@ priv:{t:"Política de privacidade",h:()=>`<p class="meta">Versão de ${esc(LEGAL
 <h3>2. Que dados tratamos</h3><ul><li>Conta: e-mail, nome, zona, telemóvel (opcional) e se é cliente ou fornecedor.</li><li>Fornecedores: nome do negócio, categoria, zonas, preços, descrição, telemóvel, número MB Way (opcional), fotografias, entregas, fidelidade e localização aproximada (arredondada a cerca de 1 km, nunca a morada exata), nome da localidade e raio de atendimento. A posição que um cliente usa para pesquisar fica só guardada no seu aparelho; para a converter em localidade enviamos coordenadas arredondadas a cerca de 1 km ao serviço OpenStreetMap Nominatim.</li><li>Pedidos: produtos, valores, nota, nome e telemóvel do cliente e, nas entregas, a morada indicada.</li><li>Pedidos de orçamento: descrição, localidade, data pretendida, nome, telemóvel e até 3 fotografias, guardadas em armazenamento privado.</li><li>Mensagens trocadas entre cliente e fornecedor dentro da app, visíveis apenas aos dois participantes.</li><li>Notas privadas e datas de seguimento que o fornecedor regista sobre clientes, e moedas de fidelidade.</li><li>Dados técnicos do aparelho para os avisos de novos pedidos, se os ativar.</li></ul>
 <h3>3. Localização</h3><p>A localização do GPS é usada no seu aparelho para ordenar por distância e não é guardada. Para obter o nome da localidade podem ser enviadas coordenadas arredondadas (cerca de 1 km) ao serviço OpenStreetMap (Nominatim).</p>
 <h3>4. Para que usamos e porquê</h3><p>Criar e gerir a conta e os pedidos (execução do serviço); mostrar fornecedores perto de si e enviar avisos (o seu consentimento); manter a app segura (interesse legítimo). Não vendemos dados nem fazemos publicidade.</p>
-<h3>5. Quem vê os dados</h3><p>O fornecedor vê o nome, o telemóvel e a morada de entrega dos clientes que lhe fazem pedidos, e, nos pedidos de orçamento, a descrição, a localidade e as fotografias enviadas. Os clientes veem os dados públicos do fornecedor, incluindo o telemóvel. O número MB Way, se o fornecedor o indicar, só é mostrado ao próprio e a clientes com um pedido seu ainda por pagar; a app não recebe nem processa pagamentos, e é o fornecedor quem marca o pedido como pago. As avaliações (estrelas, comentário e primeiro nome do cliente) são públicas. As denúncias de avaliações ficam registadas e só a equipa da app as vê. Usamos como prestadores: Supabase (base de dados, contas e fotografias), GitHub Pages (alojamento), jsDelivr (distribuição das bibliotecas da app; se falhar, unpkg), Google (apenas se entrar com Google) e OpenStreetMap (mapa e nome da localidade). Ao abrir a app ou o mapa, estes serviços recebem o endereço IP do seu aparelho, como acontece em qualquer página web.</p>
+<h3>5. Quem vê os dados</h3><p>O fornecedor vê o nome, o telemóvel e a morada de entrega dos clientes que lhe fazem pedidos, e, nos pedidos de orçamento, a descrição, a localidade e as fotografias enviadas. Os clientes veem os dados públicos do fornecedor, incluindo o telemóvel. O número MB Way, se o fornecedor o indicar, só é mostrado ao próprio e a clientes com um pedido seu ainda por pagar; a app não recebe nem processa pagamentos, e é o fornecedor quem marca o pedido como pago. As avaliações (estrelas, comentário e primeiro nome do cliente) são públicas. As denúncias de avaliações e de conversas ficam registadas e só a equipa da app as vê. Se uma conversa for denunciada, a equipa da app pode ler as últimas mensagens dessa conversa para decidir; as outras conversas nunca são lidas. Usamos como prestadores: Supabase (base de dados, contas e fotografias), GitHub Pages (alojamento), jsDelivr (distribuição das bibliotecas da app; se falhar, unpkg), Google (apenas se entrar com Google) e OpenStreetMap (mapa e nome da localidade). Ao abrir a app ou o mapa, estes serviços recebem o endereço IP do seu aparelho, como acontece em qualquer página web.</p>
 <h3>6. Quanto tempo guardamos</h3><p>Enquanto a conta existir. Ao apagar a conta eliminamos o perfil, os perfis de fornecedor, produtos, fotografias, pedidos, pedidos de orçamento, notas e avisos associados. Cópias de segurança podem demorar algum tempo a desaparecer.</p>
 <h3>7. Os seus direitos</h3><p>Pode pedir acesso, retificação, apagamento, limitação, portabilidade e opor-se ao tratamento, ou retirar o consentimento, através de ${esc(LEGAL.email)}. Pode apagar a conta na própria app (link no fundo da página). Tem direito a reclamar à Comissão Nacional de Proteção de Dados (cnpd.pt).</p>
 <h3>8. Armazenamento no aparelho</h3><p>Usamos o armazenamento do navegador só para a app funcionar (sessão e preferências). Não usamos cookies de publicidade ou de análise.</p>
@@ -954,7 +989,7 @@ async function logout(){
   const uid=SESSION&&SESSION.user.id;
   try{if(PUSH_OK())await Promise.race([pushOff(true),new Promise(r=>setTimeout(r,3000))]);}catch(x){}
   S.user=null;try{localStorage.removeItem("aq_user");}catch(x){}limparLocal();
-  S.list.forEach(p=>{p.mine=false;});IS_ADMIN=false;MOD=[];PED=[];ORC=[];MARC=[];CONV=[];MSGS={};MSG_SEEN=0;EDIT_ID="";
+  S.list.forEach(p=>{p.mine=false;});IS_ADMIN=false;MOD=[];PED=[];ORC=[];MARC=[];CONV=[];MSGS={};SUM={};MSG_MORE={};MSG_SEEN=0;EDIT_ID="";
   if(!DEMO){try{await Promise.race([sb.auth.signOut(),new Promise(r=>setTimeout(r,4000))]);}catch(x){}SESSION=null;}
   applyUser();openLogin("login");
 }
@@ -1102,10 +1137,22 @@ async function addProd(){
 const eur=n=>Number(n).toFixed(2).replace(".",",")+" €";
 const EST={novo:"Novo",confirmado:"Confirmado",concluido:"Concluído",cancelado:"Cancelado"};
 function savePed(){try{localStorage.setItem("aq_ped",JSON.stringify(PED));localStorage.setItem("aq_notas",JSON.stringify(NOTAS));localStorage.setItem("aq_seg",JSON.stringify(SEG));}catch(e){}}
+// O Supabase corta cada resposta às primeiras 1000 linhas, sem avisar. Lê por páginas (até 5000) para não perder dados.
+// mk(de,ate) devolve a consulta já com .order(...) e .range(de,ate); a ordem inclui "id" para as páginas não se repetirem.
+async function fetchAll(mk){
+  const PG=1000,out=[];
+  for(let i=0;i<5;i++){
+    const r=await mk(i*PG,i*PG+PG-1);
+    if(r.error)return {data:out.length?out:null,error:r.error};
+    const d=r.data||[];out.push(...d);
+    if(d.length<PG)break;
+  }
+  return {data:out,error:null};
+}
 async function loadPed(){
   await loadMoedas();if(DEMO)AVS=lsAvs();
   if(DEMO){try{PED=JSON.parse(localStorage.getItem("aq_ped")||"[]");}catch(e){PED=[];}try{NOTAS=JSON.parse(localStorage.getItem("aq_notas")||"{}");}catch(e){NOTAS={};}try{SEG=JSON.parse(localStorage.getItem("aq_seg")||"{}");}catch(e){SEG={};}return;}
-  const a=await sb.from("pedidos").select("*").order("created_at",{ascending:false});
+  const a=await fetchAll((f,t)=>sb.from("pedidos").select("*").order("created_at",{ascending:false}).order("id").range(f,t));
   PED=(a.data||[]).map(r=>({id:r.id,fid:r.fornecedor_id,cliente_id:r.cliente_id,nome:r.cliente_nome,tel:r.cliente_tel,itens:r.itens,total:Number(r.total),nota:r.nota||"",entrega:!!r.entrega,morada:r.morada||"",taxa:Number(r.taxa)||0,moedas:Number(r.moedas_usadas)||0,rec:r.recompensa||"",desc:Number(r.desconto)||0,estado:r.estado,pago:!!r.pago,data:r.created_at}));
   const n=await sb.from("notas_cliente").select("*");NOTAS={};SEG={};(n.data||[]).forEach(r=>{NOTAS[r.cliente_id]=r.nota;SEG[r.cliente_id]=r.seguir_em||"";});
   AVS={};if(SESSION){const av=await sb.from("avaliacoes").select("pedido_id,estrelas,comentario,estado").eq("cliente_id",SESSION.user.id);(av.data||[]).forEach(r=>{AVS[r.pedido_id]={e:r.estrelas,c:r.comentario||"",estado:r.estado||"visivel"};});}
@@ -1268,6 +1315,31 @@ function moedasCli(c){
   const ms=S.list.filter(p=>p.mine&&myFid(p));if(!ms.length)return"";
   const t=ms.reduce((a,p)=>a+saldo(p.id,c.cid),0);return " · 🪙 "+t+" moeda"+(t===1?"":"s");
 }
+// ---- interesse no perfil: só números agregados (quem viu o contacto não é identificado); dados via RPC estatisticas_perfil
+let INT_C={t:0,k:"",d:null},INT_BUSY=false;
+function intHtml(d){
+  if(!d)return"";
+  const dif=d.contactos-d.contactos_ant,mx=Math.max(1,...d.serie);
+  const tend=(d.contactos||d.contactos_ant)?(dif>0?"▲ +"+dif:dif<0?"▼ "+dif:"= igual")+" face aos "+d.dias+" dias anteriores":"Ainda sem visualizações";
+  return `<h3 style="margin:18px 0 4px">Interesse no seu perfil</h3><div class="kpis"><div class="kpi"><b>${d.contactos}</b>Pessoas viram o seu contacto (${d.dias} dias)<div class="meta" style="margin-top:4px">${tend}</div></div><div class="kpi"><b>${d.favoritos}</b>Guardaram-no nos favoritos</div></div><div class="spark" role="img" aria-label="Pessoas que viram o contacto, por dia, nos últimos ${d.serie.length} dias">${d.serie.map(n=>`<i style="height:${Math.max(4,Math.round(n/mx*100))}%" title="${n}"></i>`).join("")}</div><p class="meta">Contamos pessoas diferentes por dia e não mostramos quem foram. Gráfico dos últimos ${d.serie.length} dias${d.multi?". Soma dos seus "+d.multi+" perfis":""}.</p>`;
+}
+async function intLoad(){
+  const box=$("intbox");if(!box||DEMO||!SESSION)return;
+  const mine=S.list.filter(p=>p.mine);if(!mine.length)return;
+  const key=mine.map(p=>p.id).join(",");
+  if(INT_C.k===key&&INT_C.d&&Date.now()-INT_C.t<300000){box.innerHTML=intHtml(INT_C.d);return;}
+  if(INT_BUSY)return;INT_BUSY=true;
+  try{
+    const rs=await Promise.all(mine.map(p=>sb.rpc("estatisticas_perfil",{p_fornecedor:String(p.id),p_dias:30})));
+    const ok=rs.filter(r=>!r.error&&r.data);if(!ok.length)return; // função ainda não instalada: não mostra nada
+    const d={dias:30,contactos:0,contactos_ant:0,favoritos:0,serie:[],multi:mine.length>1?mine.length:0};
+    ok.forEach(r=>{const x=r.data;d.contactos+=Number(x.contactos)||0;d.contactos_ant+=Number(x.contactos_ant)||0;d.favoritos+=Number(x.favoritos)||0;(x.serie||[]).forEach((n,i)=>{d.serie[i]=(d.serie[i]||0)+(Number(n)||0);});});
+    if(!d.serie.length)d.serie=[0];
+    INT_C={t:Date.now(),k:key,d};
+    const b=$("intbox");if(b)b.innerHTML=intHtml(d);
+  }catch(e){}
+  finally{INT_BUSY=false;}
+}
 function drawCrm(){drawCrm1();if(CT==="painel")pushUI();}
 function drawCrm1(){
   const L=myPed(),nv=L.filter(o=>o.estado==="novo").length,B=$("crmbody");
@@ -1281,7 +1353,8 @@ function drawCrm1(){
     const done=L.filter(o=>o.estado==="concluido"),low=[],fu=[],seen={},hoje=new Date().toISOString().slice(0,10);
     L.forEach(o=>{const k=o.cliente_id||o.tel;if(!seen[k]){seen[k]=1;if(SEG[k]&&SEG[k]<=hoje)fu.push(o.nome+" · "+o.tel+" · "+(SEG[k]<hoje?"atrasado desde "+SEG[k]:"hoje"));}});
     S.list.filter(p=>p.mine).forEach(p=>p.prods.forEach(x=>{if(x.ativo&&x.stock!=null&&x.stock<=5)low.push(p.nome+" — "+x.nome+": "+(x.stock===0?"esgotado":x.stock+" "+x.un));}));
-    B.innerHTML=S.list.filter(p=>p.mine).map(ckHtml).join("")+`<div class="kpis"><div class="kpi"><b>${nv}</b>Novos pedidos</div><div class="kpi"><b>${L.filter(o=>o.estado==="confirmado").length}</b>Em curso</div><div class="kpi"><b>${done.length}</b>Concluídos</div><div class="kpi"><b>${eur(done.reduce((a,o)=>a+o.total,0))}</b>Faturado</div></div><h3 style="margin:18px 0 4px">A contactar</h3>${fu.length?fu.map(t=>`<div class="prow">${esc(t)}</div>`).join(""):'<p class="meta">Nenhum contacto agendado para hoje.</p>'}<h3 style="margin:18px 0 4px">Stock a repor</h3>`+(low.length?low.map(t=>`<div class="prow">${esc(t)}</div>`).join(""):'<p class="meta">Nada em falta.</p>');
+    B.innerHTML=S.list.filter(p=>p.mine).map(ckHtml).join("")+`<div class="kpis"><div class="kpi"><b>${nv}</b>Novos pedidos</div><div class="kpi"><b>${L.filter(o=>o.estado==="confirmado").length}</b>Em curso</div><div class="kpi"><b>${done.length}</b>Concluídos</div><div class="kpi"><b>${eur(done.reduce((a,o)=>a+o.total,0))}</b>Faturado</div></div><div id="intbox"></div><h3 style="margin:18px 0 4px">A contactar</h3>${fu.length?fu.map(t=>`<div class="prow">${esc(t)}</div>`).join(""):'<p class="meta">Nenhum contacto agendado para hoje.</p>'}<h3 style="margin:18px 0 4px">Stock a repor</h3>`+(low.length?low.map(t=>`<div class="prow">${esc(t)}</div>`).join(""):'<p class="meta">Nada em falta.</p>');
+    intLoad();
   }else if(CT==="pedidos"){
     const fl=L.filter(o=>PF==="todos"||o.estado===PF);
     B.innerHTML=`<div class="chips">${["novo","confirmado","concluido","cancelado","todos"].map(f=>`<button class="chip" data-f="${f}" aria-pressed="${PF===f}">${f==="todos"?"Todos":EST[f]}</button>`).join("")}</div>`+(fl.length?fl.map(ordRow).join(""):'<p class="meta">Sem pedidos nesta lista.</p>');
@@ -1440,7 +1513,7 @@ function exportXlsx(){
     ["xl/worksheets/sheet1.xml",sheet]
   ];
   const b=zipStore(files,"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-  const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="pedidos-aqui-perto"+(RP==="tudo"?"":"-"+RP)+".xlsx";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  baixarBlob(b,"pedidos-aqui-perto"+(RP==="tudo"?"":"-"+RP)+".xlsx");
 }
 const AW=[278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584];
 function pdfStr(s){
@@ -1562,13 +1635,14 @@ function exportPdf(){
   out+=`xref\n0 ${objs.length}\n0000000000 65535 f \n`+offs.slice(1).map(o=>String(o).padStart(10,"0")+" 00000 n \n").join("")+`trailer\n<< /Size ${objs.length} /Root 1 0 R >>\nstartxref\n${xr}\n%%EOF`;
   const u=new Uint8Array(out.length);for(let i=0;i<out.length;i++)u[i]=out.charCodeAt(i)&255;
   const b=new Blob([u],{type:"application/pdf"});
-  const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="relatorio-aqui-perto"+(RP==="tudo"?"":"-"+RP)+".pdf";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  baixarBlob(b,"relatorio-aqui-perto"+(RP==="tudo"?"":"-"+RP)+".pdf");
 }
+function baixarBlob(b,nome){const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=nome;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
 function exportCsv(){
-  const q=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
+  const q=v=>{let t=String(v==null?"":v);if(/^[=+\-@\t\r]/.test(t))t="'"+t;return '"'+t.replace(/"/g,'""')+'"';};
   const rows=[["Data","Cliente","Telemóvel","Itens","Total","Estado","Nota"]].concat(myPed().filter(inPer).map(o=>[new Date(o.data).toLocaleDateString("pt-PT"),o.nome,o.tel,o.itens.map(i=>i.qtd+" "+i.un+" "+i.nome).join(", "),String(o.total).replace(".",","),EST[o.estado],nt(o)]));
   const b=new Blob(["\ufeff"+rows.map(r=>r.map(q).join(";")).join("\r\n")],{type:"text/csv;charset=utf-8"});
-  const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="pedidos-aqui-perto"+(RP==="tudo"?"":"-"+RP)+".csv";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  baixarBlob(b,"pedidos-aqui-perto"+(RP==="tudo"?"":"-"+RP)+".csv");
 }
 const GEO=[["Lisboa",38.72,-9.14],["Lisboa",38.80,-9.38],["Lisboa",38.94,-9.33],["Lisboa",39.09,-9.26],["Lisboa",38.70,-9.42],["Lisboa",38.83,-9.17],["Lisboa",38.95,-8.99],["Lisboa",38.75,-9.23],
 ["Setúbal",38.52,-8.89],["Setúbal",38.68,-9.16],["Setúbal",38.66,-9.07],["Setúbal",38.64,-9.10],["Setúbal",38.57,-8.90],["Setúbal",37.96,-8.87],["Setúbal",38.37,-8.51],["Setúbal",38.02,-8.69],
@@ -1817,6 +1891,7 @@ function sortFn(a,b){
   if(ORD_S==="nome")return a.nome.localeCompare(b.nome,"pt");
   return MYPOS?(byD||byR):byR;
 }
+let ORC_MULTI=[],ORC_ALL=[];
 function render(){
   {const o=$("ordsel").querySelector("option[value=dist]");o.disabled=!MYPOS;o.textContent=MYPOS?"Mais perto":"Mais perto (ative a localização)";if(!MYPOS&&ORD_S==="dist")ORD_S="auto";$("ordsel").value=ORD_S;}
   $("fent").setAttribute("aria-pressed",ENT_F);$("fabr").setAttribute("aria-pressed",ABR_F);$("ffav").setAttribute("aria-pressed",FAV_F);$("ffav").textContent="♥ Favoritos"+(FAV.size?" ("+FAV.size+")":"");
@@ -1835,6 +1910,12 @@ function render(){
   if(CACHED)$("count").textContent+=" · lista guardada (sem ligação)";
   if(FAV_F)$("count").textContent=r.length+(r.length===1?" favorito":" favoritos");
   if(ABR_F&&!FAV_F)$("count").textContent+=" · só perfis com horário definido";
+  // Pedir orçamento a vários num só passo: serviços, categoria escolhida, com localização e dentro do raio (ou de quem atende a zona)
+  {const box=$("orcAll");
+   const el=(MYPOS&&S.tipo==="servico"&&S.cat&&!FAV_F&&(R||COB))?r.filter(p=>!p.mine&&p.dist!=null).sort((a,b)=>a.dist-b.dist).slice(0,5):[];
+   ORC_ALL=el.map(p=>p.id);
+   box.classList.toggle("hide",el.length<2);
+   box.innerHTML=el.length<2?"":`<button type="button" class="btn accent" onclick="openOrcMulti()">📨 Pedir orçamento aos ${el.length} mais próximos</button><div class="meta" style="margin-top:4px">Um só pedido para ${esc(S.cat)}, ${R?"até "+R+" km":"a quem atende a sua zona"}.</div>`;}
   $("grid").innerHTML=r.length?r.slice(0,SHOWN).map(card).join("")+moreBtn(r.length):`<div class="empty"><strong>Ainda ninguém${z?" em "+esc(z):""} com esta pesquisa.</strong>${FAV_F?`<p class="meta">Ainda não guardou favoritos neste separador. Toque no ♡ de um fornecedor para o guardar.</p>`:COB?`<p class="meta">Ninguém atende a sua zona com esta pesquisa. Veja quem está mais longe.</p><button class="btn accent" onclick="setRaio(50)">Ver até 50 km</button> `:NX?`<p class="meta">Nada num raio de ${R} km. Alargue a distância ou tente outra categoria.</p><button class="btn accent" onclick="setRaio(${NX})">Alargar para ${NX} km</button> `:`<p class="meta">Tente outra zona ou categoria, ou convide um fornecedor que conheça.</p>`}<button class="btn primary" onclick="go('join')">Inscrever um fornecedor</button></div>`;
   document.querySelectorAll("[data-more]").forEach(b=>b.onclick=()=>{const first=SHOWN;SHOWN+=PAGE_N;render();const c=$("grid").querySelectorAll(".card")[first];if(c){c.setAttribute("tabindex","-1");c.focus({preventScroll:true});}});
   mapSync(r);
@@ -2006,7 +2087,7 @@ function drawEnt(){$("jraioswrap").classList.toggle("hide",S.jtipo!=="servico");
 function jTipo(t){
   $("jentwrap").classList.toggle("hide",t!=="produto");
   S.jtipo=t;drawEnt();["servico","produto"].forEach(x=>$("j-"+x).setAttribute("aria-pressed",x===t));
-  $("jcat").innerHTML=CATS[t].map(c=>`<option>${c}</option>`).join("")+"<option>Outra</option>";
+  $("jcat").innerHTML=CATS[t].map(c=>`<option>${c}</option>`).join("");
 }
 function drawJZ(){
   $("jzonas").innerHTML=Z.map(z=>`<button type="button" class="chip" aria-pressed="${S.jz.includes(z)}" data-z="${z}">${z}</button>`).join("");
@@ -2344,6 +2425,7 @@ async function sendAv(){
   }
   $("dAv").close();await loadList(o.fid);await loadPed();drawMeus();toast("Obrigado pela sua avaliação.");
 }
+let RA_ID="",RVL=[],RV_FID="";
 async function openRev(fid){
   const p=S.list.find(x=>x.id===fid);if(!p)return;
   $("rvNome").textContent=p.nome;
@@ -2351,11 +2433,45 @@ async function openRev(fid){
   $("rvList").innerHTML='<p class="meta">A carregar…</p>';$("dRev").showModal();
   let L=[];
   if(DEMO)L=Object.values(lsAvs()).filter(x=>x.fid===fid).map(x=>({e:x.e,c:x.c,autor:x.autor,data:x.data})).sort((a,b)=>b.data.localeCompare(a.data));
-  else{const {data}=await sb.from("avaliacoes").select("id,cliente_id,estrelas,comentario,autor,created_at").eq("fornecedor_id",fid).eq("estado","visivel").order("created_at",{ascending:false}).limit(20);L=(data||[]).map(x=>({id:x.id,cid:x.cliente_id,e:x.estrelas,c:x.comentario||"",autor:x.autor,data:x.created_at}));}
+  else{
+    const q=cols=>sb.from("avaliacoes").select(cols).eq("fornecedor_id",fid).eq("estado","visivel").order("created_at",{ascending:false}).limit(20);
+    let r=await q("id,cliente_id,estrelas,comentario,autor,created_at,resposta,resposta_em");
+    if(r.error)r=await q("id,cliente_id,estrelas,comentario,autor,created_at");   // SQL da resposta ainda não corrido
+    L=(r.data||[]).map(x=>({id:x.id,cid:x.cliente_id,e:x.estrelas,c:x.comentario||"",autor:x.autor,data:x.created_at,r:x.resposta||"",rd:x.resposta_em||""}));
+  }
   const uid=SESSION&&SESSION.user.id;
-  $("rvList").innerHTML=L.length?L.map(x=>`<div class="prow" style="align-items:flex-start"><div style="flex:1"><span class="star">${starsTxt(x.e)}</span> <span class="meta">· ${esc(x.autor||"Cliente")} · ${new Date(x.data).toLocaleDateString("pt-PT")}</span>${x.c?`<div>${esc(x.c)}</div>`:""}</div>${!DEMO&&x.id&&x.cid!==uid?`<button type="button" class="chip" data-den="${esc(x.id)}" aria-label="Denunciar esta avaliação">🚩 Denunciar</button>`:""}</div>`).join(""):'<p class="meta">Ainda sem comentários.</p>';
+  RV_FID=fid;RVL=L;
+  $("rvList").innerHTML=L.length?L.map(x=>`<div class="prow" style="align-items:flex-start"><div style="flex:1"><span class="star">${starsTxt(x.e)}</span> <span class="meta">· ${esc(x.autor||"Cliente")} · ${new Date(x.data).toLocaleDateString("pt-PT")}</span>${x.c?`<div>${esc(x.c)}</div>`:""}${x.r?`<div class="resp"><strong>Resposta de ${esc(p.nome)}</strong>${x.rd?` <span class="meta">· ${new Date(x.rd).toLocaleDateString("pt-PT")}</span>`:""}<div>${esc(x.r)}</div></div>`:""}${p.mine&&!DEMO&&x.id?`<div style="margin-top:6px"><button type="button" class="chip" data-resp="${esc(x.id)}">${x.r?"Editar resposta":"Responder"}</button></div>`:""}</div>${!DEMO&&x.id&&x.cid!==uid?`<button type="button" class="chip" data-den="${esc(x.id)}" aria-label="Denunciar esta avaliação">🚩 Denunciar</button>`:""}</div>`).join(""):'<p class="meta">Ainda sem comentários.</p>';
 }
-$("rvList").addEventListener("click",e=>{const b=e.target.closest("button[data-den]");if(b)openDen(b.dataset.den);});
+$("rvList").addEventListener("click",e=>{const b=e.target.closest("button[data-den]");if(b){openDen(b.dataset.den);return;}const r=e.target.closest("button[data-resp]");if(r)openRA(r.dataset.resp);});
+// ---- resposta do fornecedor a uma avaliação (só o dono do perfil; a função do servidor volta a verificar tudo)
+const raCnt=()=>{$("raCnt").textContent=$("raTxt").value.length+"/300";};
+$("raTxt").addEventListener("input",raCnt);
+function openRA(id){
+  const x=RVL.find(y=>String(y.id)===String(id));if(!x)return;
+  RA_ID=id;
+  $("raAv").textContent=starsTxt(x.e)+" · "+(x.autor||"Cliente")+(x.c?": «"+x.c+"»":"");
+  $("raTxt").value=x.r||"";raCnt();$("raErr").textContent="";$("raDel").classList.toggle("hide",!x.r);
+  $("dRev").close();$("dRA").showModal();$("raTxt").focus();
+}
+const RA_BAD=/(https?:|www\.|@)|(?:\d[\s.\-]?){9,}/i;   // links, e-mails e telefones
+async function sendRA(del){
+  const e=$("raErr");e.textContent="";
+  const t=del?"":$("raTxt").value.trim().slice(0,300);
+  if(!del&&t.length<2){e.textContent="Escreva a resposta.";return;}
+  if(!del&&RA_BAD.test(t)){e.textContent="A resposta não pode ter links, e-mails nem números de telefone.";return;}
+  const {error}=await sb.rpc("responder_avaliacao",{p_id:String(RA_ID),p_texto:t});
+  if(error){
+    const m=error.message||"";
+    e.textContent=/permiss/i.test(m)?"Só o dono do perfil pode responder."
+      :/contactos/i.test(m)?"A resposta não pode ter links, e-mails nem números de telefone."
+      :/indispon/i.test(m)?"Esta avaliação já não está visível."
+      :"Não foi possível guardar a resposta. Tente outra vez.";
+    return;
+  }
+  $("dRA").close();toast(del?"Resposta removida.":"Resposta publicada.");
+  openRev(RV_FID);
+}
 function openDen(id){
   if(!SESSION){toast("Entre na sua conta para denunciar uma avaliação.");return;}
   DEN_ID=id;$("denErr").textContent="";$("denMotivo").value="ofensiva";$("dRev").close();$("dDen").showModal();
@@ -2368,18 +2484,20 @@ async function sendDen(){
 }
 // ---- moderação (só contas na tabela admins)
 const MOT={ofensiva:"Linguagem ofensiva",falsa:"Falsa (não foi cliente)",spam:"Spam ou publicidade",dados:"Dados pessoais",outro:"Outro"};
-function modPend(){return MOD.filter(x=>x.estado==="pendente"||x.denuncias>0).length;}
+var MODC=[];
+function modPend(){return MOD.filter(x=>x.estado==="pendente"||x.denuncias>0).length+(MODC||[]).length;}
 async function checkAdmin(){
   IS_ADMIN=false;
   if(!DEMO&&SESSION){
-    try{const r=await sb.rpc("sou_admin");IS_ADMIN=r.data===true;if(IS_ADMIN){const q=await sb.rpc("mod_fila");MOD=q.error?[]:(q.data||[]);}}catch(x){}
+    try{const r=await sb.rpc("sou_admin");IS_ADMIN=r.data===true;if(IS_ADMIN){const q=await sb.rpc("mod_fila");MOD=q.error?[]:(q.data||[]);const qc=await sb.rpc("mod_conversas");MODC=qc.error?[]:(qc.data||[]);}}catch(x){}
   }
-  if(!IS_ADMIN)MOD=[];
+  if(!IS_ADMIN){MOD=[];MODC=[];}
   applyUser();
 }
-async function loadMod(){const q=await sb.rpc("mod_fila");MOD=q.error?[]:(q.data||[]);applyUser();}
+async function loadMod(){const q=await sb.rpc("mod_fila");MOD=q.error?[]:(q.data||[]);const qc=await sb.rpc("mod_conversas");MODC=qc.error?[]:(qc.data||[]);applyUser();}
 async function openMod(){if(!IS_ADMIN)return;await loadMod();go("mod");drawMod();}
 function drawMod(){
+  drawModConv();
   $("modlist").innerHTML=MOD.length?MOD.map(x=>{
     const flag=x.estado==="pendente"?"em análise":x.estado==="oculta"?"oculta":"";
     const den=x.denuncias>0?"🚩 "+x.denuncias+" denúncia"+(x.denuncias>1?"s":"")+": "+(x.motivos||[]).map(m=>MOT[m]||m).join(", "):"";
@@ -2396,6 +2514,47 @@ async function modAct(id,a){
   if(error){toast("Não foi possível guardar.");return;}
   await loadMod();await loadList();drawMod();toast(a==="ocultar"?"Avaliação ocultada.":"Feito.");
 }
+// ---- segurança do chat: bloquear, denunciar e moderação de conversas denunciadas
+function chatMenu(){
+  const c=CONV.find(x=>x.id===CHAT_ID);if(!c)return;
+  const b=$("chatBlkBtn"),uid=uidNow();
+  if(c.badm||(c.bpor&&c.bpor!==uid))b.classList.add("hide");
+  else{b.classList.remove("hide");b.textContent=c.bpor===uid?"Desbloquear conversa":"Bloquear conversa";}
+  $("dChatOpc").showModal();
+}
+async function chatBloquear(){
+  const c=CONV.find(x=>x.id===CHAT_ID);if(!c)return;
+  const bloq=c.bpor!==uidNow();
+  $("dChatOpc").close();
+  if(bloq&&!(await confirmar("Bloquear esta conversa? Nenhuma das partes poderá enviar mensagens até a desbloquear.",{titulo:"Bloquear conversa",ok:"Bloquear",nao:"Cancelar",perigo:true})))return;
+  const {error}=await sb.rpc("bloquear_conversa",{p_conversa:c.id,p_bloquear:bloq});
+  if(error){toast("Não foi possível guardar. Tente outra vez.");return;}
+  await loadConv();drawChat(false);toast(bloq?"Conversa bloqueada.":"Conversa desbloqueada.");
+}
+function chatDenunciar(){$("dChatOpc").close();$("cdErr").textContent="";$("cdMotivo").value="assedio";$("cdBloq").checked=true;$("dChatDen").showModal();}
+async function sendChatDen(){
+  const c=CONV.find(x=>x.id===CHAT_ID);if(!c)return;
+  const {error}=await sb.rpc("denunciar_conversa",{p_conversa:c.id,p_motivo:$("cdMotivo").value});
+  if(error){$("cdErr").textContent="Não foi possível enviar a denúncia. Tente outra vez.";return;}
+  if($("cdBloq").checked&&!c.bpor&&!c.badm)await sb.rpc("bloquear_conversa",{p_conversa:c.id,p_bloquear:true});
+  $("dChatDen").close();await loadConv();drawChat(false);toast("Denúncia enviada. Obrigado.");
+}
+const MOTC={assedio:"Assédio ou ameaças",fraude:"Fraude ou burla",spam:"Spam ou publicidade",ofensiva:"Linguagem ofensiva",outro:"Outro"};
+function drawModConv(){
+  const el=$("modconv");if(!el)return;
+  el.innerHTML=MODC.length?MODC.map(x=>{
+    const ms=(x.ultimas||[]).map(m=>`<div class="meta"><strong>${m.de==="cliente"?"Cliente":"Fornecedor"}:</strong> ${esc(m.texto)}</div>`).join("");
+    const bt=(a,t,c)=>`<button class="btn ${c||""}" data-mc="${esc(x.conversa_id)}" data-a="${a}">${t}</button>`;
+    return `<div class="prow" style="align-items:flex-start"><div style="flex:1;min-width:min(220px,100%)"><strong>${esc(x.fornecedor_nome)}</strong> <span class="meta">· ${esc(x.cliente_nome||"Cliente")} · 🚩 ${x.denuncias}: ${esc((x.motivos||[]).map(m=>MOTC[m]||m).join(", "))}${x.bloqueada_admin?" · bloqueada pela equipa":x.bloqueada?" · bloqueada":""}</span><div style="margin-top:6px;max-height:200px;overflow:auto">${ms||'<div class="meta">Sem mensagens.</div>'}</div></div><div class="stk" style="flex-wrap:wrap">${bt("arquivar","Arquivar","primary")}${x.bloqueada_admin?bt("desbloquear","Desbloquear"):bt("bloquear","Bloquear")}</div></div>`;
+  }).join(""):'<p class="meta">Nenhuma conversa denunciada.</p>';
+}
+async function modConvAct(id,a){
+  if(a==="bloquear"&&!(await confirmar("Bloquear esta conversa para as duas partes?",{titulo:"Bloquear conversa",ok:"Bloquear",nao:"Cancelar",perigo:true})))return;
+  const {error}=await sb.rpc("moderar_conversa",{p_conversa:id,p_acao:a});
+  if(error){toast("Não foi possível guardar.");return;}
+  await loadMod();drawMod();toast("Feito.");
+}
+$("modconv").addEventListener("click",e=>{const b=e.target.closest("button[data-mc]");if(b)modConvAct(b.dataset.mc,b.dataset.a);});
 $("modlist").addEventListener("click",e=>{const b=e.target.closest("button[data-m]");if(b)modAct(b.dataset.m,b.dataset.a);});
 $("modq").addEventListener("input",drawMod);
 $("modforn").addEventListener("click",async e=>{const b=e.target.closest("button[data-v]");if(!b)return;b.disabled=true;
@@ -2450,7 +2609,7 @@ async function loadOrc(){await loadOrc0();await loadMarc();await loadConv();}
 async function loadOrc0(){
   if(DEMO){ORC=lsOrc();return;}
   if(!SESSION){ORC=[];return;}
-  const {data}=await sb.from("orcamentos").select("*").order("created_at",{ascending:false});
+  const {data}=await fetchAll((f,t)=>sb.from("orcamentos").select("*").order("created_at",{ascending:false}).order("id").range(f,t));
   ORC=(data||[]).map(r=>({id:r.id,fid:r.fornecedor_id,cid:r.cliente_id,nome:r.cliente_nome,tel:r.cliente_tel,desc:r.descricao,local:r.local||"",data:r.data_pretendida||"",urg:!!r.urgente,fotos:r.fotos||[],estado:r.estado,valor:r.resposta_valor==null?null:Number(r.resposta_valor),msg:r.resposta_msg||"",criado:r.created_at}));
 }
 const myOrc=()=>{const ids=new Set(S.list.filter(p=>p.mine).map(p=>p.id));return ORC.filter(o=>ids.has(o.fid));};
@@ -2475,10 +2634,21 @@ function orcFotos(o){
   return `<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">${o.fotos.map(p=>{const d=p.startsWith("data:");return `<a target="_blank" rel="noopener"${d?` href="${esc(p)}"`:""}><img class="pimg" data-op="${esc(p)}" alt="Foto do pedido"${d?` src="${esc(p)}"`:""}></a>`;}).join("")}</div>`;
 }
 const orcResp=o=>(o.valor!=null||o.msg)?`<div class="meta">💬 ${o.valor!=null?esc(eur(o.valor)):""}${o.valor!=null&&o.msg?" · ":""}${esc(o.msg)}</div>`:"";
+function openOrcMulti(){
+  if(!DEMO&&!SESSION){openLogin("signup","cliente");return;}
+  const L=ORC_ALL.map(id=>S.list.find(x=>x.id===id)).filter(Boolean);
+  if(L.length<2)return;
+  ORC_MULTI=L.map(p=>p.id);ORC_ID="";ORC_B=[];
+  $("orcTitulo").textContent="Pedir orçamento a "+L.length+" fornecedores";
+  const d=$("orcDest");d.innerHTML=L.map(p=>esc(p.nome)+" · a "+fmtKm(p.dist)+" km").join("<br>");d.classList.remove("hide");
+  ["orcDesc","orcLocal","orcData","orcTel"].forEach(i=>$(i).value="");$("orcUrg").checked=false;$("orcFotos").value="";$("orcPv").innerHTML="";$("orcErr").textContent="";
+  $("orcData").min=hojeISO();if(MYPOS&&MYPOS.cidade)$("orcLocal").value=MYPOS.cidade;$("orcCli").value=S.user?S.user.nome:"";$("orcBtn").disabled=false;
+  $("dOrc").showModal();
+}
 function openOrc(id){
   const p=S.list.find(x=>x.id===id);if(!p)return;
   if(!DEMO&&!SESSION){openLogin("signup","cliente");return;}
-  ORC_ID=id;ORC_B=[];
+  ORC_ID=id;ORC_B=[];ORC_MULTI=[];$("orcDest").classList.add("hide");
   $("orcTitulo").textContent="Pedir orçamento a "+p.nome;
   ["orcDesc","orcLocal","orcData","orcTel"].forEach(i=>$(i).value="");$("orcUrg").checked=false;$("orcFotos").value="";$("orcPv").innerHTML="";$("orcErr").textContent="";
   $("orcData").min=hojeISO();if(MYPOS&&MYPOS.cidade)$("orcLocal").value=MYPOS.cidade;$("orcCli").value=S.user?S.user.nome:"";$("orcBtn").disabled=false;
@@ -2502,7 +2672,7 @@ function orcErr(m){
 }
 async function sendOrc(){
   const e=$("orcErr");e.textContent="";
-  const p=S.list.find(x=>x.id===ORC_ID);if(!p)return;
+  const multi=ORC_MULTI.length>1,p=S.list.find(x=>x.id===ORC_ID);if(!multi&&!p)return;
   const desc=$("orcDesc").value.trim(),local=$("orcLocal").value.trim(),data=$("orcData").value,urg=$("orcUrg").checked,nome=$("orcCli").value.trim(),tel=$("orcTel").value.replace(/\D/g,"").replace(/^351/,"");
   if(desc.length<10){e.textContent="Descreva o que precisa (mínimo 10 caracteres).";return;}
   if(nome.length<2){e.textContent="Indique o seu nome.";return;}
@@ -2513,6 +2683,19 @@ async function sendOrc(){
   const fotos=[];
   try{for(const b of ORC_B)fotos.push(await uploadOrcFoto(b));}
   catch(x){await Promise.all(fotos.map(dropOrcFoto));e.textContent=(x&&x.reason)||"Não foi possível enviar as fotografias.";btn.disabled=false;return;}
+  if(multi){
+    // as mesmas fotografias seguem para todos; só são apagadas se nenhum pedido chegar a sair
+    const L=ORC_MULTI.map(id=>S.list.find(x=>x.id===id)).filter(Boolean);let ok=0;const fail=[];
+    for(const d of L){
+      if(DEMO){ORC=lsOrc();ORC.unshift({id:"q"+Date.now()+"-"+ok,fid:d.id,cid:null,nome,tel,desc,local,data,urg,fotos,estado:"novo",valor:null,msg:"",criado:new Date().toISOString()});saveOrcLS();ok++;continue;}
+      const {error}=await sb.rpc("pedir_orcamento",{p_fornecedor:d.id,p_nome:nome,p_tel:tel,p_desc:desc,p_local:local||null,p_data:data||null,p_urgente:urg,p_fotos:fotos});
+      if(error){fail.push(error.message||"");if(/limite/i.test(error.message||""))break;}else ok++;
+    }
+    if(!ok){await Promise.all(fotos.map(dropOrcFoto));e.textContent=orcErr(fail[0]||"");btn.disabled=false;return;}
+    btn.disabled=false;$("dOrc").close();ORC_MULTI=[];
+    toast("Pedido enviado a "+ok+" fornecedor"+(ok>1?"es":"")+(fail.length?". Não foi possível enviar a "+(L.length-ok)+".":". Acompanhe em Os meus pedidos."));
+    return;
+  }
   if(DEMO){ORC=lsOrc();ORC.unshift({id:"q"+Date.now(),fid:p.id,cid:null,nome,tel,desc,local,data,urg,fotos,estado:"novo",valor:null,msg:"",criado:new Date().toISOString()});saveOrcLS();}
   else{
     const {error}=await sb.rpc("pedir_orcamento",{p_fornecedor:p.id,p_nome:nome,p_tel:tel,p_desc:desc,p_local:local||null,p_data:data||null,p_urgente:urg,p_fotos:fotos});
@@ -2577,9 +2760,27 @@ const MARC_EST={pendente:"Aguarda resposta",proposta:"Nova hora proposta",confir
 const MARC_K={pendente:"meta",proposta:"meta",confirmada:"ok",recusada:"out",cancelada:"out"};
 const fProv=id=>S.list.find(x=>String(x.id)===String(id));
 const marcQuando=(d,h)=>fmtD(d)+" às "+h;
+// Descarrega a marcação confirmada como evento de calendário (.ics); a mesma função serve o cliente e o fornecedor
+function marcIcs(id){
+  const m=MARC.find(x=>String(x.id)===String(id));if(!m||m.estado!=="confirmada")return;
+  const f=fProv(m.fid),dono=!!(f&&f.mine),p2=n=>String(n).padStart(2,"0");
+  const [Y,M,D]=String(m.data).split("-").map(Number),[hh,mm]=String(m.hora).slice(0,5).split(":").map(Number);
+  if(!Y||!M||!D||isNaN(hh)||isNaN(mm))return;
+  const ini=new Date(Y,M-1,D,hh,mm),fim=new Date(ini.getTime()+30*60000);
+  const fmt=t=>t.getFullYear()+p2(t.getMonth()+1)+p2(t.getDate())+"T"+p2(t.getHours())+p2(t.getMinutes())+"00";
+  const esq=t=>String(t==null?"":t).replace(/\\/g,"\\\\").replace(/\r?\n/g,"\\n").replace(/;/g,"\\;").replace(/,/g,"\\,");
+  const nota=[dono?"Cliente: "+m.nome+" · "+m.tel:"",m.nota,"Marcada na app Aqui Perto"].filter(Boolean).join("\n");
+  const L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Aqui Perto//Marcacoes//PT","CALSCALE:GREGORIAN","METHOD:PUBLISH","BEGIN:VEVENT",
+    "UID:marcacao-"+m.id+"@aquiperto","DTSTAMP:"+new Date().toISOString().replace(/[-:]|\.\d{3}/g,""),
+    "DTSTART:"+fmt(ini),"DTEND:"+fmt(fim),"SUMMARY:"+esq("Marcação: "+(dono?m.nome:(f?f.nome:"Fornecedor"))),"DESCRIPTION:"+esq(nota)]
+    .concat(!dono&&f&&f.localidade?["LOCATION:"+esq(f.localidade)]:[],["BEGIN:VALARM","TRIGGER:-PT1H","ACTION:DISPLAY","DESCRIPTION:"+esq("Marcação dentro de 1 hora"),"END:VALARM","END:VEVENT","END:VCALENDAR"]);
+  const txt=L.map(l=>l.length>70?l.match(/.{1,70}/gu).join("\r\n "):l).join("\r\n")+"\r\n";
+  baixarBlob(new Blob([txt],{type:"text/calendar;charset=utf-8"}),"marcacao-aqui-perto-"+m.data+".ics");
+  toast("Evento guardado. Abra o ficheiro para o juntar ao calendário.");
+}
 async function loadMarc(){
   if(DEMO||!SESSION){MARC=[];return;}
-  const {data,error}=await sb.from("marcacoes").select("*").order("data",{ascending:true}).order("hora",{ascending:true});
+  const {data,error}=await fetchAll((f,t)=>sb.from("marcacoes").select("*").order("data",{ascending:true}).order("hora",{ascending:true}).order("id").range(f,t));
   if(error){MARC=[];return;} // tabela ainda não criada
   MARC=(data||[]).map(r=>({id:r.id,fid:r.fornecedor_id,cid:r.cliente_id,nome:r.cliente_nome,tel:r.cliente_tel,data:r.data,hora:r.hora,nota:r.nota||"",estado:r.estado,pd:r.prop_data||"",ph:r.prop_hora||"",criado:r.created_at}));
 }
@@ -2665,7 +2866,7 @@ function marcSup(){
   const act=L.filter(m=>m.estado==="pendente"||m.estado==="proposta"||(m.estado==="confirmada"&&m.data>=hoje)),old=L.filter(m=>!act.includes(m));
   const row=m=>{
     const f=fProv(m.fid),bt=(a,t,c)=>`<button class="btn ${c||""}" data-mz="${a}" data-mid="${esc(m.id)}">${t}</button>`;
-    const ac=(m.estado==="pendente"?bt("confirmar","Confirmar","primary"):"")+((m.estado==="pendente"||m.estado==="proposta")?bt("propor","Propor outra hora")+bt("recusar","Recusar"):"")+(m.estado==="confirmada"?bt("cancelar","Cancelar"):"");
+    const ac=(m.estado==="pendente"?bt("confirmar","Confirmar","primary"):"")+((m.estado==="pendente"||m.estado==="proposta")?bt("propor","Propor outra hora")+bt("recusar","Recusar"):"")+(m.estado==="confirmada"?(m.data>=hoje?bt("ics","📅 Calendário"):"")+bt("cancelar","Cancelar"):"");
     return `<div class="prow" style="align-items:flex-start"><div style="flex:1;min-width:min(200px,100%)"><strong>${esc(m.nome)}</strong> <span class="meta">· ${esc(marcQuando(m.data,m.hora))}</span>${multi&&f?`<div class="meta">Para: ${esc(f.nome)}</div>`:""}<div class="meta"><a href="tel:+351${esc(m.tel)}">${esc(m.tel)}</a></div>${m.nota?`<div>${esc(m.nota)}</div>`:""}${m.estado==="proposta"?`<div class="meta">Proposta enviada: ${esc(marcQuando(m.pd,m.ph))}</div>`:""}<span class="${MARC_K[m.estado]}">${MARC_EST[m.estado]}</span></div><div class="stk" style="flex-wrap:wrap">${ac}</div></div>`;
   };
   return'<h3 style="margin:0 0 4px">Por tratar e próximas</h3>'+(act.length?act.map(row).join(""):'<p class="meta">Nada pendente.</p>')+(old.length?'<h3 style="margin:18px 0 4px">Histórico</h3>'+old.slice(-10).reverse().map(row).join(""):"");
@@ -2688,6 +2889,7 @@ async function sendProp(){
 $("crmbody").addEventListener("click",async e=>{
   const b=e.target.closest("button[data-mz]");if(!b)return;
   const id=b.dataset.mid,a=b.dataset.mz;
+  if(a==="ics"){marcIcs(id);return;}
   if(a==="propor"){openProp(id);return;}
   if(a==="recusar"&&!await confirmar("Recusar esta marcação?"))return;
   if(a==="cancelar"&&!await confirmar("Cancelar esta marcação confirmada? O cliente vê o cancelamento."))return;
@@ -2700,7 +2902,7 @@ function drawMeusMarc(){
   if(!L.length){b.innerHTML="";return;}
   b.innerHTML='<h3 style="margin:0 0 4px">As minhas marcações</h3>'+L.slice().sort((x,y)=>String(y.data+y.hora).localeCompare(String(x.data+x.hora))).map(m=>{
     const f=fProv(m.fid),bt=(a,t,c)=>`<button class="btn ${c||""}" data-mk="${a}" data-mid="${esc(m.id)}">${t}</button>`;
-    const ac=(m.estado==="proposta"?bt("aceitar","Aceitar nova hora","primary"):"")+((m.estado==="pendente"||m.estado==="proposta"||m.estado==="confirmada")?bt("cancelar","Cancelar"):"")+(f?`<button class="btn" data-contact="${esc(f.id)}">Contactar</button>`:"");
+    const ac=(m.estado==="proposta"?bt("aceitar","Aceitar nova hora","primary"):"")+(m.estado==="confirmada"&&m.data>=hojeISO()?bt("ics","📅 Calendário"):"")+((m.estado==="pendente"||m.estado==="proposta"||m.estado==="confirmada")?bt("cancelar","Cancelar"):"")+(f?`<button class="btn" data-contact="${esc(f.id)}">Contactar</button>`:"");
     return `<div class="prow" style="align-items:flex-start"><div style="flex:1;min-width:min(200px,100%)"><strong>${esc(f?f.nome:"Fornecedor")}</strong> <span class="meta">· ${esc(marcQuando(m.data,m.hora))}</span>${m.nota?`<div>${esc(m.nota)}</div>`:""}${m.estado==="proposta"?`<div class="meta">🕒 O fornecedor propõe: ${esc(marcQuando(m.pd,m.ph))}</div>`:""}<span class="${MARC_K[m.estado]}">${MARC_EST[m.estado]}</span></div><div class="stk" style="flex-wrap:wrap">${ac}</div></div>`;
   }).join("");
 }
@@ -2708,13 +2910,14 @@ $("meusmarc").addEventListener("click",async e=>{
   const b=e.target.closest("button");if(!b)return;
   if(b.dataset.contact){openCont(b.dataset.contact);return;}
   const a=b.dataset.mk;if(!a)return;
+  if(a==="ics"){marcIcs(b.dataset.mid);return;}
   if(a==="cancelar"&&!await confirmar("Cancelar esta marcação?"))return;
   const {error}=await sb.rpc("decidir_marcacao",{p_id:b.dataset.mid,p_acao:a});
   if(error){toast(/ocupado/i.test(error.message||"")?"Essa hora já foi ocupada. Fale com o fornecedor.":"Não foi possível guardar. Atualize e tente outra vez.");}
   await loadMarc();drawMeus();
 });
 // ---- chat cliente <-> fornecedor (tabelas conversas/mensagens; escrita por RPC)
-let CONV=[],MSGS={},CHAT_ID="",CHAT_BACK="home",MSG_SEEN=0;
+let CONV=[],MSGS={},SUM={},MSG_MORE={},CHAT_LD=false,CHAT_ID="",CHAT_BACK="home",MSG_SEEN=0;
 const BASE_TITLE=document.title;
 const msgTotal=()=>CONV.reduce((a,c)=>a+convUnread(c),0);
 // selo de mensagens por ler: botões do cabeçalho e título do separador
@@ -2738,20 +2941,28 @@ function rtMsg(){
 const uidNow=()=>SESSION?SESSION.user.id:"";
 async function loadConv(){
   if(DEMO||!SESSION){CONV=[];MSGS={};return;}
-  const c=await sb.from("conversas").select("*").order("ultima_em",{ascending:false});
+  const c=await fetchAll((f,t)=>sb.from("conversas").select("*").order("ultima_em",{ascending:false}).order("id").range(f,t));
   if(c.error){CONV=[];MSGS={};return;} // tabelas ainda não criadas
-  const m=await sb.from("mensagens").select("id,conversa_id,autor_id,texto,lida,created_at").order("created_at",{ascending:false}).limit(1000);
-  MSGS={};((m.data)||[]).slice().reverse().forEach(x=>{(MSGS[x.conversa_id]||(MSGS[x.conversa_id]=[])).push(x);});
-  CONV=(c.data||[]).map(r=>({id:r.id,fid:r.fornecedor_id,cid:r.cliente_id,nome:r.cliente_nome||"Cliente",ult:r.ultima_em}));
+  // resumo por conversa (última mensagem e não lidas) calculado no servidor; as mensagens só se carregam ao abrir a conversa
+  SUM={};
+  const s=await sb.rpc("resumo_conversas");
+  if(!s.error){(s.data||[]).forEach(x=>{SUM[x.conversa_id]={txt:x.ultima_texto||"",aut:x.ultima_autor||"",em:x.ultima_em,n:Number(x.nao_lidas)||0};});}
+  else{ // função nova ainda não criada: comportamento anterior (últimas 1000 mensagens)
+    const m=await sb.from("mensagens").select("id,conversa_id,autor_id,texto,lida,created_at").order("created_at",{ascending:false}).limit(1000),g={};
+    ((m.data)||[]).slice().reverse().forEach(x=>{(g[x.conversa_id]||(g[x.conversa_id]=[])).push(x);});
+    Object.keys(g).forEach(k=>{const L=g[k],l=L[L.length-1];SUM[k]={txt:l.texto,aut:l.autor_id,em:l.created_at,n:L.filter(x=>x.autor_id!==uidNow()&&!x.lida).length};});
+  }
+  CONV=(c.data||[]).map(r=>({id:r.id,fid:r.fornecedor_id,cid:r.cliente_id,nome:r.cliente_nome||"Cliente",ult:r.ultima_em,bpor:r.bloqueada_por||"",badm:!!r.bloqueada_admin}));
+  if(VIEW==="chat"&&CHAT_ID&&CONV.some(x=>x.id===CHAT_ID))await loadMsgs(CHAT_ID);
   const t=msgTotal(),up=t>MSG_SEEN;MSG_SEEN=t;msgBadge();return up;
 }
-const convUnread=c=>(MSGS[c.id]||[]).filter(x=>x.autor_id!==uidNow()&&!x.lida).length;
+const convUnread=c=>(SUM[c.id]||{}).n||0;
 const myConvs=()=>{const ids=new Set(S.list.filter(p=>p.mine).map(p=>String(p.id)));return CONV.filter(c=>ids.has(String(c.fid)));};
 const cliConvs=()=>CONV.filter(c=>c.cid===uidNow()&&!(fProv(c.fid)&&fProv(c.fid).mine));
 const msgsNovas=()=>myConvs().reduce((a,c)=>a+convUnread(c),0);
 function convRow(c,quem){
-  const L=MSGS[c.id]||[],l=L[L.length-1],n=convUnread(c);
-  return `<div class="prow" style="align-items:flex-start"><div style="flex:1;min-width:min(200px,100%)"><strong>${esc(quem)}</strong>${n?` <span class="mine">${n} nova${n>1?"s":""}</span>`:""}<div class="meta">${l?esc((l.autor_id===uidNow()?"Você: ":"")+l.texto.slice(0,80)):"Sem mensagens"}</div></div><button class="btn primary" data-chat="${esc(c.id)}">Abrir</button></div>`;
+  const l=SUM[c.id],n=convUnread(c);
+  return `<div class="prow" style="align-items:flex-start"><div style="flex:1;min-width:min(200px,100%)"><strong>${esc(quem)}</strong>${n?` <span class="mine">${n} nova${n>1?"s":""}</span>`:""}<div class="meta">${l&&l.txt?esc((l.aut===uidNow()?"Você: ":"")+l.txt.slice(0,80)):"Sem mensagens"}</div></div><button class="btn primary" data-chat="${esc(c.id)}">Abrir</button></div>`;
 }
 function msgSup(){
   const L=myConvs(),multi=S.list.filter(p=>p.mine).length>1;
@@ -2774,7 +2985,7 @@ async function openChatWith(fid){
 }
 function openChat(id,back){
   CHAT_ID=id;CHAT_BACK=back||(VIEW==="crm"?"crm":VIEW==="meus"?"meus":"home");
-  $("chatTxt").value="";$("chatErr").textContent="";go("chat");drawChat(true);
+  $("chatTxt").value="";$("chatErr").textContent="";go("chat");CHAT_LD=!(MSGS[id]&&MSGS[id].length);drawChat(true);loadMsgs(id).then(()=>{CHAT_LD=false;if(CHAT_ID===id&&VIEW==="chat")drawChat(true);});
 }
 async function chatBack(){
   if(CHAT_BACK==="crm"){CT="mensagens";await openCrm();}
@@ -2784,16 +2995,20 @@ async function chatBack(){
 function drawChat(scroll){
   const c=CONV.find(x=>x.id===CHAT_ID);if(!c){go("home");render();return;}
   const p=fProv(c.fid),uid=uidNow(),eu=!!(p&&p.mine);
+  {const bl=!!(c.bpor||c.badm),bx=$("chatBloq");
+   bx.style.display=bl?"block":"none";
+   bx.textContent=c.badm?"Esta conversa foi bloqueada pela equipa da app.":(c.bpor===uid?"Bloqueou esta conversa. Ninguém pode enviar mensagens até a desbloquear.":"A outra pessoa bloqueou esta conversa.");
+   $("chatTxt").disabled=bl;$("chatSend").disabled=bl;}
   $("chatNome").textContent=eu?c.nome:(p?p.nome:"Fornecedor");
   $("chatSub").textContent=eu?"Cliente"+(p?" · "+p.nome:""):(p?p.cat:"");
   const box=$("chatMsgs"),L=MSGS[c.id]||[],fim=scroll||box.scrollHeight-box.scrollTop-box.clientHeight<60;
-  box.innerHTML=L.length?L.map(x=>{
+  box.innerHTML=(MSG_MORE[c.id]?'<button class="btn" data-more="1" style="align-self:center">Mensagens anteriores</button>':"")+(L.length?L.map(x=>{
     const m=x.autor_id===uid;
     return `<div style="align-self:${m?"flex-end":"flex-start"};max-width:85%;background:${m?"var(--brand)":"var(--chip)"};color:${m?"var(--brand-ink)":"var(--ink)"};border-radius:14px;padding:8px 12px;white-space:pre-wrap;overflow-wrap:anywhere">${esc(x.texto)}<div style="font-size:11px;opacity:.7;margin-top:2px;text-align:right">${esc(new Date(x.created_at).toLocaleString("pt-PT",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}))}</div></div>`;
-  }).join(""):'<p class="meta">Ainda sem mensagens. Escreva a primeira.</p>';
+  }).join(""):(CHAT_LD?'<p class="meta">A carregar…</p>':'<p class="meta">Ainda sem mensagens. Escreva a primeira.</p>'));
   if(fim)box.scrollTop=box.scrollHeight;
-  const un=L.filter(x=>x.autor_id!==uid&&!x.lida);
-  if(un.length){un.forEach(x=>{x.lida=true;});sb.rpc("marcar_lidas",{p_conversa:c.id}).then(()=>{},()=>{});}
+  const un=L.filter(x=>x.autor_id!==uid&&!x.lida),s=SUM[c.id];
+  if(un.length||(s&&s.n)){un.forEach(x=>{x.lida=true;});if(s)s.n=0;msgBadge();sb.rpc("marcar_lidas",{p_conversa:c.id}).then(()=>{},()=>{});}
 }
 async function sendMsg(){
   const e=$("chatErr");e.textContent="";
@@ -2801,12 +3016,33 @@ async function sendMsg(){
   const b=$("chatSend");b.disabled=true;
   const {error}=await sb.rpc("enviar_mensagem",{p_conversa:CHAT_ID,p_texto:t});
   b.disabled=false;
-  if(error){e.textContent=/limite/i.test(error.message||"")?"Enviou muitas mensagens. Aguarde um minuto.":"Não foi possível enviar. Tente outra vez.";return;}
+  if(error){e.textContent=/limite/i.test(error.message||"")?"Enviou muitas mensagens. Aguarde um minuto.":/bloquead/i.test(error.message||"")?"Esta conversa está bloqueada.":"Não foi possível enviar. Tente outra vez.";if(/bloquead/i.test(error.message||"")){await loadConv();drawChat(false);}return;}
   $("chatTxt").value="";await loadConv();drawChat(true);
 }
+// mensagens: só as 50 mais recentes da conversa aberta; as anteriores carregam-se a pedido
+const MSG_PAGE=50;
+const MSG_COLS="id,conversa_id,autor_id,texto,lida,created_at";
+async function loadMsgs(id){
+  const m=await sb.from("mensagens").select(MSG_COLS).eq("conversa_id",id).order("created_at",{ascending:false}).limit(MSG_PAGE);
+  if(m.error)return;
+  const L=(m.data||[]).slice().reverse(),old=MSGS[id]||[],first=L.length?L[0].created_at:null;
+  const keep=first?old.filter(x=>x.created_at<first):[];   // mantém as mais antigas já carregadas
+  MSGS[id]=keep.concat(L);
+  if(!keep.length)MSG_MORE[id]=(m.data||[]).length>=MSG_PAGE;
+}
+async function maisMsgs(){
+  const id=CHAT_ID,L=MSGS[id]||[];if(!id||!L.length)return;
+  const m=await sb.from("mensagens").select(MSG_COLS).eq("conversa_id",id).lt("created_at",L[0].created_at).order("created_at",{ascending:false}).limit(MSG_PAGE);
+  if(m.error){toast("Não foi possível carregar mais mensagens.");return;}
+  MSGS[id]=(m.data||[]).slice().reverse().concat(L);MSG_MORE[id]=(m.data||[]).length>=MSG_PAGE;
+  const box=$("chatMsgs"),h=box.scrollHeight;drawChat(false);box.scrollTop=box.scrollHeight-h;   // não salta para o fim
+}
+$("chatMsgs").addEventListener("click",e=>{if(e.target.closest("button[data-more]"))maisMsgs();});
 document.addEventListener("click",e=>{const b=e.target.closest("button[data-chat]");if(b)openChat(b.dataset.chat);});
 // ---- perfil do fornecedor, link direto, partilha e QR code
-const fornUrl=id=>location.origin+location.pathname+"?f="+encodeURIComponent(id);
+// No GitHub Pages, o link de partilha é a página estática do perfil (f/<id>.html, gerada por scripts/gerar-previews.mjs)
+// para o WhatsApp mostrar o nome e a imagem; abre a app no perfil. Noutros alojamentos usa o link direto de sempre.
+const fornUrl=id=>/\.github\.io$/.test(location.hostname)?location.origin+location.pathname.replace(/[^\/]*$/,"")+"f/"+encodeURIComponent(id)+".html":location.origin+location.pathname+"?f="+encodeURIComponent(id);
 function bindCards(root){
   root.querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>openCont(b.dataset.id));
   root.querySelectorAll("[data-prod]").forEach(b=>b.onclick=()=>openProd(b.dataset.prod));
@@ -2853,10 +3089,7 @@ function printPoster(){
 }
 function dlQR(){
   const p=S.list.find(x=>x.id===FORN_ID);if(!p||!QR_SVG)return;
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(new Blob([QR_SVG],{type:"image/svg+xml"}));
-  a.download="qr-"+(norm(p.nome).replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"perfil")+".svg";
-  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  baixarBlob(new Blob([QR_SVG],{type:"image/svg+xml"}),"qr-"+(norm(p.nome).replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"perfil")+".svg");
 }
 async function copyLink(url){
   try{await navigator.clipboard.writeText(url);toast("Link copiado.");return;}catch(e){}

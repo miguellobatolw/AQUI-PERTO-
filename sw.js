@@ -1,6 +1,5 @@
-// V só precisa de mudar quando ESTE ficheiro mudar (lógica de cache ou lista SHELL). As versões novas da app (APP_VERSION no index.html)
-// chegam sozinhas: a página abre sempre a partir da rede e a app avisa quando há versão nova (ver versaoNova() no index.html).
-const V="aqui-perto-sw5",SHELL=["./","index.html","manifest.webmanifest","icon-180.png","icon-192.png","icon-512.png","badge-96.png","bricolage-grotesque.woff2","lib/supabase.min.js","lib/qrcode.js","lib/leaflet.js","lib/leaflet.css"];
+// IMPORTANTE: mudar V sempre que a app (APP_VERSION no index.html) mudar, para os aparelhos receberem a versão nova.
+const V="aqui-perto-v65",SHELL=["./","index.html","manifest.webmanifest","icon-180.png","icon-192.png","icon-512.png","badge-96.png"];
 // Bibliotecas externas (CDN). Guardadas em cache para a app arrancar mesmo que a CDN falhe ou sem rede.
 const LIBS=["cdn.jsdelivr.net","unpkg.com"];
 // Só as bibliotecas com versão fixa no endereço (ex.: pacote@2.45.4) são imutáveis e podem ir "cache primeiro".
@@ -69,14 +68,12 @@ self.addEventListener("notificationclick",e=>{
   const url=(e.notification.data&&e.notification.data.url)||"./?crm=1";
   const t=(e.notification.data&&e.notification.data.t)||"crm";
   // se a notificação for de mensagens ou orçamentos, a app abre diretamente esse separador
-  // promoções: o aviso traz ?f=<id do fornecedor>; a app abre esse perfil
-  const f=(()=>{try{return new URL(url,self.registration.scope).searchParams.get("f")||"";}catch(x){return "";}})();
   const aba=/[?&]aba=mensagens/.test(url)?"mensagens":/[?&]aba=orcamentos/.test(url)?"orcamentos":"";
   e.waitUntil(clients.matchAll({type:"window",includeUncontrolled:true}).then(l=>{
     // só janelas desta app (o GitHub Pages partilha a origem com os outros projetos da mesma conta) e, de preferência, a que está visível
     const minhas=l.filter(c=>"focus" in c&&c.url.startsWith(self.registration.scope));
     const c=minhas.find(x=>x.visibilityState==="visible")||minhas[0];
-    if(c){c.postMessage({t,aba,f});return c.focus();}
+    if(c){c.postMessage({t,aba});return c.focus();}
     return clients.openWindow(url);
   }));
 });
