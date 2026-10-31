@@ -1,0 +1,22 @@
+name: Pré-visualizações de perfis
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  gerar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/gerar-previews.mjs
+      - name: Guardar alterações
+        run: |
+          git config user.name "previews-bot"
+          git config user.email "previews-bot@users.noreply.github.com"
+          git add f sitemap.xml
+          git diff --cached --quiet || (git commit -m "Atualizar pré-visualizações" && git push)
