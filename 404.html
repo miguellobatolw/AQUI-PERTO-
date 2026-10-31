@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="pt-PT"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Aqui Perto</title></head>
+<body style="font:16px system-ui,sans-serif;max-width:560px;margin:40px auto;padding:0 16px">
+<p>A abrir a Aqui Perto… <a href="./">Continuar</a></p>
+<script>
+// Perfil novo ainda sem página própria (/f/<id>.html): abre a app diretamente nesse perfil
+(function(){var p=location.pathname,m=p.match(/^(.*\/)f\/([^\/]+?)(?:\.html)?\/?$/),b=m?m[1]:p.replace(/[^\/]*$/,"");
+location.replace(b+(m?"?f="+m[2]:""));})();
+</script></body></html>
