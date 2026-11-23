@@ -45,6 +45,11 @@ p{margin:0}
 .lead{font-size:1.2rem;max-width:34em;margin-top:20px;color:rgba(255,255,255,.9)}
 .cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
 .hnote{font-size:.95rem;margin-top:18px;color:rgba(255,255,255,.78);max-width:36em}
+.qr{display:none;align-items:center;gap:16px;margin-top:26px}
+@media (min-width:880px) and (hover:hover){.qr.on{display:flex}}
+.qr .qrc{width:116px;flex:none;line-height:0}
+.qr .qrc svg{width:100%;height:auto;border-radius:8px}
+.qr p{font-size:.95rem;max-width:17em;color:rgba(255,255,255,.88)}
 .mapbox{justify-self:center;width:100%;max-width:440px}
 .map{display:block;width:100%;height:auto;font-family:var(--sans)}
 .cap{font-size:.85rem;text-align:center;color:rgba(255,255,255,.7);margin-top:6px}
@@ -90,6 +95,16 @@ details p{margin-top:10px;color:var(--muted);max-width:40em}
 footer{padding:28px 0 40px;font-size:.95rem;color:var(--muted)}
 footer .wrap{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between}
 footer nav{display:flex;flex-wrap:wrap;gap:6px 20px}
+.bar{display:none}
+@media (max-width:879px){
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:12px;background:#0f5c4d;color:#fff;padding:10px 16px calc(10px + env(safe-area-inset-bottom));box-shadow:0 -4px 16px rgba(0,0,0,.2);transform:translateY(100%);visibility:hidden;transition:transform .25s ease,visibility 0s .25s}
+.bar.on{transform:none;visibility:visible;transition:transform .25s ease}
+.bar .bt{font:800 1.05rem var(--serif);line-height:1.15}
+.bar .bt small{display:block;font:400 .8rem var(--sans);opacity:.82}
+.bar .btn{padding:12px 18px;font-size:.95rem;white-space:nowrap}
+footer{padding-bottom:104px}
+}
+@media (prefers-reduced-motion:reduce){.bar,.bar.on{transition:none}}
 </style>
 </head>
 <body>
@@ -111,6 +126,7 @@ footer nav{display:flex;flex-wrap:wrap;gap:6px 20px}
           <a class="btn g" href="#fornecedores">Quero vender na app</a>
         </div>
         <p class="hnote">Funciona no telemóvel, no navegador. Pode juntá-la ao ecrã inicial e usá-la como qualquer outra app. <a href="./" data-web hidden style="color:#fff">Prefere experimentar primeiro? Abra no navegador.</a></p>
+        <div class="qr" id="qr"><div class="qrc" id="qrc" role="img" aria-label="QR code desta página"></div><p>Está no computador? Aponte a câmara do telemóvel para continuar lá.</p></div>
       </div>
       <div class="mapbox">
         <svg class="map" viewBox="0 0 400 400" role="img" aria-label="Exemplo ilustrativo: a sua posição ao centro e fornecedores a diferentes distâncias à volta">
@@ -235,6 +251,21 @@ footer nav{display:flex;flex-wrap:wrap;gap:6px 20px}
     </nav>
   </div>
 </footer>
+<div class="bar" id="bar" aria-hidden="true"><span class="bt">Aqui Perto<small>Serviços e produtores perto de si</small></span><a class="btn p" href="./" data-inst>Abrir a app</a></div>
+<script src="lib/qrcode.js"></script>
+<script>window.qrcode||document.write('<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js" integrity="sha384-8FWZA6BGMXhsfO+BLtrJK0We6gg5o1JyO8xQm6peWDEUs17ACA5ziE/NIAkl9z2k" crossorigin="anonymous"><\/script>');</script>
+<script>window.qrcode||document.write('<script src="https://unpkg.com/qrcode-generator@1.4.4/qrcode.js" integrity="sha384-8FWZA6BGMXhsfO+BLtrJK0We6gg5o1JyO8xQm6peWDEUs17ACA5ziE/NIAkl9z2k" crossorigin="anonymous"><\/script>');</script>
+<script>
+// QR code desta página (só aparece em ecrãs largos com rato; se a biblioteca não carregar, fica escondido)
+(function(){try{
+  if(typeof qrcode!=="function")return;
+  var q=qrcode(0,"M");q.addData(location.href.split("#")[0].split("?")[0]);q.make();
+  var n=q.getModuleCount(),m=4,d="",r,c;
+  for(r=0;r<n;r++)for(c=0;c<n;c++)if(q.isDark(r,c))d+="M"+(c+m)+","+(r+m)+"h1v1h-1z";
+  document.getElementById("qrc").innerHTML='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+(n+2*m)+" "+(n+2*m)+'" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="#fff"/><path d="'+d+'" fill="#000"/></svg>';
+  document.getElementById("qr").classList.add("on");
+}catch(e){}})();
+</script>
 <script>
 (function(){
   var ev=null,bs=[].slice.call(document.querySelectorAll("[data-inst]")),web=document.querySelector("[data-web]"),
@@ -250,6 +281,16 @@ footer nav{display:flex;flex-wrap:wrap;gap:6px 20px}
     else if(ios&&!app){e.preventDefault();document.getElementById("instalar").scrollIntoView({behavior:"smooth"});}
   });});
   if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(function(){});
+})();
+</script>
+<script>
+// Barra fixa no telemóvel: aparece quando os botões do topo saem do ecrã e some junto ao chamamento final
+(function(){
+  var bar=document.getElementById("bar"),cta=document.querySelector(".hero .cta"),fin=document.querySelector(".final"),pass=false,end=false;
+  if(!bar||!cta||!fin||!("IntersectionObserver" in window))return;
+  function upd(){var on=pass&&!end;bar.classList.toggle("on",on);bar.setAttribute("aria-hidden",on?"false":"true");}
+  new IntersectionObserver(function(e){var r=e[0];pass=!r.isIntersecting&&r.boundingClientRect.bottom<0;upd();}).observe(cta);
+  new IntersectionObserver(function(e){end=e[0].isIntersecting;upd();}).observe(fin);
 })();
 </script>
 <!-- Quando a app estiver na Google Play, acrescentar aqui e no topo o botão de descarga. -->
