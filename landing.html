@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aqui Perto: serviços e produtores locais perto de si</title>
+<meta name="description" content="Encontre prestadores de serviços e produtores da sua zona. Peça, marque e fale diretamente com quem trabalha ao seu lado.">
+<meta name="theme-color" content="#0f5c4d">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Aqui Perto">
+<meta property="og:title" content="Aqui Perto: serviços e produtores locais perto de si">
+<meta property="og:description" content="Peça, marque e fale diretamente com quem trabalha ao seu lado.">
+<meta property="og:image" content="https://miguellobatolw.github.io/AQUI-PERTO-/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+:root{--bg:#f2f6f4;--ink:#14262b;--muted:#4d6266;--line:#d3ded9;--tint:#e3ece8;--brand:#0f5c4d;--link:#0f5c4d;--accent:#f2b33d;--accent-ink:#2a1d00;--serif:Rockwell,"Roboto Slab",Cambria,Georgia,serif;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1a1d;--ink:#e6f0ed;--muted:#9fb3b0;--line:#27403f;--tint:#16303a;--link:#5fd0b2}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:1.0625rem/1.6 var(--sans)}
+a{color:var(--link)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px;border-radius:4px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+h1,h2,h3{font-family:var(--serif);line-height:1.1;margin:0;letter-spacing:-.01em}
+h2{font-size:clamp(1.8rem,4.5vw,2.6rem);font-weight:800}
+h3{font-size:1.2rem;font-weight:700}
+p{margin:0}
+.btn{display:inline-block;padding:14px 24px;border-radius:999px;font-weight:700;text-decoration:none;font-family:var(--sans);line-height:1.2}
+.btn.p{background:var(--accent);color:var(--accent-ink)}
+.btn.g{border:2px solid rgba(255,255,255,.6);color:#fff}
+.btn.w{background:#fff;color:#0f5c4d}
+
+/* topo e herói */
+.hero{background:#0f5c4d;color:#fff;padding:18px 0 60px;overflow:hidden}
+.top{display:flex;justify-content:space-between;align-items:center;padding:4px 0 40px}
+.brand{display:flex;gap:10px;align-items:center;font:800 1.3rem var(--serif);color:#fff;text-decoration:none}
+.top .btn{padding:9px 18px;font-size:.95rem}
+.hgrid{display:grid;gap:36px;align-items:center}
+.hero h1{font-size:clamp(2.6rem,9vw,4.8rem);font-weight:800}
+.lead{font-size:1.2rem;max-width:34em;margin-top:20px;color:rgba(255,255,255,.9)}
+.cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
+.hnote{font-size:.95rem;margin-top:18px;color:rgba(255,255,255,.78);max-width:36em}
+.mapbox{justify-self:center;width:100%;max-width:440px}
+.map{display:block;width:100%;height:auto;font-family:var(--sans)}
+.cap{font-size:.85rem;text-align:center;color:rgba(255,255,255,.7);margin-top:6px}
+.pulse{transform-box:fill-box;transform-origin:center;animation:pl 1.9s ease-out 3}
+@keyframes pl{from{transform:scale(1);opacity:.95}to{transform:scale(5.5);opacity:0}}
+@media (prefers-reduced-motion:reduce){.pulse{animation:none;opacity:0}html{scroll-behavior:auto}}
+@media (min-width:880px){.hgrid{grid-template-columns:1.1fr .9fr}}
+
+/* secções */
+section{padding:68px 0}
+.sub{color:var(--muted);max-width:36em;margin-top:12px}
+.steps{list-style:none;counter-reset:s;padding:0;margin:36px 0 0;display:grid;gap:28px}
+.steps li{counter-increment:s;border-top:4px solid var(--brand);padding-top:16px}
+.steps h3::before{content:counter(s) ". ";color:var(--link)}
+.steps p{color:var(--muted);margin-top:8px}
+@media (min-width:760px){.steps{grid-template-columns:repeat(3,1fr);gap:36px}}
+.split{display:grid;gap:28px}
+@media (min-width:880px){.split{grid-template-columns:.8fr 1.2fr;gap:56px}.split .stick{position:sticky;top:24px;align-self:start}}
+.rows{margin:0}
+.rows div{padding:18px 0;border-top:1px solid var(--line)}
+.rows div:last-child{border-bottom:1px solid var(--line)}
+.rows dt{font:700 1.2rem var(--serif)}
+.rows dd{margin:4px 0 0;color:var(--muted)}
+.sell{background:var(--tint)}
+.sell .btn{margin-top:26px;background:var(--brand);color:#fff}
+.ticks{list-style:none;margin:0;padding:0;display:grid;gap:14px}
+.ticks li{position:relative;padding-left:34px}
+.ticks li::before{content:"✓";position:absolute;left:0;top:1px;width:22px;height:22px;border-radius:50%;background:var(--brand);color:#fff;font-size:.8rem;font-weight:800;display:grid;place-items:center}
+.cols{display:grid;gap:28px;margin-top:30px}
+.cols p{color:var(--muted);margin-top:8px}
+@media (min-width:760px){.cols{grid-template-columns:1fr 1fr;gap:56px}}
+details{border-top:1px solid var(--line);padding:16px 0}
+details:last-of-type{border-bottom:1px solid var(--line)}
+summary{font-weight:700;cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:16px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";font-size:1.4rem;line-height:1;color:var(--link)}
+details[open] summary::after{content:"−"}
+details p{margin-top:10px;color:var(--muted);max-width:40em}
+.faq{margin-top:28px}
+.final{background:#0f5c4d;color:#fff;text-align:center}
+.final h2{max-width:14em;margin:0 auto}
+.final .btn{margin-top:28px}
+footer{padding:28px 0 40px;font-size:.95rem;color:var(--muted)}
+footer .wrap{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between}
+footer nav{display:flex;flex-wrap:wrap;gap:6px 20px}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <div class="top">
+      <a class="brand" href="./" aria-label="Aqui Perto">
+        <svg width="30" height="30" viewBox="-12 -24 24 30" aria-hidden="true"><path d="M0 4 L-7.07 -3 A10 10 0 1 1 7.07 -3 Z" fill="#f2b33d"/><circle cy="-10" r="3.6" fill="#0f5c4d"/></svg>
+        Aqui Perto
+      </a>
+      <a class="btn w" href="./" data-inst>Abrir a app</a>
+    </div>
+    <div class="hgrid">
+      <div>
+        <h1>O que precisa está aqui perto.</h1>
+        <p class="lead">Encontre prestadores de serviços e produtores da sua zona. Peça, marque e fale diretamente com quem trabalha ao seu lado.</p>
+        <div class="cta">
+          <a class="btn p" href="./" data-inst>Abrir a Aqui Perto</a>
+          <a class="btn g" href="#fornecedores">Quero vender na app</a>
+        </div>
+        <p class="hnote">Funciona no telemóvel, no navegador. Pode juntá-la ao ecrã inicial e usá-la como qualquer outra app. <a href="./" data-web hidden style="color:#fff">Prefere experimentar primeiro? Abra no navegador.</a></p>
+      </div>
+      <div class="mapbox">
+        <svg class="map" viewBox="0 0 400 400" role="img" aria-label="Exemplo ilustrativo: a sua posição ao centro e fornecedores a diferentes distâncias à volta">
+          <defs><g id="pin"><path d="M0 4 L-7.07 -3 A10 10 0 1 1 7.07 -3 Z" fill="#f2b33d"/><circle cy="-10" r="3.6" fill="#0f5c4d"/></g></defs>
+          <g fill="none" stroke="#fff">
+            <path d="M10 120 C110 160 150 90 240 125 S350 150 395 105" stroke-opacity=".1" stroke-width="12"/>
+            <path d="M50 395 C120 310 170 340 215 280 S310 235 395 255" stroke-opacity=".1" stroke-width="12"/>
+            <circle cx="200" cy="205" r="62" stroke-opacity=".28" stroke-width="1.5"/>
+            <circle cx="200" cy="205" r="124" stroke-opacity=".24" stroke-width="1.5"/>
+            <circle cx="200" cy="205" r="186" stroke-opacity=".2" stroke-width="1.5"/>
+          </g>
+          <g font-size="11" fill="#fff" fill-opacity=".72" text-anchor="middle">
+            <text x="200" y="138">500 m</text><text x="200" y="76">1 km</text><text x="200" y="14">2 km</text>
+          </g>
+          <g font-size="12" font-weight="700" text-anchor="middle">
+            <g transform="translate(140 160) scale(1.3)"><use href="#pin"/></g>
+            <rect x="107" y="108" width="66" height="22" rx="11" fill="#fff"/><text x="140" y="123" fill="#14262b">Padaria</text>
+            <g transform="translate(290 110) scale(1.3)"><use href="#pin"/></g>
+            <rect x="261" y="58" width="58" height="22" rx="11" fill="#fff"/><text x="290" y="73" fill="#14262b">Quinta</text>
+            <g transform="translate(300 265) scale(1.3)"><use href="#pin"/></g>
+            <rect x="253" y="213" width="94" height="22" rx="11" fill="#fff"/><text x="300" y="228" fill="#14262b">Eletricista</text>
+            <g transform="translate(105 275) scale(1.3)"><use href="#pin"/></g>
+            <rect x="55" y="223" width="100" height="22" rx="11" fill="#fff"/><text x="105" y="238" fill="#14262b">Cabeleireira</text>
+            <g transform="translate(225 345) scale(1.3)"><use href="#pin"/></g>
+            <rect x="178" y="293" width="94" height="22" rx="11" fill="#fff"/><text x="225" y="308" fill="#14262b">Explicações</text>
+          </g>
+          <circle class="pulse" cx="200" cy="205" r="7" fill="none" stroke="#f2b33d" stroke-width="3"/>
+          <circle cx="200" cy="205" r="7" fill="#fff" stroke="#f2b33d" stroke-width="4"/>
+          <text x="200" y="231" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">Você</text>
+        </svg>
+        <p class="cap">Exemplo ilustrativo</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+<section id="como">
+  <div class="wrap">
+    <h2>Do primeiro olhar ao pedido, em três passos</h2>
+    <ol class="steps">
+      <li><h3>Procure na sua zona</h3><p>Escolha a categoria e veja quem está perto, em lista ou no mapa. Filtre os que estão abertos agora e guarde os seus favoritos.</p></li>
+      <li><h3>Peça ou marque</h3><p>Junte produtos ao pedido e escolha levantar ou receber em casa. Com um prestador de serviços, marque hora ou peça um orçamento.</p></li>
+      <li><h3>Combine diretamente</h3><p>Fale com o fornecedor e acerte o pagamento com ele, por exemplo por MB WAY. Acompanhe o estado em Os meus pedidos.</p></li>
+    </ol>
+  </div>
+</section>
+
+<section id="clientes" style="padding-top:0">
+  <div class="wrap split">
+    <div class="stick">
+      <h2>Para quem procura</h2>
+      <p class="sub">Menos procura, menos intermediários. Fala-se com quem faz e vende.</p>
+    </div>
+    <dl class="rows">
+      <div><dt>Perto de si</dt><dd>Veja a distância, a zona de atendimento e se o fornecedor está aberto agora.</dd></div>
+      <div><dt>Stock à vista</dt><dd>O produtor mostra o que tem. Se acabou, pode entrar em lista de espera e ser atendido por ordem de pedido.</dd></div>
+      <div><dt>Entrega ou levantamento</dt><dd>Quando o fornecedor entrega, vê logo a taxa, o pedido mínimo e a partir de quanto a entrega é grátis.</dd></div>
+      <div><dt>Moedas e recompensas</dt><dd>Nos fornecedores com programa de fidelidade, ganhe moedas a cada pedido e troque-as por desconto ou entrega grátis.</dd></div>
+      <div><dt>Avisos no telemóvel</dt><dd>Saiba quando um pedido é confirmado ou quando um favorito lança uma promoção.</dd></div>
+      <div><dt>Conversa e avaliações</dt><dd>Tire dúvidas por mensagem, leia o que outros clientes dizem e procure o selo Verificado.</dd></div>
+    </dl>
+  </div>
+</section>
+
+<section id="fornecedores" class="sell">
+  <div class="wrap split">
+    <div class="stick">
+      <h2>Inscreva o seu negócio</h2>
+      <p class="sub">Os clientes da sua zona passam a encontrá-lo aqui.</p>
+      <a class="btn" href="./">Inscrever o meu negócio</a>
+    </div>
+    <ul class="ticks">
+      <li><strong>Catálogo com preços e stock.</strong> Atualize quando quiser e esconda o que não tem.</li>
+      <li><strong>Pedidos organizados.</strong> Novos, em espera, confirmados e concluídos, por ordem de chegada.</li>
+      <li><strong>Entrega ao domicílio à sua medida.</strong> Defina o raio, a taxa e o pedido mínimo.</li>
+      <li><strong>Horário e marcações.</strong> Para prestadores de serviços: só se pede hora dentro do seu horário.</li>
+      <li><strong>Promoções com aviso.</strong> Os clientes que o têm nos favoritos recebem uma notificação.</li>
+      <li><strong>Fidelização.</strong> Crie o seu programa de moedas e recompensas.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="instalar">
+  <div class="wrap">
+    <h2>Instale em dois toques</h2>
+    <p class="sub">Fica com o ícone no telemóvel e abre em ecrã inteiro. Não precisa de ir a uma loja de aplicações.</p>
+    <div class="cols">
+      <div><h3>Android, no Chrome</h3><p>Abra a Aqui Perto, toque nos três pontos e escolha Instalar app (ou Adicionar ao ecrã inicial).</p></div>
+      <div><h3>iPhone, no Safari</h3><p>Abra a Aqui Perto, toque em Partilhar e escolha Adicionar ao ecrã principal.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="perguntas" style="padding-top:0">
+  <div class="wrap">
+    <h2>Perguntas frequentes</h2>
+    <div class="faq">
+      <details><summary>A Aqui Perto processa os pagamentos?</summary><p>Não. O pagamento e a entrega são combinados diretamente entre si e o fornecedor.</p></details>
+      <details><summary>Que dados guardam sobre mim?</summary><p>Só o necessário para a conta, os pedidos e as mensagens. Leia a <a href="privacidade.html">Política de privacidade</a>. Pode apagar a conta na própria app, a qualquer momento.</p></details>
+      <details><summary>Funciona no iPhone?</summary><p>Sim. Abre no Safari e pode ser adicionada ao ecrã principal, como descrito acima.</p></details>
+      <details><summary>Como posso falar convosco?</summary><p>Escreva para <a href="mailto:aquiperto2026.app@gmail.com">aquiperto2026.app@gmail.com</a>.</p></details>
+    </div>
+  </div>
+</section>
+
+<section class="final">
+  <div class="wrap">
+    <h2>Veja quem está perto de si.</h2>
+    <a class="btn p" href="./" data-inst>Abrir a Aqui Perto</a>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Aqui Perto</span>
+    <nav aria-label="Informação legal">
+      <a href="privacidade.html">Política de privacidade</a>
+      <a href="termos.html">Termos de uso</a>
+      <a href="eliminar-conta.html">Eliminar conta</a>
+    </nav>
+  </div>
+</footer>
+<script>
+(function(){
+  var ev=null,bs=[].slice.call(document.querySelectorAll("[data-inst]")),web=document.querySelector("[data-web]"),
+  ios=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1),
+  app=matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+  bs.forEach(function(b){b.dataset.t0=b.textContent;});
+  function modo(inst){bs.forEach(function(b){b.textContent=inst?"Instalar a app":b.dataset.t0;});if(web)web.hidden=!inst;}
+  addEventListener("beforeinstallprompt",function(e){e.preventDefault();ev=e;modo(true);});
+  addEventListener("appinstalled",function(){ev=null;modo(false);});
+  if(ios&&!app)modo(true);
+  bs.forEach(function(b){b.addEventListener("click",function(e){
+    if(ev){e.preventDefault();ev.prompt();ev.userChoice.then(function(){ev=null;modo(false);});}
+    else if(ios&&!app){e.preventDefault();document.getElementById("instalar").scrollIntoView({behavior:"smooth"});}
+  });});
+  if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(function(){});
+})();
+</script>
+<!-- Quando a app estiver na Google Play, acrescentar aqui e no topo o botão de descarga. -->
+</body>
+</html>
