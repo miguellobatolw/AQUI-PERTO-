@@ -782,7 +782,7 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"
 const norm=s=>String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 let S={tipo:"servico",cat:"",jtipo:"servico",jz:[],user:null,list:SEED.slice()};
 
-const APP_VERSION="v65";
+const APP_VERSION="v66";
 const DEMO=!SUPABASE_URL||!SUPABASE_KEY;
 const REC_LINK=/type=recovery/.test(location.hash+location.search),REC_ERR=/otp_expired/.test(location.hash+location.search),OAUTH_ERR=!/otp_expired/.test(location.hash+location.search)&&/[#&?]error=/.test(location.hash+location.search);
 // Bloqueio da sessão que nunca espera para sempre: se outra janela/separador antigo estiver a segurar o
@@ -1135,7 +1135,7 @@ async function addProd(){
   ["pnome","ppreco","pstock","pfoto"].forEach(i=>$(i).value="");NEWBLOB=null;$("ppv").classList.add("hide");drawCat();$("pnome").focus();
 }
 const eur=n=>Number(n).toFixed(2).replace(".",",")+" €";
-const EST={novo:"Novo",confirmado:"Confirmado",concluido:"Concluído",cancelado:"Cancelado"};
+const EST={novo:"Novo",espera:"Em espera",confirmado:"Confirmado",concluido:"Concluído",cancelado:"Cancelado"};
 function savePed(){try{localStorage.setItem("aq_ped",JSON.stringify(PED));localStorage.setItem("aq_notas",JSON.stringify(NOTAS));localStorage.setItem("aq_seg",JSON.stringify(SEG));}catch(e){}}
 // O Supabase corta cada resposta às primeiras 1000 linhas, sem avisar. Lê por páginas (até 5000) para não perder dados.
 // mk(de,ate) devolve a consulta já com .order(...) e .range(de,ate); a ordem inclui "id" para as páginas não se repetirem.
@@ -1284,7 +1284,7 @@ async function setEstado(id,est){
   if(DEMO){
     const f=S.list.find(x=>x.id===o.fid);
     const adj=sg=>o.itens.forEach(i=>{const pr=f&&f.prods.find(y=>y.id===i.pid);if(pr&&pr.stock!=null)pr.stock=Math.max(0,Number(pr.stock)+sg*i.qtd);});
-    if(o.estado==="novo"&&est==="confirmado")adj(-1);
+    if((o.estado==="novo"||o.estado==="espera")&&est==="confirmado")adj(-1);
     if(o.estado==="confirmado"&&est==="cancelado")adj(1);
     const prev=o.estado,fp=S.list.find(x=>x.id===o.fid);
     if(est==="concluido"&&prev!=="concluido"&&fp&&fp.fi&&fp.fi.ativo)MOEDAS[o.fid]=saldo(o.fid)+Math.floor((o.total-(o.taxa||0))*fp.fi.ppe+1e-9);
@@ -1295,7 +1295,7 @@ async function setEstado(id,est){
     if(error){
       // mensagens da base de dados (mudar_estado_pedido): stock insuficiente ao confirmar / pedido já mudado noutro aparelho
       const m=error.message||"";
-      if(/stock/i.test(m))toast("Stock insuficiente para confirmar este pedido. Atualize o stock do produto ou recuse o pedido.");
+      if(/stock/i.test(m))toast("Stock insuficiente para confirmar este pedido. Ponha-o em lista de espera, atualize o stock ou recuse.");
       else if(/transicao/i.test(m)){toast("Este pedido já mudou de estado. Lista atualizada.");await loadPed();drawCrm();}
       else toast("Não foi possível atualizar o pedido.");
       return;
@@ -1304,10 +1304,12 @@ async function setEstado(id,est){
   }
   drawCrm();
 }
+// Lista de espera: por ordem de pedido (o mais antigo primeiro), separada por fornecedor.
+function posFila(o){const t=new Date(o.data).getTime();return PED.filter(x=>{const u=new Date(x.data).getTime();return x.fid===o.fid&&x.estado==="espera"&&(u<t||(u===t&&String(x.id)<String(o.id)));}).length+1;}
 function ordRow(o){
   const bt=(e,t,c)=>`<button class="btn ${c||""}" data-id="${esc(o.id)}" data-est="${e}">${t}</button>`;
-  const ac=o.estado==="novo"?bt("confirmado","Confirmar","primary")+bt("cancelado","Recusar"):o.estado==="confirmado"?bt("concluido","Concluir","primary")+bt("cancelado","Cancelar"):"";
-  return `<div class="prow" style="align-items:flex-start"><div style="flex:1;min-width:min(200px,100%)"><strong>${esc(o.nome)}</strong> <span class="meta">· ${EST[o.estado]} · ${new Date(o.data).toLocaleDateString("pt-PT")}</span>
+  const ac=o.estado==="novo"?bt("confirmado","Confirmar","primary")+bt("espera","Pôr em espera")+bt("cancelado","Recusar"):o.estado==="espera"?bt("confirmado","Confirmar","primary")+bt("cancelado","Recusar"):o.estado==="confirmado"?bt("concluido","Concluir","primary")+bt("cancelado","Cancelar"):"";
+  return `<div class="prow" style="align-items:flex-start"><div style="flex:1;min-width:min(200px,100%)"><strong>${esc(o.nome)}</strong> <span class="meta">· ${EST[o.estado]}${o.estado==="espera"?" (n.º "+posFila(o)+" na fila)":""} · ${new Date(o.data).toLocaleDateString("pt-PT")}</span>
   <div class="meta"><a href="tel:+351${esc(o.tel)}">${esc(o.tel)}</a></div><div>${o.itens.map(i=>esc(i.qtd+" "+i.un+" "+i.nome)).join(", ")}</div>${o.entrega?`<div class="meta">🚚 Entrega: ${esc(o.morada)} · taxa ${eur(o.taxa)}</div>`:""}${o.rec?`<div class="meta">🪙 ${esc(recTxt(o))}</div>`:""}${o.nota?`<div class="meta">${esc(o.nota)}</div>`:""}<strong>${eur(o.total)}</strong>${o.pago?` <span class="badge">💶 Pago</span>`:""}</div>
   <div class="stk" style="flex-wrap:wrap">${ac}${o.estado!=="cancelado"?`<button class="btn" data-pago="${esc(o.id)}" data-v="${o.pago?0:1}">${o.pago?"Desmarcar pago":"Marcar como pago"}</button>`:""}<a class="btn" target="_blank" rel="noopener" href="https://wa.me/351${esc(o.tel)}">WhatsApp</a></div></div>`;
 }
@@ -1342,7 +1344,7 @@ async function intLoad(){
 }
 function drawCrm(){drawCrm1();if(CT==="painel")pushUI();}
 function drawCrm1(){
-  const L=myPed(),nv=L.filter(o=>o.estado==="novo").length,B=$("crmbody");
+  const L=myPed(),nv=L.filter(o=>o.estado==="novo").length,esp=L.filter(o=>o.estado==="espera").length,B=$("crmbody");
   ["painel","pedidos","orcamentos","marcacoes","mensagens","clientes","perfil","relatorios"].forEach(t=>$("ct-"+t).setAttribute("aria-selected",t===CT));
   {const n=orcNovos();$("ct-orcamentos").textContent="Orçamentos"+(n?" ("+n+")":"");}
   {const n=marcNovas();$("ct-marcacoes").textContent="Marcações"+(n?" ("+n+")":"");}
@@ -1353,11 +1355,11 @@ function drawCrm1(){
     const done=L.filter(o=>o.estado==="concluido"),low=[],fu=[],seen={},hoje=new Date().toISOString().slice(0,10);
     L.forEach(o=>{const k=o.cliente_id||o.tel;if(!seen[k]){seen[k]=1;if(SEG[k]&&SEG[k]<=hoje)fu.push(o.nome+" · "+o.tel+" · "+(SEG[k]<hoje?"atrasado desde "+SEG[k]:"hoje"));}});
     S.list.filter(p=>p.mine).forEach(p=>p.prods.forEach(x=>{if(x.ativo&&x.stock!=null&&x.stock<=5)low.push(p.nome+" — "+x.nome+": "+(x.stock===0?"esgotado":x.stock+" "+x.un));}));
-    B.innerHTML=S.list.filter(p=>p.mine).map(ckHtml).join("")+`<div class="kpis"><div class="kpi"><b>${nv}</b>Novos pedidos</div><div class="kpi"><b>${L.filter(o=>o.estado==="confirmado").length}</b>Em curso</div><div class="kpi"><b>${done.length}</b>Concluídos</div><div class="kpi"><b>${eur(done.reduce((a,o)=>a+o.total,0))}</b>Faturado</div></div><div id="intbox"></div><h3 style="margin:18px 0 4px">A contactar</h3>${fu.length?fu.map(t=>`<div class="prow">${esc(t)}</div>`).join(""):'<p class="meta">Nenhum contacto agendado para hoje.</p>'}<h3 style="margin:18px 0 4px">Stock a repor</h3>`+(low.length?low.map(t=>`<div class="prow">${esc(t)}</div>`).join(""):'<p class="meta">Nada em falta.</p>');
+    B.innerHTML=S.list.filter(p=>p.mine).map(ckHtml).join("")+`<div class="kpis"><div class="kpi"><b>${nv}</b>Novos pedidos</div>${esp?`<div class="kpi"><b>${esp}</b>Em espera</div>`:""}<div class="kpi"><b>${L.filter(o=>o.estado==="confirmado").length}</b>Em curso</div><div class="kpi"><b>${done.length}</b>Concluídos</div><div class="kpi"><b>${eur(done.reduce((a,o)=>a+o.total,0))}</b>Faturado</div></div><div id="intbox"></div><h3 style="margin:18px 0 4px">A contactar</h3>${fu.length?fu.map(t=>`<div class="prow">${esc(t)}</div>`).join(""):'<p class="meta">Nenhum contacto agendado para hoje.</p>'}<h3 style="margin:18px 0 4px">Stock a repor</h3>`+(low.length?low.map(t=>`<div class="prow">${esc(t)}</div>`).join(""):'<p class="meta">Nada em falta.</p>');
     intLoad();
   }else if(CT==="pedidos"){
-    const fl=L.filter(o=>PF==="todos"||o.estado===PF);
-    B.innerHTML=`<div class="chips">${["novo","confirmado","concluido","cancelado","todos"].map(f=>`<button class="chip" data-f="${f}" aria-pressed="${PF===f}">${f==="todos"?"Todos":EST[f]}</button>`).join("")}</div>`+(fl.length?fl.map(ordRow).join(""):'<p class="meta">Sem pedidos nesta lista.</p>');
+    const fl=L.filter(o=>PF==="todos"||o.estado===PF);if(PF==="espera")fl.sort((a,b)=>new Date(a.data)-new Date(b.data));
+    B.innerHTML=`<div class="chips">${["novo","espera","confirmado","concluido","cancelado","todos"].map(f=>`<button class="chip" data-f="${f}" aria-pressed="${PF===f}">${f==="todos"?"Todos":EST[f]}</button>`).join("")}</div>`+(fl.length?fl.map(ordRow).join(""):'<p class="meta">Sem pedidos nesta lista.</p>');
   }else if(CT==="perfil"){
     B.innerHTML=S.list.filter(p=>p.mine).map(p=>`<div class="prow"><div style="flex:1;min-width:min(200px,100%)"><strong>${esc(p.nome)}</strong><div class="meta">${esc(p.cat)} · ${esc(p.zonas.join(", "))}<br>${esc(p.tel)} · ${p.lat!=null?"📍 "+esc(p.localidade||"com localização"):"sem localização (os clientes não veem a distância)"}${p.entrega?" · 🚚 entrega até "+p.raio+" km ("+(p.taxa?eur(p.taxa):"grátis")+(p.gratis>0?", grátis acima de "+eur(p.gratis):"")+(p.min>0?", mínimo "+eur(p.min):"")+")":""}${p.fi&&p.fi.ativo?" · 🪙 programa de moedas ativo":""}</div></div><div class="stk" style="flex-wrap:wrap"><button class="btn" data-forn="${esc(p.id)}">Partilhar / QR</button><button class="btn primary" data-edit="${esc(p.id)}">Editar</button></div></div>`).join("")+'<p style="margin-top:14px"><button class="btn" data-newprof="1">Novo perfil</button></p>';
   }else if(CT==="relatorios"){
@@ -1371,9 +1373,12 @@ function drawCrm1(){
     B.innerHTML=cs.length?cs.map(c=>`<div class="prow" style="align-items:flex-start"><div style="flex:1;min-width:min(200px,100%)"><strong>${esc(c.nome)}</strong> <span class="mine">${c.g>=150?"VIP":c.n>=3?"Habitual":c.n>1?"Repetente":"Novo"}</span><div class="meta"><a href="tel:+351${esc(c.tel)}">${esc(c.tel)}</a> · ${c.n} pedido${c.n>1?"s":""} · ${eur(c.g)} concluídos · último a ${new Date(c.u).toLocaleDateString("pt-PT")}${moedasCli(c)}</div></div><textarea class="f" style="flex:1;min-width:min(200px,100%)" rows="2" maxlength="500" data-nota="${esc(c.k)}" placeholder="Nota privada (ex.: prefere entregas à sexta)">${esc(NOTAS[c.k]||"")}</textarea><div style="flex-basis:100%"><label class="tg" style="margin:0">Contactar em <input class="f" type="date" style="width:auto" data-seg="${esc(c.k)}" value="${esc(SEG[c.k]||"")}"></label> <button class="btn" data-hist="${esc(c.k)}">Histórico</button><div id="h-${esc(c.k)}" class="hide meta" style="margin-top:6px"></div></div></div>`).join(""):'<p class="meta">Os clientes aparecem aqui quando fizerem o primeiro pedido.</p>';
   }
 }
-const EST_C={novo:"Enviado, a aguardar resposta",confirmado:"Confirmado",concluido:"Concluído",cancelado:"Cancelado"};
-const EST_K={novo:"",confirmado:"ok",concluido:"ok",cancelado:"out"};
-async function openMeus(){await loadPed();await loadOrc();go("meus");drawMeus();}
+const EST_C={novo:"Enviado, a aguardar resposta",espera:"Em lista de espera",confirmado:"Confirmado",concluido:"Concluído",cancelado:"Cancelado"};
+const EST_K={novo:"",espera:"",confirmado:"ok",concluido:"ok",cancelado:"out"};
+// Posição de cada pedido meu em lista de espera (RPC posicoes_espera); se a RPC não existir, simplesmente não mostra o número.
+let ESP={};
+async function loadEspera(){ESP={};if(DEMO||!SESSION)return;try{const r=await sb.rpc("posicoes_espera");(r.data||[]).forEach(x=>{ESP[x.pedido_id]=x.posicao;});}catch(e){}}
+async function openMeus(){await loadPed();await loadOrc();await loadEspera();go("meus");drawMeus();}
 function drawMeusMoedas(){
   const rows=S.list.map(p=>({p,s:myFid(p)?mySaldo(p):0})).filter(x=>x.s>0);
   $("meusmoedas").innerHTML=rows.length?'<h3 style="margin:0 0 4px">As minhas moedas</h3>'+rows.map(x=>`<div class="prow"><strong>${esc(x.p.nome)}</strong><span class="meta">🪙 ${x.s} moeda${x.s===1?"":"s"}</span></div>`).join(""):"";
@@ -1383,8 +1388,8 @@ function drawMeus(){
   const uid=SESSION&&SESSION.user.id,L=PED.filter(o=>DEMO||o.cliente_id===uid);
   $("meuslist").innerHTML=L.length?L.map(o=>{
     const f=S.list.find(x=>x.id===o.fid);
-    return `<div class="prow" style="align-items:flex-start"><div style="flex:1;min-width:min(200px,100%)"><strong>${esc(f?f.nome:"Fornecedor")}</strong> <span class="meta">· ${new Date(o.data).toLocaleDateString("pt-PT")}</span><div>${o.itens.map(i=>esc(i.qtd+" "+i.un+" "+i.nome)).join(", ")}</div>${o.entrega?`<div class="meta">🚚 Entrega com taxa de ${eur(o.taxa)}</div>`:""}${o.rec?`<div class="meta">🪙 ${esc(recTxt(o))}</div>`:""}<strong>${eur(o.total)}</strong> <span class="${EST_K[o.estado]}">${EST_C[o.estado]}</span>${o.pago?` <span class="badge">💶 Pago</span>`:""}</div>
-    <div class="stk" style="flex-wrap:wrap">${o.estado==="novo"?`<button class="btn" data-cancel="${esc(o.id)}">Cancelar</button>`:""}${!o.pago&&(o.estado==="novo"||o.estado==="confirmado")?`<button class="btn primary" data-mbway="${esc(o.id)}">Pagar por MB Way</button>`:""}${f&&!f.mine&&(o.estado==="concluido"||o.estado==="cancelado")?`<button class="btn" data-rep="${esc(o.id)}">Repetir pedido</button>`:""}${avBtn(o)}${f?`<button class="btn" data-contact="${esc(f.id)}">Contactar</button>`:""}</div></div>`;
+    return `<div class="prow" style="align-items:flex-start"><div style="flex:1;min-width:min(200px,100%)"><strong>${esc(f?f.nome:"Fornecedor")}</strong> <span class="meta">· ${new Date(o.data).toLocaleDateString("pt-PT")}</span><div>${o.itens.map(i=>esc(i.qtd+" "+i.un+" "+i.nome)).join(", ")}</div>${o.entrega?`<div class="meta">🚚 Entrega com taxa de ${eur(o.taxa)}</div>`:""}${o.rec?`<div class="meta">🪙 ${esc(recTxt(o))}</div>`:""}<strong>${eur(o.total)}</strong> <span class="${EST_K[o.estado]}">${EST_C[o.estado]}${o.estado==="espera"&&ESP[o.id]?" · n.º "+ESP[o.id]+" na fila":""}</span>${o.pago?` <span class="badge">💶 Pago</span>`:""}</div>
+    <div class="stk" style="flex-wrap:wrap">${(o.estado==="novo"||o.estado==="espera")?`<button class="btn" data-cancel="${esc(o.id)}">Cancelar</button>`:""}${!o.pago&&(o.estado==="novo"||o.estado==="confirmado")?`<button class="btn primary" data-mbway="${esc(o.id)}">Pagar por MB Way</button>`:""}${f&&!f.mine&&(o.estado==="concluido"||o.estado==="cancelado")?`<button class="btn" data-rep="${esc(o.id)}">Repetir pedido</button>`:""}${avBtn(o)}${f?`<button class="btn" data-contact="${esc(f.id)}">Contactar</button>`:""}</div></div>`;
   }).join(""):'<p class="meta">Ainda não fez pedidos. Escolha um fornecedor e toque em "Ver produtos".</p>';
 }
 // ---- Pagamento por MB Way direto ao fornecedor (a app não toca no dinheiro)
