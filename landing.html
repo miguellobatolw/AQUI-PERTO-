@@ -6,6 +6,8 @@
 <title>Aqui Perto: serviços e produtores locais perto de si</title>
 <meta name="description" content="Encontre prestadores de serviços e produtores da sua zona. Peça, marque e fale diretamente com quem trabalha ao seu lado.">
 <meta name="theme-color" content="#0f5c4d">
+<meta name="color-scheme" content="light dark">
+<link rel="apple-touch-icon" href="icon-180.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Aqui Perto">
 <meta property="og:title" content="Aqui Perto: serviços e produtores locais perto de si">
@@ -32,13 +34,26 @@
   "applicationCategory": "LifestyleApplication",
   "operatingSystem": "Android, iOS, navegador web",
   "inLanguage": "pt-PT",
-  "image": "https://miguellobatolw.github.io/AQUI-PERTO-/og-image.png"
+  "image": "https://miguellobatolw.github.io/AQUI-PERTO-/og-image.png",
+  "offers": {
+   "@type": "Offer",
+   "price": "0",
+   "priceCurrency": "EUR"
+  }
  },
  {
   "@context": "https://schema.org",
   "@type": "FAQPage",
   "inLanguage": "pt-PT",
   "mainEntity": [
+   {
+    "@type": "Question",
+    "name": "Quanto custa?",
+    "acceptedAnswer": {
+     "@type": "Answer",
+     "text": "Neste momento a Aqui Perto é gratuita, para clientes e fornecedores."
+    }
+   },
    {
     "@type": "Question",
     "name": "A Aqui Perto processa os pagamentos?",
@@ -52,7 +67,7 @@
     "name": "Que dados guardam sobre mim?",
     "acceptedAnswer": {
      "@type": "Answer",
-     "text": "Só o necessário para a conta, os pedidos e as mensagens. Contamos também, de forma anónima, quantas vezes a página e a app são abertas, sem cookies nem identificadores. Pode apagar a conta na própria app, a qualquer momento."
+     "text": "Só o necessário para a conta, os pedidos e as mensagens. Contamos também, de forma anónima, quantas vezes a página e a app são abertas e os botões da página usados, sem cookies nem identificadores. Pode apagar a conta na própria app, a qualquer momento."
     }
    },
    {
@@ -192,7 +207,7 @@ footer{padding-bottom:104px}
           <a class="btn p" href="./" data-inst>Abrir a Aqui Perto</a>
           <a class="btn g" href="#fornecedores">Quero vender na app</a>
         </div>
-        <p class="hnote">Funciona no telemóvel, no navegador. Pode juntá-la ao ecrã inicial e usá-la como qualquer outra app. <a href="./" data-web hidden style="color:#fff">Prefere experimentar primeiro? Abra no navegador.</a></p>
+        <p class="hnote">Gratuita para clientes e fornecedores. Funciona no telemóvel, no navegador, e pode juntá-la ao ecrã inicial como qualquer outra app. <a href="./" data-web hidden style="color:#fff">Prefere experimentar primeiro? Abra no navegador.</a></p>
         <div class="qr" id="qr"><div class="qrc" id="qrc" role="img" aria-label="QR code desta página"></div><p>Está no computador? Aponte a câmara do telemóvel para continuar lá.</p></div>
       </div>
       <div class="mapbox">
@@ -276,8 +291,8 @@ footer{padding-bottom:104px}
   <div class="wrap split">
     <div class="stick">
       <h2>Inscreva o seu negócio</h2>
-      <p class="sub">Os clientes da sua zona passam a encontrá-lo aqui.</p>
-      <a class="btn" href="./">Inscrever o meu negócio</a>
+      <p class="sub">Os clientes da sua zona passam a encontrá-lo aqui. Neste momento, a inscrição é gratuita.</p>
+      <a class="btn" href="./" data-vender>Inscrever o meu negócio</a>
     </div>
     <ul class="ticks">
       <li><strong>Catálogo com preços e stock.</strong> Atualize quando quiser e esconda o que não tem.</li>
@@ -305,8 +320,9 @@ footer{padding-bottom:104px}
   <div class="wrap">
     <h2>Perguntas frequentes</h2>
     <div class="faq">
+      <details><summary>Quanto custa?</summary><p>Neste momento a Aqui Perto é gratuita, para clientes e fornecedores.</p></details>
       <details><summary>A Aqui Perto processa os pagamentos?</summary><p>Não. O pagamento e a entrega são combinados diretamente entre si e o fornecedor.</p></details>
-      <details><summary>Que dados guardam sobre mim?</summary><p>Só o necessário para a conta, os pedidos e as mensagens. Contamos também, de forma anónima, quantas vezes a página e a app são abertas, sem cookies nem identificadores. Leia a <a href="privacidade.html">Política de privacidade</a>. Pode apagar a conta na própria app, a qualquer momento.</p></details>
+      <details><summary>Que dados guardam sobre mim?</summary><p>Só o necessário para a conta, os pedidos e as mensagens. Contamos também, de forma anónima, quantas vezes a página e a app são abertas e os botões da página usados, sem cookies nem identificadores. Leia a <a href="privacidade.html">Política de privacidade</a>. Pode apagar a conta na própria app, a qualquer momento.</p></details>
       <details><summary>Funciona no iPhone?</summary><p>Sim. Abre no Safari e pode ser adicionada ao ecrã principal.</p></details>
       <details><summary>Como posso falar convosco?</summary><p>Escreva para <a href="mailto:aquiperto2026.app@gmail.com">aquiperto2026.app@gmail.com</a>.</p></details>
     </div>
@@ -391,10 +407,16 @@ footer{padding-bottom:104px}
 })();
 </script>
 <script>
-// Contagem anónima de visitas à página: só um total por dia, sem cookies nem identificadores
+// Contagem anónima: visitas à página e cliques nos botões principais. Só totais por dia, sem cookies nem identificadores
 (function(){try{
-  if(navigator.webdriver||/bot|crawl|spider|headless|lighthouse/i.test(navigator.userAgent))return;
-  fetch("https://nwkfndenohfndbyhzlpc.supabase.co/rest/v1/rpc/registar_visita",{method:"POST",keepalive:true,headers:{"Content-Type":"application/json",apikey:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53a2ZuZGVub2hmbmRieWh6bHBjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwNjA5MzIsImV4cCI6MjEwNzYzNjkzMn0.Yz49qK22BWco5JC6ShzXTsXgNKZ2hEd-RaUORbBSmAo",Authorization:"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53a2ZuZGVub2hmbmRieWh6bHBjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwNjA5MzIsImV4cCI6MjEwNzYzNjkzMn0.Yz49qK22BWco5JC6ShzXTsXgNKZ2hEd-RaUORbBSmAo"},body:JSON.stringify({p_canal:"landing"})}).catch(function(){});
+  var bot=navigator.webdriver||/bot|crawl|spider|headless|lighthouse/i.test(navigator.userAgent);
+  window.aqReg=function(c){if(bot)return;try{fetch("https://nwkfndenohfndbyhzlpc.supabase.co/rest/v1/rpc/registar_visita",{method:"POST",keepalive:true,headers:{"Content-Type":"application/json",apikey:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53a2ZuZGVub2hmbmRieWh6bHBjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwNjA5MzIsImV4cCI6MjEwNzYzNjkzMn0.Yz49qK22BWco5JC6ShzXTsXgNKZ2hEd-RaUORbBSmAo",Authorization:"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53a2ZuZGVub2hmbmRieWh6bHBjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwNjA5MzIsImV4cCI6MjEwNzYzNjkzMn0.Yz49qK22BWco5JC6ShzXTsXgNKZ2hEd-RaUORbBSmAo"},body:JSON.stringify({p_canal:c})}).catch(function(){});}catch(e){}};
+  aqReg("landing");
+  document.addEventListener("click",function(e){
+    var a=e.target.closest&&e.target.closest("[data-inst],[data-web],[data-vender],#shr");if(!a)return;
+    aqReg(a.id==="shr"?"landing_partilhar":a.hasAttribute("data-vender")?"landing_vender":a.hasAttribute("data-inst")&&/^\s*Instalar/.test(a.textContent)?"landing_instalar":"landing_abrir");
+  });
+  addEventListener("appinstalled",function(){aqReg("landing_instalada");});
 }catch(e){}})();
 </script>
 <!-- Quando a app estiver na Google Play, acrescentar aqui e no topo o botão de descarga. -->
