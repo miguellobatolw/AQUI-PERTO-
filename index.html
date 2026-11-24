@@ -232,6 +232,7 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
 .qb:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .ordbar{position:sticky;bottom:-22px;z-index:2;display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:center;background:var(--surface);border-top:1px solid var(--line);margin:12px -22px 0;padding:12px 22px 34px}
 .ordbar .err{grid-column:1/-1;margin:0;min-height:0}
+.ordbar .esp{grid-column:1/-1;background:var(--chip);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:6px 0 2px;font-size:14px}
 .ordbar .otv{font-size:18px}
 .ordbar .oth{font-size:12.5px;margin-top:1px}
 @media(max-width:560px){.ordbar{bottom:-18px;margin-left:-18px;margin-right:-18px;padding:12px 18px 30px}}
@@ -267,7 +268,7 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
     <button class="btn" id="btnIn" onclick="openLogin('login')">Entrar</button>
     <button class="btn hide" id="btnMeus" onclick="openMeus()">Os meus pedidos</button>
     <button class="btn hide" id="btnCat" onclick="openCrm()">Área do fornecedor</button>
-    <button class="btn hide" id="btnMod" onclick="openMod()">Moderação</button>
+    <button class="btn hide" id="btnMod" onclick="openMod()">Administração</button>
     <button class="btn hide" id="btnOut" onclick="logout()">Sair</button>
     <button class="btn primary" onclick="goProv()">Sou fornecedor</button>
   </div>
@@ -340,6 +341,8 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
     <input class="f" id="jraios" type="number" inputmode="numeric" min="1" max="200" placeholder="ex.: 20"></div>
     <div class="zones" id="jzonas"></div>
     <div id="jentwrap" class="hide">
+<label class="tg" style="margin-top:16px;font-size:16px;font-weight:600"><input type="checkbox" id="jlesp" checked> Aceito lista de espera quando o stock acaba</label>
+<p class="note" style="margin:2px 0 0">Com isto ativo, os clientes podem pedir mais do que o stock e ficam por ordem de chegada. Desative para produtos frescos que não se guardam.</p>
       <label class="tg" style="margin-top:16px;font-size:16px;font-weight:600"><input type="checkbox" id="jent" onchange="drawEnt()"> Faço entregas ao domicílio</label>
       <div id="jentbox" class="hide">
         <div class="pgrid">
@@ -564,7 +567,12 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
 
 <main id="mod" class="hide">
   <div class="panel" style="max-width:760px">
-    <h2>Moderação</h2>
+    <h2>Administração</h2>
+<h3 style="margin:14px 0 4px">Utilização da app</h3>
+<div class="meta" id="admgen">A carregar…</div>
+<div id="admres"></div>
+<button class="btn" type="button" id="admref" style="margin-top:10px">Atualizar</button>
+<h3 style="margin:26px 0 4px">Moderação</h3>
     <div class="meta">Avaliações em análise (comentário com link, e-mail ou telefone), denunciadas ou ocultas.</div>
     <div id="modlist" style="margin-top:12px"></div>
     <h3 style="margin:22px 0 4px">Conversas denunciadas</h3>
@@ -625,7 +633,8 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
     <div class="ordbar" id="ordbar">
       <div id="ordtot" aria-live="polite"></div>
       <button class="btn accent" type="button" onclick="sendOrder()">Enviar pedido</button>
-      <div class="err" id="oerr" role="alert"></div>
+      <div class="esp hide" id="espbox" role="group" aria-label="Stock insuficiente"></div>
+<div class="err" id="oerr" role="alert"></div>
     </div>
   </div>
   <div style="display:flex;gap:8px;margin-top:14px"><button class="btn" onclick="dProd.close()">Fechar</button><button class="btn primary" id="pdCont">Contactar</button></div>
@@ -782,7 +791,7 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"
 const norm=s=>String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 let S={tipo:"servico",cat:"",jtipo:"servico",jz:[],user:null,list:SEED.slice()};
 
-const APP_VERSION="v66";
+const APP_VERSION="v71";
 const DEMO=!SUPABASE_URL||!SUPABASE_KEY;
 const REC_LINK=/type=recovery/.test(location.hash+location.search),REC_ERR=/otp_expired/.test(location.hash+location.search),OAUTH_ERR=!/otp_expired/.test(location.hash+location.search)&&/[#&?]error=/.test(location.hash+location.search);
 // Bloqueio da sessão que nunca espera para sempre: se outra janela/separador antigo estiver a segurar o
@@ -807,7 +816,7 @@ async function loadList(only){
   // O telemóvel (coluna tel) NÃO é pedido aqui: só chega a quem tem sessão, via sb.rpc("obter_contacto")
   // Leitura com recuo progressivo: se faltar alguma coluna recente na base de dados, tenta com menos colunas em vez de falhar
   const BASE="id,user_id,created_at,nome,tipo,cat,zonas,preco,descr,lat,lng,entrega,entrega_raio,entrega_taxa,entrega_min,entrega_gratis";
-  const NIVEIS=[BASE+",fidelidade,localidade,raio_servico,logo,galeria,horario,promo,verificado",BASE+",fidelidade,localidade,raio_servico,logo,galeria,horario,promo",BASE+",fidelidade,localidade,raio_servico,logo,galeria,horario",BASE+",fidelidade,localidade,raio_servico,logo,galeria",BASE+",fidelidade,localidade,raio_servico",BASE+",fidelidade",BASE];
+  const NIVEIS=[BASE+",fidelidade,localidade,raio_servico,logo,galeria,horario,promo,verificado,lista_espera",BASE+",fidelidade,localidade,raio_servico,logo,galeria,horario,promo,verificado",BASE+",fidelidade,localidade,raio_servico,logo,galeria,horario,promo",BASE+",fidelidade,localidade,raio_servico,logo,galeria,horario",BASE+",fidelidade,localidade,raio_servico,logo,galeria",BASE+",fidelidade,localidade,raio_servico",BASE+",fidelidade",BASE];
   // O Supabase devolve no máximo 1000 linhas por pedido (e sem avisar): lê por páginas para nunca cortar a lista.
   // A ordem tem desempate por id, senão o mesmo fornecedor podia repetir-se ou faltar entre páginas.
   const PAGE=500;
@@ -844,7 +853,7 @@ async function loadList(only){
   if(error){LOAD_ERR=(error.message||String(error));console.error("loadList:",error);if(window.aqLog)aqLog(error.message||String(error),"lista");toast("Não foi possível carregar a lista. Verifique a ligação.");return false;}
   LOAD_ERR="";
   const uid=SESSION&&SESSION.user.id;
-  const nova=data.map(r=>({id:r.id,nome:r.nome,tipo:r.tipo,cat:r.cat,zonas:r.zonas,preco:r.preco||"",desc:r.descr||"",tel:"",rating:0,n:0,lat:r.lat==null?null:Number(r.lat),lng:r.lng==null?null:Number(r.lng),entrega:!!r.entrega,raio:Number(r.entrega_raio)||0,taxa:Number(r.entrega_taxa)||0,min:Number(r.entrega_min)||0,gratis:Number(r.entrega_gratis)||0,fi:r.fidelidade&&r.fidelidade.ativo?r.fidelidade:null,logo:r.logo||"",galeria:r.galeria||[],localidade:r.localidade||"",raioS:Number(r.raio_servico)||0,horario:r.horario&&typeof r.horario==="object"?r.horario:null,promo:r.promo&&typeof r.promo==="object"?r.promo:null,verif:!!r.verificado,prods:(r.produtos||[]).map(x=>({id:x.id,nome:x.nome,preco:Number(x.preco),un:x.un,stock:x.stock==null?null:Number(x.stock),ativo:x.ativo,foto:x.foto||""})),mine:r.user_id===uid,criado:r.created_at||""}));
+  const nova=data.map(r=>({id:r.id,nome:r.nome,tipo:r.tipo,cat:r.cat,zonas:r.zonas,preco:r.preco||"",desc:r.descr||"",tel:"",rating:0,n:0,lat:r.lat==null?null:Number(r.lat),lng:r.lng==null?null:Number(r.lng),entrega:!!r.entrega,raio:Number(r.entrega_raio)||0,taxa:Number(r.entrega_taxa)||0,min:Number(r.entrega_min)||0,gratis:Number(r.entrega_gratis)||0,fi:r.fidelidade&&r.fidelidade.ativo?r.fidelidade:null,logo:r.logo||"",galeria:r.galeria||[],localidade:r.localidade||"",raioS:Number(r.raio_servico)||0,horario:r.horario&&typeof r.horario==="object"?r.horario:null,promo:r.promo&&typeof r.promo==="object"?r.promo:null,verif:!!r.verificado,lespera:r.lista_espera!==false,prods:(r.produtos||[]).map(x=>({id:x.id,nome:x.nome,preco:Number(x.preco),un:x.un,stock:x.stock==null?null:Number(x.stock),ativo:x.ativo,foto:x.foto||""})),mine:r.user_id===uid,criado:r.created_at||""}));
   // com "only" (um fornecedor): atualiza só essa entrada e mantém o resto da lista; sem "only": lista completa
   if(only){nova.forEach(n=>{const i=S.list.findIndex(x=>x.id===n.id);if(i<0)S.list.push(n);else{n.tel=S.list[i].tel;n.mbway=S.list[i].mbway;S.list[i]=n;}});}else S.list=nova;
   await loadMyTels();
@@ -908,18 +917,18 @@ async function saveNewPass(){
   try{history.replaceState(null,"",location.pathname);}catch(x){}
   toast("Palavra-passe atualizada.");await afterAuth();
 }
-const LEGAL={resp:"Miguel Lobato",email:"aquiperto2026.app@gmail.com",versao:"2026-10-31",data:"31 de outubro de 2026"};
+const LEGAL={resp:"Miguel Lobato",email:"aquiperto2026.app@gmail.com",versao:"2026-11-24",data:"24 de novembro de 2026"};
 let LEGAL_BACK="home";
 const LEGAL_TXT={
 priv:{t:"Política de privacidade",h:()=>`<p class="meta">Versão de ${esc(LEGAL.data)}.</p>
 <h3>1. Quem é o responsável</h3><p>${esc(LEGAL.resp)}, contacto: ${esc(LEGAL.email)}.</p>
 <h3>2. Que dados tratamos</h3><ul><li>Conta: e-mail, nome, zona, telemóvel (opcional) e se é cliente ou fornecedor.</li><li>Fornecedores: nome do negócio, categoria, zonas, preços, descrição, telemóvel, número MB Way (opcional), fotografias, entregas, fidelidade e localização aproximada (arredondada a cerca de 1 km, nunca a morada exata), nome da localidade e raio de atendimento. A posição que um cliente usa para pesquisar fica só guardada no seu aparelho; para a converter em localidade enviamos coordenadas arredondadas a cerca de 1 km ao serviço OpenStreetMap Nominatim.</li><li>Pedidos: produtos, valores, nota, nome e telemóvel do cliente e, nas entregas, a morada indicada.</li><li>Pedidos de orçamento: descrição, localidade, data pretendida, nome, telemóvel e até 3 fotografias, guardadas em armazenamento privado.</li><li>Mensagens trocadas entre cliente e fornecedor dentro da app, visíveis apenas aos dois participantes.</li><li>Notas privadas e datas de seguimento que o fornecedor regista sobre clientes, e moedas de fidelidade.</li><li>Dados técnicos do aparelho para os avisos de novos pedidos, se os ativar.</li></ul>
 <h3>3. Localização</h3><p>A localização do GPS é usada no seu aparelho para ordenar por distância e não é guardada. Para obter o nome da localidade podem ser enviadas coordenadas arredondadas (cerca de 1 km) ao serviço OpenStreetMap (Nominatim).</p>
-<h3>4. Para que usamos e porquê</h3><p>Criar e gerir a conta e os pedidos (execução do serviço); mostrar fornecedores perto de si e enviar avisos (o seu consentimento); manter a app segura (interesse legítimo). Não vendemos dados nem fazemos publicidade.</p>
+<h3>4. Para que usamos e porquê</h3><p>Criar e gerir a conta e os pedidos (execução do serviço); mostrar fornecedores perto de si e enviar avisos (o seu consentimento); manter a app segura e contar, de forma anónima e agregada, quantas vezes a app é aberta (interesse legítimo). Não vendemos dados nem fazemos publicidade.</p>
 <h3>5. Quem vê os dados</h3><p>O fornecedor vê o nome, o telemóvel e a morada de entrega dos clientes que lhe fazem pedidos, e, nos pedidos de orçamento, a descrição, a localidade e as fotografias enviadas. Os clientes veem os dados públicos do fornecedor, incluindo o telemóvel. O número MB Way, se o fornecedor o indicar, só é mostrado ao próprio e a clientes com um pedido seu ainda por pagar; a app não recebe nem processa pagamentos, e é o fornecedor quem marca o pedido como pago. As avaliações (estrelas, comentário e primeiro nome do cliente) são públicas. As denúncias de avaliações e de conversas ficam registadas e só a equipa da app as vê. Se uma conversa for denunciada, a equipa da app pode ler as últimas mensagens dessa conversa para decidir; as outras conversas nunca são lidas. Usamos como prestadores: Supabase (base de dados, contas e fotografias), GitHub Pages (alojamento), jsDelivr (distribuição das bibliotecas da app; se falhar, unpkg), Google (apenas se entrar com Google) e OpenStreetMap (mapa e nome da localidade). Ao abrir a app ou o mapa, estes serviços recebem o endereço IP do seu aparelho, como acontece em qualquer página web.</p>
 <h3>6. Quanto tempo guardamos</h3><p>Enquanto a conta existir. Ao apagar a conta eliminamos o perfil, os perfis de fornecedor, produtos, fotografias, pedidos, pedidos de orçamento, notas e avisos associados. Cópias de segurança podem demorar algum tempo a desaparecer.</p>
 <h3>7. Os seus direitos</h3><p>Pode pedir acesso, retificação, apagamento, limitação, portabilidade e opor-se ao tratamento, ou retirar o consentimento, através de ${esc(LEGAL.email)}. Pode apagar a conta na própria app (link no fundo da página). Tem direito a reclamar à Comissão Nacional de Proteção de Dados (cnpd.pt).</p>
-<h3>8. Armazenamento no aparelho</h3><p>Usamos o armazenamento do navegador só para a app funcionar (sessão e preferências). Não usamos cookies de publicidade ou de análise.</p>
+<h3>8. Armazenamento no aparelho</h3><p>Usamos o armazenamento do navegador só para a app funcionar (sessão e preferências). Não usamos cookies de publicidade ou de análise. Contamos apenas, por dia, quantas vezes a app e a página de apresentação são abertas: são totais anónimos, sem identificadores, sem ligação a nenhuma conta e sem guardar nada no seu aparelho.</p>
 <h3>9. Menores</h3><p>A app destina-se a maiores de 18 anos.</p>`},
 termos:{t:"Termos de uso",h:()=>`<p class="meta">Versão de ${esc(LEGAL.data)}.</p>
 <h3>1. O que é a Aqui Perto</h3><p>Uma plataforma que aproxima clientes e fornecedores locais. Não vendemos nem entregamos os produtos ou serviços: o contrato é feito diretamente entre cliente e fornecedor.</p>
@@ -1058,9 +1067,9 @@ function prodBtn(p){const n=(p.prods||[]).filter(x=>x.ativo).length;return n?`<d
 async function openProd(id){
   const p=S.list.find(x=>x.id===id);if(!p)return;
   $("pdNome").textContent=p.nome;ORD_F=id;
-  $("pdList").innerHTML=p.prods.filter(x=>x.ativo).sort(byNome).map(x=>{const out=x.stock===0;return `<div class="prow">${imgUrl(x)?`<img class="pimg" src="${esc(imgUrl(x))}" alt="${esc(x.nome)}" loading="lazy">`:""}<div class="pinfo"><strong>${esc(x.nome)}</strong><div class="meta">${esc(fmtP(x))}</div><div class="${out?"out":"ok"} pst">${esc(stkTxt(x))}</div></div>${out?"":`<div class="qs" role="group" aria-label="Quantidade de ${esc(x.nome)}"><button type="button" class="qb" data-step="-1" data-for="${esc(x.id)}" aria-label="Menos ${esc(x.nome)}" disabled>−</button><input class="f" type="number" min="0" step="any" inputmode="decimal" data-q="${esc(x.id)}" placeholder="0" aria-label="Quantidade de ${esc(x.nome)}"><button type="button" class="qb" data-step="1" data-for="${esc(x.id)}" aria-label="Mais ${esc(x.nome)}">+</button></div>`}</div>`}).join("");
+  $("pdList").innerHTML=p.prods.filter(x=>x.ativo).sort(byNome).map(x=>{const out=x.stock===0;return `<div class="prow">${imgUrl(x)?`<img class="pimg" src="${esc(imgUrl(x))}" alt="${esc(x.nome)}" loading="lazy">`:""}<div class="pinfo"><strong>${esc(x.nome)}</strong><div class="meta">${esc(fmtP(x))}</div><div class="${out?"out":"ok"} pst">${esc(stkTxt(x))}${out&&p.lespera!==false?" · pode pedir em lista de espera":""}</div></div>${out&&p.lespera===false?"":`<div class="qs" role="group" aria-label="Quantidade de ${esc(x.nome)}"><button type="button" class="qb" data-step="-1" data-for="${esc(x.id)}" aria-label="Menos ${esc(x.nome)}" disabled>−</button><input class="f" type="number" min="0" step="any" inputmode="decimal" data-q="${esc(x.id)}" placeholder="0" aria-label="Quantidade de ${esc(x.nome)}"><button type="button" class="qb" data-step="1" data-for="${esc(x.id)}" aria-label="Mais ${esc(x.nome)}">+</button></div>`}</div>`}).join("");
   $("pdCont").onclick=()=>{$("dProd").close();openCont(id);};
-  $("ordbox").classList.toggle("hide",!!p.mine||!p.prods.some(x=>x.ativo&&x.stock!==0));$("oerr").textContent="";
+  $("ordbox").classList.toggle("hide",!!p.mine||!p.prods.some(x=>x.ativo&&(x.stock!==0||p.lespera!==false)));$("oerr").textContent="";
   RW="";setOM(false);$("entbox").classList.toggle("hide",!p.entrega);$("entmsg").textContent="";
   if(S.user&&!$("onome").value)$("onome").value=S.user.nome;
   if(p.fi&&p.fi.ativo&&(DEMO||SESSION))await loadMoedas();
@@ -1161,6 +1170,18 @@ function ordItems(){
   const p=S.list.find(x=>x.id===ORD_F);if(!p)return[];
   return [...document.querySelectorAll("#pdList [data-q]")].map(i=>({x:p.prods.find(y=>y.id===i.dataset.q),q:Number(i.value)})).filter(o=>o.x&&o.q>0).map(o=>({pid:o.x.id,nome:o.x.nome,un:o.x.un,qtd:o.q,preco:Number(o.x.preco)}));
 }
+// Itens acima do stock disponível (stock null = sem limite)
+function ordOver(p,it){return (it||[]).map(i=>{const x=p&&p.prods.find(y=>y.id===i.pid);return x&&x.stock!=null&&i.qtd>x.stock?{nome:i.nome,un:i.un||x.un||"",qtd:i.qtd,stock:x.stock}:null;}).filter(Boolean);}
+function showEsp(over){
+const b=$("espbox");if(!b)return;const q=n=>String(n).replace(".",","),p=S.list.find(x=>x.id===ORD_F),lt=!(p&&p.lespera===false);
+b.innerHTML='<strong>Não há stock suficiente</strong><ul style="margin:6px 0 0;padding-left:18px">'+over.map(o=>"<li>"+esc(o.nome)+": pediu "+q(o.qtd)+" "+esc(o.un)+", "+(o.stock>0?"há "+q(o.stock)+" "+esc(o.un):"sem stock")+"</li>").join("")+'</ul><div class="meta" style="margin-top:6px">'+(lt?"Na lista de espera, o fornecedor atende os pedidos por ordem de chegada quando voltar a ter stock, e confirma ou recusa. Também pode ajustar o pedido ao stock que há.":"Este fornecedor não aceita lista de espera. Ajuste o pedido ao stock que há.")+'</div><div class="stk" style="margin-top:8px"><button class="btn'+(lt?"":" accent")+'" type="button" onclick="ordAjustar()">Ajustar ao stock</button>'+(lt?'<button class="btn accent" type="button" onclick="sendOrder(true)">Entrar em lista de espera</button>':"")+'</div>';
+b.classList.remove("hide");b.scrollIntoView({block:"nearest",behavior:"smooth"});
+}
+function ordAjustar(){
+const p=S.list.find(x=>x.id===ORD_F);if(!p)return;
+document.querySelectorAll("#pdList [data-q]").forEach(i=>{const x=p.prods.find(y=>y.id===i.dataset.q);if(x&&x.stock!=null&&Number(i.value)>x.stock)i.value=x.stock;});
+syncStep();calcOrd();
+}
 const fmtKm=d=>d<10?d.toFixed(1).replace(".",","):String(Math.round(d));
 const recTxt=o=>o.moedas+" moedas: "+(o.rec==="entrega"?"entrega grátis":"desconto de "+eur(o.desc));
 const nt=o=>[o.entrega?"Entrega em "+o.morada+" (taxa "+eur(o.taxa)+")":"",o.rec?"Moedas usadas — "+recTxt(o):"",o.nota].filter(Boolean).join(" · ");
@@ -1203,9 +1224,9 @@ function drawFid(){
   $("fidopts").innerHTML=op.map(o=>`<button type="button" class="chip" data-rw="${o.k}" aria-pressed="${RW===o.k}" ${okk(o)?"":"disabled"}>${esc(o.t)} · ${o.custo} 🪙</button>`).join("");
 }
 function calcOrd(){
-  const p=S.list.find(x=>x.id===ORD_F),it=ordItems(),sub=subOrd(),el=$("ordtot");
+  const p=S.list.find(x=>x.id===ORD_F),it=ordItems(),sub=subOrd(),el=$("ordtot"),eb=$("espbox");if(eb)eb.classList.add("hide");
   if(!it.length){el.innerHTML='<span class="meta">Indique as quantidades que deseja.</span>';return;}
-  const c=calcTot(p,sub),t=c.taxa,h=[];
+  const c=calcTot(p,sub),t=c.taxa,h=[],ov=ordOver(p,it);if(ov.length)h.push("acima do stock em "+ov.map(o=>o.nome).join(", ")+(p&&p.lespera===false?": ajuste a quantidade":": pode entrar em lista de espera"));
   if(OM)h.push(t?"inclui entrega "+eur(t):"entrega grátis");
   if(c.rw==="produto")h.push("desconto de "+eur(c.desc)+" com "+c.custo+" moedas");
   else if(c.rw==="entrega")h.push("com "+c.custo+" moedas");
@@ -1221,7 +1242,7 @@ function syncStep(){
   document.querySelectorAll("#pdList [data-q]").forEach(i=>{
     const x=p.prods.find(y=>y.id===i.dataset.q),v=Number(i.value)||0,g=i.closest(".qs");if(!g||!x)return;
     g.querySelector('[data-step="-1"]').disabled=v<=0;
-    g.querySelector('[data-step="1"]').disabled=x.stock!=null&&v>=x.stock;
+    g.querySelector('[data-step="1"]').disabled=v>=1000||(p.lespera===false&&x.stock!=null&&v>=x.stock);
   });
 }
 function showEnt(p){
@@ -1249,14 +1270,14 @@ function ordErr(m){
   if(/pr[óo]prio perfil/i.test(m))return "Não pode fazer pedidos ao seu próprio perfil.";
   return "Não foi possível enviar o pedido. Tente outra vez.";
 }
-async function sendOrder(){
+async function sendOrder(espera){
   const e=$("oerr");e.textContent="";
   const p=S.list.find(x=>x.id===ORD_F),it=ordItems(),nome=$("onome").value.trim(),tel=$("otel").value.replace(/\D/g,"").replace(/^351/,""),nota=$("onota").value.trim();
   if(!p)return;
   if(!DEMO&&!SESSION){$("dProd").close();openLogin("signup","cliente");return;}
   if(!it.length){e.textContent="Escolha a quantidade de pelo menos um produto.";return;}
-  const bad=it.find(i=>{const x=p.prods.find(y=>y.id===i.pid);return x&&x.stock!=null&&i.qtd>x.stock;});
-  if(bad){e.textContent="Quantidade acima do stock de "+bad.nome+".";return;}
+  const over=ordOver(p,it);
+  if(over.length&&(espera!==true||p.lespera===false)){showEsp(over);return;}
   if(nome.length<2){e.textContent="Indique o seu nome.";return;}
   if(tel.length!==9){e.textContent="O telemóvel deve ter 9 dígitos.";return;}
   let morada="",taxa=0;
@@ -1269,12 +1290,12 @@ async function sendOrder(){
     if(p.min>0&&sub<p.min){e.textContent="Para entrega, o pedido mínimo é "+eur(p.min)+". Aumente as quantidades ou escolha levantar.";return;}
   }
   const CT=calcTot(p,it.reduce((a,b)=>a+b.qtd*b.preco,0));taxa=morada?CT.taxa:0;const total=CT.total;
-  if(DEMO){await loadPed();PED.unshift({id:"o"+Date.now(),fid:p.id,cliente_id:null,nome,tel,itens:it,total,nota,entrega:!!morada,morada,taxa,moedas:CT.custo,rec:CT.rw,desc:CT.desc,estado:"novo",data:new Date().toISOString()});savePed();if(CT.custo){MOEDAS[p.id]=saldo(p.id)-CT.custo;saveMoedas();}}
+  if(DEMO){await loadPed();PED.unshift({id:"o"+Date.now(),fid:p.id,cliente_id:null,nome,tel,itens:it,total,nota,entrega:!!morada,morada,taxa,moedas:CT.custo,rec:CT.rw,desc:CT.desc,estado:over.length?"espera":"novo",data:new Date().toISOString()});savePed();if(CT.custo){MOEDAS[p.id]=saldo(p.id)-CT.custo;saveMoedas();}}
   else{
-    const {error}=await sb.from("pedidos").insert({fornecedor_id:p.id,cliente_nome:nome,cliente_tel:tel,itens:it,total,nota:nota||null,...(morada?{entrega:true,morada,taxa}:{}),...(CT.rw?{moedas_usadas:CT.custo,recompensa:CT.rw,desconto:CT.desc}:{})});
+    const {error}=await sb.from("pedidos").insert({fornecedor_id:p.id,cliente_nome:nome,cliente_tel:tel,itens:it,total,nota:nota||null,...(over.length?{aceita_espera:true}:{}),...(morada?{entrega:true,morada,taxa}:{}),...(CT.rw?{moedas_usadas:CT.custo,recompensa:CT.rw,desconto:CT.desc}:{})});
     if(error){e.textContent=ordErr(error.message);return;}
   }
-  $("dProd").close();$("onota").value="";toast("Pedido enviado a "+p.nome+". Acompanhe em Os meus pedidos.");
+  $("dProd").close();$("onota").value="";toast(over.length?"Entrou na lista de espera de "+p.nome+". Será atendido por ordem de pedido. Acompanhe em Os meus pedidos.":"Pedido enviado a "+p.nome+". Acompanhe em Os meus pedidos.");
 }
 const myPed=()=>{const ids=new Set(S.list.filter(p=>p.mine).map(p=>p.id));return PED.filter(o=>ids.has(o.fid));};
 async function openCrm(){if(!S.list.some(p=>p.mine)){goProv();return;}await loadPed();await loadOrc();go("crm");drawCrm();}
@@ -1839,7 +1860,7 @@ function abertoAgora(p){
   return false;
 }
 function horBadge(p){const r=horResumo(p.horario);return r?`<div><span class="badge">🕘 ${esc(r)}${abertoAgora(p)?" · 🟢 aberto agora":""}</span></div>`:"";}
-const exV=p=>({localidade:p.localidade||null,raio_servico:p.raioS||null,horario:p.horario||null,promo:p.promo||null,mbway:p.mbway||null});
+const exV=p=>({localidade:p.localidade||null,raio_servico:p.raioS||null,horario:p.horario||null,promo:p.promo||null,mbway:p.mbway||null,lista_espera:p.lespera!==false});
 const colErr=e=>/localidade|raio_servico|column|schema cache/i.test((e&&e.message)||"");
 function servBadge(p){
   if(p.tipo!=="servico"||!p.raioS)return"";
@@ -1857,14 +1878,14 @@ function clearJoin(){
   if($("jhor"))$("jhor").innerHTML="";
   ["jnome","jpreco","jdesc","jtel","jmbway","jpromo","jpromoate"].forEach(i=>$(i).value="");$("jpromoate").min=hojeISO();
   S.jz=[];JPOS=null;JLOC="";$("jlocq").value="";$("jlocres").innerHTML="";$("jraios").value="";$("jmsg").textContent="";$("jerr").textContent="";drawJZ();$("jmedia").classList.add("hide");
-  $("jent").checked=false;$("jraio").value="";$("jtaxa").value="";$("jmin").value="";$("jgratis").value="";drawEnt();$("jfid").checked=false;$("jppe").value=1;["jfecusto","jfpnome","jfpvalor","jfpcusto"].forEach(i=>$(i).value="");drawFidForm();
+  $("jent").checked=false;$("jlesp").checked=true;$("jraio").value="";$("jtaxa").value="";$("jmin").value="";$("jgratis").value="";drawEnt();$("jfid").checked=false;$("jppe").value=1;["jfecusto","jfpnome","jfpvalor","jfpcusto"].forEach(i=>$(i).value="");drawFidForm();
 }
 function openEdit(id){
   const p=S.list.find(x=>x.id===id&&x.mine);if(!p)return;
   EDIT_ID=id;S.jtipo=p.tipo;go("join");
   $("jnome").value=p.nome;$("jcat").value=p.cat;S.jz=p.zonas.slice();drawJZ();
   $("jpreco").value=p.preco||"";$("jpromo").value=(p.promo&&p.promo.texto)||"";$("jpromoate").value=(p.promo&&p.promo.ate)||"";$("jpromoate").min=hojeISO();$("jdesc").value=p.desc==="Sem descrição."?"":p.desc;$("jtel").value=p.tel;$("jmbway").value=p.mbway||"";
-  $("jent").checked=!!p.entrega;$("jraio").value=p.entrega?p.raio:"";$("jtaxa").value=p.entrega&&p.taxa?p.taxa:"";$("jmin").value=p.entrega&&p.min?p.min:"";$("jgratis").value=p.entrega&&p.gratis?p.gratis:"";drawEnt();
+  $("jlesp").checked=p.lespera!==false;$("jent").checked=!!p.entrega;$("jraio").value=p.entrega?p.raio:"";$("jtaxa").value=p.entrega&&p.taxa?p.taxa:"";$("jmin").value=p.entrega&&p.min?p.min:"";$("jgratis").value=p.entrega&&p.gratis?p.gratis:"";drawEnt();
   {const fi=p.fi;$("jfid").checked=!!(fi&&fi.ativo);$("jppe").value=fi?fi.ppe:1;$("jfecusto").value=fi&&fi.ent?fi.ent.custo:"";$("jfpnome").value=fi&&fi.prod?fi.prod.nome:"";$("jfpvalor").value=fi&&fi.prod?fi.prod.valor:"";$("jfpcusto").value=fi&&fi.prod?fi.prod.custo:"";drawFidForm();}
   JPOS=p.lat!=null?{lat:p.lat,lng:p.lng}:null;JLOC=p.localidade||"";$("jlocq").value=JLOC;$("jlocres").innerHTML="";$("jraios").value=p.raioS||"";drawHor(p.horario||null);
   $("jmsg").textContent=JPOS?(JLOC?"Localização guardada: "+JLOC+".":"Localização aproximada guardada."):"Sem localização guardada.";$("jerr").textContent="";
@@ -2132,10 +2153,10 @@ async function saveProvInner(){
   else if(promoT&&promoD>maxD)e="A promoção pode durar no máximo 90 dias.";
   $("jerr").textContent=e;if(e)return;
   const FI=fon?{ativo:true,ppe,ent:fec>0?{custo:fec}:null,prod:(fpn&&fpv>0&&fpc>0)?{nome:fpn,valor:fpv,custo:fpc}:null}:null;
-  const p={nome,tipo:S.jtipo,cat:$("jcat").value,zonas:S.jz.slice(),preco:$("jpreco").value.trim(),desc:$("jdesc").value.trim()||"Sem descrição.",tel,mbway,entrega:ent,raio:ent?raio:0,taxa:ent?taxa:0,min:ent?mn:0,gratis:ent?gr:0,fi:FI,localidade:JLOC,raioS,horario:horR,promo:promoT?{texto:promoT,ate:promoD}:null};
+  const p={nome,tipo:S.jtipo,cat:$("jcat").value,zonas:S.jz.slice(),preco:$("jpreco").value.trim(),desc:$("jdesc").value.trim()||"Sem descrição.",tel,mbway,entrega:ent,raio:ent?raio:0,taxa:ent?taxa:0,min:ent?mn:0,gratis:ent?gr:0,fi:FI,localidade:JLOC,raioS,horario:horR,promo:promoT?{texto:promoT,ate:promoD}:null,lespera:$("jlesp").checked};
   if(EDIT_ID){
     const loc=JPOS?{lat:JPOS.lat,lng:JPOS.lng}:{};
-    if(DEMO){const f=S.list.find(x=>x.id===EDIT_ID);if(f){Object.assign(f,{nome:p.nome,cat:p.cat,zonas:p.zonas,preco:p.preco,desc:p.desc,tel:p.tel,mbway:p.mbway,entrega:p.entrega,raio:p.raio,taxa:p.taxa,min:p.min,gratis:p.gratis,fi:p.fi,localidade:p.localidade,raioS:p.raioS,horario:p.horario,promo:p.promo},loc);saveMine();}}
+    if(DEMO){const f=S.list.find(x=>x.id===EDIT_ID);if(f){Object.assign(f,{nome:p.nome,cat:p.cat,zonas:p.zonas,preco:p.preco,desc:p.desc,tel:p.tel,mbway:p.mbway,entrega:p.entrega,raio:p.raio,taxa:p.taxa,min:p.min,gratis:p.gratis,fi:p.fi,localidade:p.localidade,raioS:p.raioS,horario:p.horario,promo:p.promo,lespera:p.lespera},loc);saveMine();}}
     else{
       const upd={nome:p.nome,cat:p.cat,zonas:p.zonas,preco:p.preco,descr:p.desc,tel:p.tel||null,entrega:p.entrega,entrega_raio:p.entrega?p.raio:null,entrega_taxa:p.entrega?p.taxa:null,entrega_min:p.entrega&&p.min?p.min:null,entrega_gratis:p.entrega&&p.gratis?p.gratis:null,fidelidade:p.fi,...loc};
       let {error}=await sb.from("fornecedores").update({...upd,...exV(p)}).eq("id",EDIT_ID);
@@ -2500,7 +2521,26 @@ async function checkAdmin(){
   applyUser();
 }
 async function loadMod(){const q=await sb.rpc("mod_fila");MOD=q.error?[]:(q.data||[]);const qc=await sb.rpc("mod_conversas");MODC=qc.error?[]:(qc.data||[]);applyUser();}
-async function openMod(){if(!IS_ADMIN)return;await loadMod();go("mod");drawMod();}
+async function openMod(){if(!IS_ADMIN)return;await loadMod();go("mod");drawMod();loadAdm();}
+// ---- resumo de utilização (RPC admin_resumo: só números agregados; "ativa" = fez pelo menos uma ação na app)
+let ADM_BUSY=false;
+async function loadAdm(){if(ADM_BUSY)return;ADM_BUSY=true;$("admgen").textContent="A carregar…";try{const r=await sb.rpc("admin_resumo");drawAdm(r.error?null:r.data);}catch(e){drawAdm(null);}ADM_BUSY=false;}
+function drawAdm(d){
+  const g=$("admgen"),R=$("admres");
+  if(!d){g.textContent="Não foi possível carregar os números. Confirme que o SQL do resumo foi corrido.";R.innerHTML="";return;}
+  const u=d.utilizadores,f=d.fornecedores,p=d.pedidos,i=d.interacoes,E={novo:"Novos",espera:"Em espera",confirmado:"Confirmados",concluido:"Concluídos",cancelado:"Cancelados"};
+  const k=(n,t,x)=>`<div class="kpi"><b>${esc(String(n))}</b>${esc(t)}${x?`<div class="meta" style="margin-top:4px">${esc(x)}</div>`:""}</div>`;
+  const sp=(t,key)=>{const v=d.serie.map(x=>x[key]),mx=Math.max(1,...v);return `<div class="meta" style="margin-top:14px">${esc(t)}</div><div class="spark" role="img" aria-label="${esc(t)}">${v.map((n,j)=>`<i style="height:${Math.max(4,Math.round(n/mx*100))}%" title="${esc(d.serie[j].d)}: ${n}"></i>`).join("")}</div>`;};
+  const lst=a=>a.length?a.map(x=>esc(x.nome)+" ("+x.n+")").join(", "):"sem dados";
+  g.textContent="Atualizado às "+new Date(d.gerado_em).toLocaleTimeString("pt-PT",{hour:"2-digit",minute:"2-digit"})+". Só números agregados. Pessoa ativa é quem fez pelo menos uma ação (pedido, mensagem, avaliação, orçamento, marcação, favorito ou contacto). Quem só navega sem conta não entra nas contagens de pessoas, só nas aberturas da app.";
+  R.innerHTML=`<div class="kpis">${k(u.total,"Contas criadas","+"+u.novos_7d+" nos últimos 7 dias")}${k(u.ativos_30d,"Pessoas ativas (30 dias)",u.ativos_7d+" nos últimos 7 dias")}${k(u.entraram_30d,"Entraram na app (30 dias)",u.entraram_7d+" nos últimos 7 dias")}${k(f.total,"Fornecedores",f.produtores+" produtores · "+f.servicos+" serviços")}${k(p.total,"Pedidos",p["7d"]+" nos últimos 7 dias")}${k(i.contactos_30d,"Contactos pedidos (30 dias)")}${d.visitas?k(d.visitas["30d"],"Aberturas da app (30 dias)",d.visitas["7d"]+" nos últimos 7 dias, "+d.visitas.hoje+" hoje"):""}</div>`
+   +sp("Pessoas ativas por dia (30 dias)","ativos")+sp("Novas contas por dia (30 dias)","novos")+sp("Pedidos por dia (30 dias)","pedidos")+(d.visitas?sp("Aberturas da app por dia (30 dias)","visitas"):"")
+   +`<div class="meta" style="margin-top:14px">Pedidos por estado: ${Object.keys(E).filter(c=>p.por_estado[c]).map(c=>E[c]+" "+p.por_estado[c]).join(", ")||"nenhum"}. Valor dos concluídos: ${eur(p.valor_concluido)}.</div>`
+   +(d.visitas?`<div class="meta" style="margin-top:6px">Aberturas por canal (30 dias): navegador ${d.visitas.por_canal_30d.web||0}, app instalada ${d.visitas.por_canal_30d.instalada||0}, página de apresentação ${d.visitas.por_canal_30d.landing||0}. Cada abertura é uma visita, não uma pessoa.</div>`:"")
+   +`<div class="meta" style="margin-top:6px">Fornecedores: ${f.donos} donos de perfil, ${f.novos_30d} novos em 30 dias, ${f.verificados} verificados.</div>`
+   +`<div class="meta" style="margin-top:6px">Zonas com mais fornecedores: ${lst(d.zonas)}.</div><div class="meta" style="margin-top:6px">Categorias: ${lst(d.categorias)}.</div>`
+   +`<div class="meta" style="margin-top:6px">Mensagens (30 dias): ${i.mensagens_30d}, em ${i.conversas} conversas. Avaliações: ${i.avaliacoes}${i.aval_media!=null?" (média "+String(i.aval_media).replace(".",",")+")":""}. Orçamentos: ${i.orcamentos}. Marcações: ${i.marcacoes}. Favoritos: ${i.favoritos}. Pessoas com avisos ativos: ${i.push_pessoas}. Erros registados (7 dias): ${d.erros_7d}.</div>`;
+}
 function drawMod(){
   drawModConv();
   $("modlist").innerHTML=MOD.length?MOD.map(x=>{
@@ -2562,6 +2602,7 @@ async function modConvAct(id,a){
 $("modconv").addEventListener("click",e=>{const b=e.target.closest("button[data-mc]");if(b)modConvAct(b.dataset.mc,b.dataset.a);});
 $("modlist").addEventListener("click",e=>{const b=e.target.closest("button[data-m]");if(b)modAct(b.dataset.m,b.dataset.a);});
 $("modq").addEventListener("input",drawMod);
+$("admref").addEventListener("click",loadAdm);
 $("modforn").addEventListener("click",async e=>{const b=e.target.closest("button[data-v]");if(!b)return;b.disabled=true;
   const {error}=await sb.rpc("definir_verificado",{p_id:b.dataset.v,p_valor:b.dataset.val==="1"});
   if(error){toast("Não foi possível guardar.");b.disabled=false;return;}
@@ -3109,7 +3150,8 @@ function shareProv(id){const p=S.list.find(x=>x.id===id);if(p&&p.mine)markShared
 // ---- instalar a app (PWA): Android/Chrome usa o pedido nativo; iPhone mostra as instruções
 let INST_EV=null;
 const INST_KEY="aq_inst_ate";
-const emApp=()=>{try{return matchMedia("(display-mode: standalone)").matches||matchMedia("(display-mode: window-controls-overlay)").matches||navigator.standalone===true;}catch(e){return false;}};
+// Dentro da app Android da Google Play (Trusted Web Activity) o referrer começa por android-app://; guarda-se na sessão porque só vem no 1.º carregamento.
+const emApp=()=>{try{if((document.referrer||"").indexOf("android-app://")===0)sessionStorage.setItem("aq_twa","1");return matchMedia("(display-mode: standalone)").matches||matchMedia("(display-mode: window-controls-overlay)").matches||navigator.standalone===true||sessionStorage.getItem("aq_twa")==="1";}catch(e){return false;}};
 const eIOS=()=>/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
 function instAdiado(){try{return Date.now()<Number(localStorage.getItem(INST_KEY)||0);}catch(e){return false;}}
 function instUI(){
@@ -3131,6 +3173,10 @@ async function instalarApp(){
 }
 addEventListener("beforeinstallprompt",e=>{e.preventDefault();INST_EV=e;instUI();});
 addEventListener("appinstalled",()=>{INST_EV=null;instUI();});
+// Vindo da landing page (?instalar=1): oferece logo a instalação (ou as instruções) e limpa o endereço
+(()=>{let q=false;try{q=new URLSearchParams(location.search).get("instalar")==="1";}catch(e){}
+if(!q)return;try{history.replaceState(null,"",location.pathname+location.hash);}catch(e){}
+setTimeout(()=>{if(emApp())return;if(INST_EV)confirmar("Instale a Aqui Perto no telemóvel para a abrir mais depressa e receber avisos.",{titulo:"Instalar a app",ok:"Instalar",nao:"Agora não",perigo:false}).then(ok=>{if(ok)instalarApp();});else instalarApp();},1500);})();
 function shareApp(){shareLink("Aqui Perto","Serviços e produtores locais perto de si",location.origin+location.pathname);}
 $("crmbody").addEventListener("click",e=>{const b=e.target.closest("button[data-forn]");if(b)openForn(b.dataset.forn);});
 $("pdList").addEventListener("input",()=>{syncStep();calcOrd();});
@@ -3199,6 +3245,8 @@ setTimeout(()=>{
     $("lerr").textContent="Não foi possível entrar com o Google. Tente outra vez.";
     return;
   }
+  // contagem anónima de aberturas (só totais por dia; sem identificadores nem armazenamento no aparelho)
+  if(!DEMO&&!navigator.webdriver&&!/bot|crawl|spider|headless|lighthouse/i.test(navigator.userAgent))sb.rpc("registar_visita",{p_canal:emApp()?"instalada":"web"}).then(()=>{},()=>{});
   const DL=(()=>{try{return new URLSearchParams(location.search).get("f")||"";}catch(e){return "";}})();
   if(SESSION)await afterAuth();
   else{await loadList();render();if(S.user||DL)go("home");else openLogin("login");}

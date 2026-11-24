@@ -14,11 +14,71 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://miguellobatolw.github.io/AQUI-PERTO-/landing">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<meta property="og:url" content="https://miguellobatolw.github.io/AQUI-PERTO-/landing">
+<meta property="og:locale" content="pt_PT">
+<meta property="og:image:alt" content="Aqui Perto: serviços e produtores locais perto de si">
+<meta name="twitter:title" content="Aqui Perto: serviços e produtores locais perto de si">
+<meta name="twitter:description" content="Encontre prestadores de serviços e produtores da sua zona. Peça, marque e fale diretamente com quem trabalha ao seu lado.">
+<meta name="twitter:image" content="https://miguellobatolw.github.io/AQUI-PERTO-/og-image.png">
+<script type="application/ld+json">[
+ {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Aqui Perto",
+  "url": "https://miguellobatolw.github.io/AQUI-PERTO-/",
+  "description": "Encontre prestadores de serviços e produtores da sua zona. Peça, marque e fale diretamente com quem trabalha ao seu lado.",
+  "applicationCategory": "LifestyleApplication",
+  "operatingSystem": "Android, iOS, navegador web",
+  "inLanguage": "pt-PT",
+  "image": "https://miguellobatolw.github.io/AQUI-PERTO-/og-image.png"
+ },
+ {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "inLanguage": "pt-PT",
+  "mainEntity": [
+   {
+    "@type": "Question",
+    "name": "A Aqui Perto processa os pagamentos?",
+    "acceptedAnswer": {
+     "@type": "Answer",
+     "text": "Não. O pagamento e a entrega são combinados diretamente entre si e o fornecedor."
+    }
+   },
+   {
+    "@type": "Question",
+    "name": "Que dados guardam sobre mim?",
+    "acceptedAnswer": {
+     "@type": "Answer",
+     "text": "Só o necessário para a conta, os pedidos e as mensagens. Contamos também, de forma anónima, quantas vezes a página e a app são abertas, sem cookies nem identificadores. Pode apagar a conta na própria app, a qualquer momento."
+    }
+   },
+   {
+    "@type": "Question",
+    "name": "Funciona no iPhone?",
+    "acceptedAnswer": {
+     "@type": "Answer",
+     "text": "Sim. Abre no Safari e pode ser adicionada ao ecrã principal."
+    }
+   },
+   {
+    "@type": "Question",
+    "name": "Como posso falar convosco?",
+    "acceptedAnswer": {
+     "@type": "Answer",
+     "text": "Escreva para aquiperto2026.app@gmail.com."
+    }
+   }
+  ]
+ }
+]</script>
 <link rel="icon" href="icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
 <style>
-:root{--bg:#f2f6f4;--ink:#14262b;--muted:#4d6266;--line:#d3ded9;--tint:#e3ece8;--brand:#0f5c4d;--link:#0f5c4d;--accent:#f2b33d;--accent-ink:#2a1d00;--serif:Rockwell,"Roboto Slab",Cambria,Georgia,serif;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-@media (prefers-color-scheme:dark){:root{--bg:#0e1a1d;--ink:#e6f0ed;--muted:#9fb3b0;--line:#27403f;--tint:#16303a;--link:#5fd0b2}}
+:root{--bg:#f2f6f4;--ink:#14262b;--muted:#4d6266;--line:#d3ded9;--tint:#e3ece8;--brand:#0f5c4d;--link:#0f5c4d;--accent:#f2b33d;--accent-ink:#2a1d00;--frame:#14262b;--serif:Rockwell,"Roboto Slab",Cambria,Georgia,serif;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1a1d;--ink:#e6f0ed;--muted:#9fb3b0;--line:#27403f;--tint:#16303a;--link:#5fd0b2;--frame:#3a5a5c}}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html{scroll-behavior:smooth}
@@ -91,7 +151,9 @@ details p{margin-top:10px;color:var(--muted);max-width:40em}
 .faq{margin-top:28px}
 .final{background:#0f5c4d;color:#fff;text-align:center}
 .final h2{max-width:14em;margin:0 auto}
-.final .btn{margin-top:28px}
+.fbtns{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:28px}
+button.btn{font:700 1rem var(--sans);line-height:1.2;cursor:pointer;background:transparent}
+.shst{min-height:1.6em;margin-top:14px;font-size:.95rem;color:rgba(255,255,255,.88)}
 footer{padding:28px 0 40px;font-size:.95rem;color:var(--muted)}
 footer .wrap{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between}
 footer nav{display:flex;flex-wrap:wrap;gap:6px 20px}
@@ -105,6 +167,11 @@ footer nav{display:flex;flex-wrap:wrap;gap:6px 20px}
 footer{padding-bottom:104px}
 }
 @media (prefers-reduced-motion:reduce){.bar,.bar.on{transition:none}}
+.shots{display:flex;gap:18px;overflow-x:auto;scroll-snap-type:x mandatory;padding:6px 20px 18px;margin:30px -20px 0}
+.shots figure{margin:0;flex:0 0 min(62vw,250px);scroll-snap-align:center}
+.shots img{display:block;width:100%;height:auto;border-radius:24px;border:6px solid var(--frame);background:var(--frame);box-shadow:0 12px 30px rgba(10,35,30,.22)}
+.shots figcaption{margin:12px auto 0;max-width:15em;font-size:.95rem;text-align:center;color:var(--muted)}
+@media (min-width:880px){.shots{overflow:visible;justify-content:space-between;padding:0;margin:36px 0 0}.shots figure{flex:1 1 0;max-width:240px}}
 </style>
 </head>
 <body>
@@ -175,6 +242,19 @@ footer{padding-bottom:104px}
   </div>
 </section>
 
+<section id="ver" style="padding-top:0">
+  <div class="wrap">
+    <h2>A app por dentro</h2>
+    <p class="sub">Capturas reais, tiradas num telemóvel.</p>
+    <div class="shots" role="list">
+      <figure role="listitem"><img src="img/app-procurar.webp" width="540" height="1080" loading="lazy" alt="Ecrã de procura da Aqui Perto, com pesquisa por zona, categorias e mapa"><figcaption>Procure por zona, em lista ou no mapa.</figcaption></figure>
+      <figure role="listitem"><img src="img/app-pedidos.webp" width="540" height="1080" loading="lazy" alt="Ecrã Os meus pedidos, com avisos ativos e o estado de cada pedido"><figcaption>Acompanhe o estado de cada pedido.</figcaption></figure>
+      <figure role="listitem"><img src="img/app-catalogo.webp" width="540" height="1080" loading="lazy" alt="Catálogo do fornecedor, com preços, fotografias e stock de cada produto"><figcaption>O produtor gere preços e stock.</figcaption></figure>
+      <figure role="listitem"><img src="img/app-relatorios.webp" width="540" height="1080" loading="lazy" alt="Relatórios do fornecedor, com valor faturado, ticket médio e vendas por mês"><figcaption>E vê como estão a correr as vendas.</figcaption></figure>
+    </div>
+  </div>
+</section>
+
 <section id="clientes" style="padding-top:0">
   <div class="wrap split">
     <div class="stick">
@@ -226,8 +306,8 @@ footer{padding-bottom:104px}
     <h2>Perguntas frequentes</h2>
     <div class="faq">
       <details><summary>A Aqui Perto processa os pagamentos?</summary><p>Não. O pagamento e a entrega são combinados diretamente entre si e o fornecedor.</p></details>
-      <details><summary>Que dados guardam sobre mim?</summary><p>Só o necessário para a conta, os pedidos e as mensagens. Leia a <a href="privacidade.html">Política de privacidade</a>. Pode apagar a conta na própria app, a qualquer momento.</p></details>
-      <details><summary>Funciona no iPhone?</summary><p>Sim. Abre no Safari e pode ser adicionada ao ecrã principal, como descrito acima.</p></details>
+      <details><summary>Que dados guardam sobre mim?</summary><p>Só o necessário para a conta, os pedidos e as mensagens. Contamos também, de forma anónima, quantas vezes a página e a app são abertas, sem cookies nem identificadores. Leia a <a href="privacidade.html">Política de privacidade</a>. Pode apagar a conta na própria app, a qualquer momento.</p></details>
+      <details><summary>Funciona no iPhone?</summary><p>Sim. Abre no Safari e pode ser adicionada ao ecrã principal.</p></details>
       <details><summary>Como posso falar convosco?</summary><p>Escreva para <a href="mailto:aquiperto2026.app@gmail.com">aquiperto2026.app@gmail.com</a>.</p></details>
     </div>
   </div>
@@ -236,7 +316,8 @@ footer{padding-bottom:104px}
 <section class="final">
   <div class="wrap">
     <h2>Veja quem está perto de si.</h2>
-    <a class="btn p" href="./" data-inst>Abrir a Aqui Perto</a>
+    <div class="fbtns"><a class="btn p" href="./" data-inst>Abrir a Aqui Perto</a><button class="btn g" type="button" id="shr">Partilhar com alguém</button></div>
+    <p class="shst" id="shst" role="status" aria-live="polite"></p>
   </div>
 </section>
 </main>
@@ -269,13 +350,15 @@ footer{padding-bottom:104px}
 <script>
 (function(){
   var ev=null,bs=[].slice.call(document.querySelectorAll("[data-inst]")),web=document.querySelector("[data-web]"),
-  ios=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1),
+  ua=navigator.userAgent,ios=/iphone|ipad|ipod/i.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1),
+  mov=ios||/android/i.test(ua),
   app=matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
   bs.forEach(function(b){b.dataset.t0=b.textContent;});
-  function modo(inst){bs.forEach(function(b){b.textContent=inst?"Instalar a app":b.dataset.t0;});if(web)web.hidden=!inst;}
+  // Sem o evento do navegador (ex.: app já instalada, ou outro navegador), o botão leva à app com ?instalar=1, que mostra o pedido de instalação ou as instruções
+  function modo(inst){bs.forEach(function(b){b.textContent=inst?"Instalar a app":b.dataset.t0;b.setAttribute("href",inst&&!ev&&!ios?"./?instalar=1":"./");});if(web)web.hidden=!inst;}
   addEventListener("beforeinstallprompt",function(e){e.preventDefault();ev=e;modo(true);});
   addEventListener("appinstalled",function(){ev=null;modo(false);});
-  if(ios&&!app)modo(true);
+  if(mov&&!app)modo(true);
   bs.forEach(function(b){b.addEventListener("click",function(e){
     if(ev){e.preventDefault();ev.prompt();ev.userChoice.then(function(){ev=null;modo(false);});}
     else if(ios&&!app){e.preventDefault();document.getElementById("instalar").scrollIntoView({behavior:"smooth"});}
@@ -292,6 +375,27 @@ footer{padding-bottom:104px}
   new IntersectionObserver(function(e){var r=e[0];pass=!r.isIntersecting&&r.boundingClientRect.bottom<0;upd();}).observe(cta);
   new IntersectionObserver(function(e){end=e[0].isIntersecting;upd();}).observe(fin);
 })();
+</script>
+<script>
+// Partilhar: menu nativo do telemóvel; sem ele, copia a ligação
+(function(){
+  var b=document.getElementById("shr"),st=document.getElementById("shst");if(!b||!st)return;
+  var url=location.href.split("#")[0].split("?")[0],txt="Serviços e produtores locais perto de si.",tm;
+  function msg(t){st.textContent=t;clearTimeout(tm);tm=setTimeout(function(){st.textContent="";},3500);}
+  function velho(){var t=document.createElement("textarea");t.value=url;t.setAttribute("readonly","");t.style.cssText="position:fixed;opacity:0";document.body.appendChild(t);t.select();var ok=false;try{ok=document.execCommand("copy");}catch(e){}document.body.removeChild(t);msg(ok?"Ligação copiada.":"Copie a ligação: "+url);}
+  function copiar(){if(navigator.clipboard&&window.isSecureContext)return navigator.clipboard.writeText(url).then(function(){msg("Ligação copiada.");},velho);velho();}
+  b.addEventListener("click",function(){
+    if(navigator.share){navigator.share({title:"Aqui Perto",text:txt,url:url}).catch(function(e){if(!e||e.name!=="AbortError")copiar();});}
+    else copiar();
+  });
+})();
+</script>
+<script>
+// Contagem anónima de visitas à página: só um total por dia, sem cookies nem identificadores
+(function(){try{
+  if(navigator.webdriver||/bot|crawl|spider|headless|lighthouse/i.test(navigator.userAgent))return;
+  fetch("https://nwkfndenohfndbyhzlpc.supabase.co/rest/v1/rpc/registar_visita",{method:"POST",keepalive:true,headers:{"Content-Type":"application/json",apikey:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53a2ZuZGVub2hmbmRieWh6bHBjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwNjA5MzIsImV4cCI6MjEwNzYzNjkzMn0.Yz49qK22BWco5JC6ShzXTsXgNKZ2hEd-RaUORbBSmAo",Authorization:"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53a2ZuZGVub2hmbmRieWh6bHBjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwNjA5MzIsImV4cCI6MjEwNzYzNjkzMn0.Yz49qK22BWco5JC6ShzXTsXgNKZ2hEd-RaUORbBSmAo"},body:JSON.stringify({p_canal:"landing"})}).catch(function(){});
+}catch(e){}})();
 </script>
 <!-- Quando a app estiver na Google Play, acrescentar aqui e no topo o botão de descarga. -->
 </body>
