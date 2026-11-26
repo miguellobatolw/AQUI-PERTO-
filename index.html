@@ -572,6 +572,13 @@ dialog{max-height:calc(100dvh - 32px);overflow-y:auto}
 <div class="meta" id="admgen">A carregar…</div>
 <div id="admres"></div>
 <button class="btn" type="button" id="admref" style="margin-top:10px">Atualizar</button>
+<h3 style="margin:26px 0 4px">Contador na página de apresentação</h3>
+<div class="meta" id="lpmsg">A carregar…</div>
+<label style="display:flex;align-items:center;gap:10px;margin-top:10px"><input type="checkbox" id="lpativo"> Mostrar «N utilizadores já fazem parte da Aqui Perto»</label>
+<label for="lpmin" style="display:block;margin-top:10px">Só mostrar a partir de (utilizadores)</label>
+<input class="f" id="lpmin" type="number" min="0" max="1000000" step="1" inputmode="numeric" value="0" style="max-width:160px">
+<div><button class="btn primary" type="button" id="lpguardar" style="margin-top:10px">Guardar</button></div>
+<div class="meta" id="lperr" role="status"></div>
 <h3 style="margin:26px 0 4px">Fornecedores</h3>
 <div class="meta">Quem está a receber pedidos e quem está parado. Atividade é o que recebem em pedidos, orçamentos e marcações.</div>
 <div class="chips" id="crmf" role="group" aria-label="Filtrar fornecedores" style="margin-top:8px"></div>
@@ -929,11 +936,11 @@ priv:{t:"Política de privacidade",h:()=>`<p class="meta">Versão de ${esc(LEGAL
 <h3>1. Quem é o responsável</h3><p>${esc(LEGAL.resp)}, contacto: ${esc(LEGAL.email)}.</p>
 <h3>2. Que dados tratamos</h3><ul><li>Conta: e-mail, nome, zona, telemóvel (opcional) e se é cliente ou fornecedor.</li><li>Fornecedores: nome do negócio, categoria, zonas, preços, descrição, telemóvel, número MB Way (opcional), fotografias, entregas, fidelidade e localização aproximada (arredondada a cerca de 1 km, nunca a morada exata), nome da localidade e raio de atendimento. A posição que um cliente usa para pesquisar fica só guardada no seu aparelho; para a converter em localidade enviamos coordenadas arredondadas a cerca de 1 km ao serviço OpenStreetMap Nominatim.</li><li>Pedidos: produtos, valores, nota, nome e telemóvel do cliente e, nas entregas, a morada indicada.</li><li>Pedidos de orçamento: descrição, localidade, data pretendida, nome, telemóvel e até 3 fotografias, guardadas em armazenamento privado.</li><li>Mensagens trocadas entre cliente e fornecedor dentro da app, visíveis apenas aos dois participantes.</li><li>Notas privadas e datas de seguimento que o fornecedor regista sobre clientes, e moedas de fidelidade.</li><li>Dados técnicos do aparelho para os avisos de novos pedidos, se os ativar.</li></ul>
 <h3>3. Localização</h3><p>A localização do GPS é usada no seu aparelho para ordenar por distância e não é guardada. Para obter o nome da localidade podem ser enviadas coordenadas arredondadas (cerca de 1 km) ao serviço OpenStreetMap (Nominatim).</p>
-<h3>4. Para que usamos e porquê</h3><p>Criar e gerir a conta e os pedidos (execução do serviço); mostrar fornecedores perto de si e enviar avisos (o seu consentimento); manter a app segura e contar, de forma anónima e agregada, quantas vezes a app é aberta e a página de apresentação é usada (interesse legítimo). Não vendemos dados nem fazemos publicidade.</p>
+<h3>4. Para que usamos e porquê</h3><p>Criar e gerir a conta e os pedidos (execução do serviço); mostrar fornecedores perto de si e enviar avisos (o seu consentimento); manter a app segura e contar, de forma anónima e agregada, quantas vezes a app é aberta (interesse legítimo). Não vendemos dados nem fazemos publicidade.</p>
 <h3>5. Quem vê os dados</h3><p>O fornecedor vê o nome, o telemóvel e a morada de entrega dos clientes que lhe fazem pedidos, e, nos pedidos de orçamento, a descrição, a localidade e as fotografias enviadas. Os clientes veem os dados públicos do fornecedor, incluindo o telemóvel. O número MB Way, se o fornecedor o indicar, só é mostrado ao próprio e a clientes com um pedido seu ainda por pagar; a app não recebe nem processa pagamentos, e é o fornecedor quem marca o pedido como pago. As avaliações (estrelas, comentário e primeiro nome do cliente) são públicas. As denúncias de avaliações e de conversas ficam registadas e só a equipa da app as vê. Se uma conversa for denunciada, a equipa da app pode ler as últimas mensagens dessa conversa para decidir; as outras conversas nunca são lidas. Usamos como prestadores: Supabase (base de dados, contas e fotografias), GitHub Pages (alojamento), jsDelivr (distribuição das bibliotecas da app; se falhar, unpkg), Google (apenas se entrar com Google) e OpenStreetMap (mapa e nome da localidade). Ao abrir a app ou o mapa, estes serviços recebem o endereço IP do seu aparelho, como acontece em qualquer página web.</p>
 <h3>6. Quanto tempo guardamos</h3><p>Enquanto a conta existir. Ao apagar a conta eliminamos o perfil, os perfis de fornecedor, produtos, fotografias, pedidos, pedidos de orçamento, notas e avisos associados. Cópias de segurança podem demorar algum tempo a desaparecer.</p>
 <h3>7. Os seus direitos</h3><p>Pode pedir acesso, retificação, apagamento, limitação, portabilidade e opor-se ao tratamento, ou retirar o consentimento, através de ${esc(LEGAL.email)}. Pode apagar a conta na própria app (link no fundo da página). Tem direito a reclamar à Comissão Nacional de Proteção de Dados (cnpd.pt).</p>
-<h3>8. Armazenamento no aparelho</h3><p>Usamos o armazenamento do navegador só para a app funcionar (sessão e preferências). Não usamos cookies de publicidade ou de análise. Contamos apenas, por dia, quantas vezes a app e a página de apresentação são abertas e quantas vezes se carrega nos botões principais desta última: são totais anónimos, sem identificadores, sem ligação a nenhuma conta e sem guardar nada no seu aparelho.</p>
+<h3>8. Armazenamento no aparelho</h3><p>Usamos o armazenamento do navegador só para a app funcionar (sessão e preferências). Não usamos cookies de publicidade ou de análise. Contamos apenas, por dia, quantas vezes a app e a página de apresentação são abertas: são totais anónimos, sem identificadores, sem ligação a nenhuma conta e sem guardar nada no seu aparelho.</p>
 <h3>9. Menores</h3><p>A app destina-se a maiores de 18 anos.</p>`},
 termos:{t:"Termos de uso",h:()=>`<p class="meta">Versão de ${esc(LEGAL.data)}.</p>
 <h3>1. O que é a Aqui Perto</h3><p>Uma plataforma que aproxima clientes e fornecedores locais. Não vendemos nem entregamos os produtos ou serviços: o contrato é feito diretamente entre cliente e fornecedor.</p>
@@ -2548,7 +2555,26 @@ function drawCrm(){
 }
 // ---- resumo de utilização (RPC admin_resumo: só números agregados; "ativa" = fez pelo menos uma ação na app)
 let ADM_BUSY=false;
-async function loadAdm(){if(ADM_BUSY)return;ADM_BUSY=true;$("admgen").textContent="A carregar…";try{const r=await sb.rpc("admin_resumo");drawAdm(r.error?null:r.data);}catch(e){drawAdm(null);}ADM_BUSY=false;}
+// Contador de utilizadores na página de apresentação: o administrador liga/desliga aqui (guardado no servidor).
+async function lpLoad(){
+  const m=$("lpmsg");if(!m)return;
+  try{
+    const r=await sb.rpc("admin_landing_ler");
+    if(r.error||!r.data)throw (r.error||new Error("vazio"));
+    const d=r.data,mn=Number(d.minimo)||0,tot=Number(d.total)||0;
+    $("lpativo").checked=!!d.ativo;$("lpmin").value=String(mn);
+    m.textContent="Contas confirmadas agora: "+tot.toLocaleString("pt-PT")+". "+(d.ativo?(tot>=mn?"O contador está visível na página.":"Ligado, mas escondido até chegar ao número mínimo."):"O contador está desligado.");
+  }catch(e){m.textContent="Não foi possível carregar. Confirme que o SQL do contador foi corrido.";}
+}
+async function lpGuardar(){
+  const e=$("lperr");e.textContent="";
+  const mn=Math.floor(Number($("lpmin").value));
+  if(!(mn>=0&&mn<=1000000)){e.textContent="O mínimo tem de ser um número entre 0 e 1 000 000.";return;}
+  const {error}=await sb.rpc("admin_landing_definir",{p_ativo:$("lpativo").checked,p_minimo:mn});
+  if(error){e.textContent="Não foi possível guardar.";return;}
+  toast("Contador atualizado.");lpLoad();
+}
+async function loadAdm(){if(ADM_BUSY)return;ADM_BUSY=true;$("admgen").textContent="A carregar…";try{const r=await sb.rpc("admin_resumo");drawAdm(r.error?null:r.data);lpLoad();}catch(e){drawAdm(null);}ADM_BUSY=false;}
 function drawAdm(d){
   const g=$("admgen"),R=$("admres");
   if(!d){g.textContent="Não foi possível carregar os números. Confirme que o SQL do resumo foi corrido.";R.innerHTML="";return;}
@@ -2561,7 +2587,6 @@ function drawAdm(d){
    +sp("Pessoas ativas por dia (30 dias)","ativos")+sp("Novas contas por dia (30 dias)","novos")+sp("Pedidos por dia (30 dias)","pedidos")+(d.visitas?sp("Aberturas da app por dia (30 dias)","visitas"):"")
    +`<div class="meta" style="margin-top:14px">Pedidos por estado: ${Object.keys(E).filter(c=>p.por_estado[c]).map(c=>E[c]+" "+p.por_estado[c]).join(", ")||"nenhum"}. Valor dos concluídos: ${eur(p.valor_concluido)}.</div>`
    +(d.visitas?`<div class="meta" style="margin-top:6px">Aberturas por canal (30 dias): navegador ${d.visitas.por_canal_30d.web||0}, app instalada ${d.visitas.por_canal_30d.instalada||0}, página de apresentação ${d.visitas.por_canal_30d.landing||0}. Cada abertura é uma visita, não uma pessoa.</div>`:"")
-   +(d.visitas&&d.visitas.por_canal_30d.landing?(c=>`<div class="meta" style="margin-top:6px">Cliques na página de apresentação (30 dias): abrir a app ${c.landing_abrir||0}, instalar ${c.landing_instalar||0} (instalações concluídas ${c.landing_instalada||0}), inscrever o negócio ${c.landing_vender||0}, partilhar ${c.landing_partilhar||0}. Passaram da página para a app ${Math.round(((c.landing_abrir||0)+(c.landing_instalar||0))/c.landing*100)}% das visitas à página.</div>`)(d.visitas.por_canal_30d):"")
    +`<div class="meta" style="margin-top:6px">Fornecedores: ${f.donos} donos de perfil, ${f.novos_30d} novos em 30 dias, ${f.verificados} verificados.</div>`
    +`<div class="meta" style="margin-top:6px">Zonas com mais fornecedores: ${lst(d.zonas)}.</div><div class="meta" style="margin-top:6px">Categorias: ${lst(d.categorias)}.</div>`
    +`<div class="meta" style="margin-top:6px">Mensagens (30 dias): ${i.mensagens_30d}, em ${i.conversas} conversas. Avaliações: ${i.avaliacoes}${i.aval_media!=null?" (média "+String(i.aval_media).replace(".",",")+")":""}. Orçamentos: ${i.orcamentos}. Marcações: ${i.marcacoes}. Favoritos: ${i.favoritos}. Pessoas com avisos ativos: ${i.push_pessoas}. Erros registados (7 dias): ${d.erros_7d}.</div>`;
@@ -2628,6 +2653,7 @@ $("modconv").addEventListener("click",e=>{const b=e.target.closest("button[data-
 $("modlist").addEventListener("click",e=>{const b=e.target.closest("button[data-m]");if(b)modAct(b.dataset.m,b.dataset.a);});
 $("modq").addEventListener("input",drawMod);
 $("admref").addEventListener("click",()=>{loadAdm();loadCrm();});
+$("lpguardar").addEventListener("click",lpGuardar);
 $("crmq").addEventListener("input",()=>{CRM_N=30;drawCrm();});
 $("crmf").addEventListener("click",e=>{const b=e.target.closest("button[data-cf]");if(!b)return;CRM_F=b.dataset.cf;CRM_N=30;CRM_ED="";drawCrm();});
 $("crmlist").addEventListener("click",async e=>{

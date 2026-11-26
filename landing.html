@@ -187,6 +187,12 @@ footer{padding-bottom:104px}
 .shots img{display:block;width:100%;height:auto;border-radius:24px;border:6px solid var(--frame);background:var(--frame);box-shadow:0 12px 30px rgba(10,35,30,.22)}
 .shots figcaption{margin:12px auto 0;max-width:15em;font-size:.95rem;text-align:center;color:var(--muted)}
 @media (min-width:880px){.shots{overflow:visible;justify-content:space-between;padding:0;margin:36px 0 0}.shots figure{flex:1 1 0;max-width:240px}}
+.hcount{display:flex;align-items:center;gap:10px;margin-top:20px;font-size:1.02rem;color:rgba(255,255,255,.92);font-family:var(--sans);animation:hfade .5s ease both}
+.hcount[hidden]{display:none}
+.hcount b{color:var(--accent);font-size:1.25em;font-weight:800;font-variant-numeric:tabular-nums}
+.hdot{width:9px;height:9px;border-radius:50%;background:var(--accent);flex:none}
+@keyframes hfade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.hcount{animation:none}}
 </style>
 </head>
 <body>
@@ -207,6 +213,7 @@ footer{padding-bottom:104px}
           <a class="btn p" href="./" data-inst>Abrir a Aqui Perto</a>
           <a class="btn g" href="#fornecedores">Quero vender na app</a>
         </div>
+        <p class="hcount" id="hcount" hidden aria-live="polite"><span class="hdot" aria-hidden="true"></span><span><b id="hcn">0</b> <span id="hct">utilizadores já fazem parte da Aqui Perto</span></span></p>
         <p class="hnote">Gratuita para clientes e fornecedores. Funciona no telemóvel, no navegador, e pode juntá-la ao ecrã inicial como qualquer outra app. <a href="./" data-web hidden style="color:#fff">Prefere experimentar primeiro? Abra no navegador.</a></p>
         <div class="qr" id="qr"><div class="qrc" id="qrc" role="img" aria-label="QR code desta página"></div><p>Está no computador? Aponte a câmara do telemóvel para continuar lá.</p></div>
       </div>
@@ -405,6 +412,27 @@ footer{padding-bottom:104px}
     else copiar();
   });
 })();
+</script>
+<script>
+// Contador de utilizadores. O administrador liga/desliga e define o mínimo no painel da app; só mostra números reais.
+(function(){try{
+  var box=document.getElementById("hcount");if(!box)return;
+  if(navigator.webdriver||/bot|crawl|spider|headless|lighthouse/i.test(navigator.userAgent))return;
+  var K="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53a2ZuZGVub2hmbmRieWh6bHBjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwNjA5MzIsImV4cCI6MjEwNzYzNjkzMn0.Yz49qK22BWco5JC6ShzXTsXgNKZ2hEd-RaUORbBSmAo";
+  fetch("https://nwkfndenohfndbyhzlpc.supabase.co/rest/v1/rpc/contador_landing",{method:"POST",headers:{"Content-Type":"application/json",apikey:K,Authorization:"Bearer "+K},body:"{}"})
+  .then(function(r){return r.ok?r.json():null;})
+  .then(function(d){
+    if(!d||d.ativo!==true||typeof d.total!=="number"||!(d.total>0))return;
+    var n=d.total,el=document.getElementById("hcn"),tx=document.getElementById("hct");
+    function fmt(x){return x.toLocaleString("pt-PT");}
+    tx.textContent=n===1?"utilizador já faz parte da Aqui Perto":"utilizadores já fazem parte da Aqui Perto";
+    el.textContent=fmt(n);box.hidden=false;
+    if(n<2||(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches))return;
+    var t0=null;
+    function passo(t){if(t0===null)t0=t;var p=Math.min(1,(t-t0)/1200),e=1-Math.pow(1-p,3);el.textContent=fmt(p<1?Math.round(n*e):n);if(p<1)requestAnimationFrame(passo);}
+    el.textContent=fmt(0);requestAnimationFrame(passo);
+  }).catch(function(){});
+}catch(e){}})();
 </script>
 <script>
 // Contagem anónima: visitas à página e cliques nos botões principais. Só totais por dia, sem cookies nem identificadores
